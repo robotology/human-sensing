@@ -1,2 +1,2 @@
-# face-recognition
-This repository contains software related to h
+# human-sensing
+This repository contains software related to human sensing
