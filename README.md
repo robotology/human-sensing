@@ -4,10 +4,11 @@ This repository contains software related to human sensing
 The code has been tested on Ubuntu 14.04 LTS & Lubuntu 14.04 LTS
 
 The code needs the follwoing libraries:
-1- OpenCV 3.0
-2- tbb
-3- boost
-4- BLAS (is needed for dlib c++ library)
+
+    1- OpenCV 3.0
+    2- tbb
+    3- boost
+    4- BLAS (is needed for dlib c++ library)
 
 # Get BLAS:
 
