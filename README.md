@@ -9,6 +9,7 @@ The code needs the follwoing libraries:
     2- tbb
     3- boost
     4- BLAS (is needed for dlib c++ library)
+    5- icub-main (receiving images from icub eyes as inputs)
 
 # Get BLAS:
 
@@ -36,6 +37,11 @@ The code needs the follwoing libraries:
     
 finally, build the main code and test it by running the SimpleCLM executable. 
   
+# iCub-main:
+
+Install, icub-main from the following link,
+
+    https://github.com/robotology/icub-main
 
 
 
@@ -44,8 +50,7 @@ finally, build the main code and test it by running the SimpleCLM executable.
 
 
 
-
-A bunch of video files for testing the code and the main source-code of CLM can be found at:
+Note: A bunch of video files for testing the code and the main source-code of CLM can be found at:
 https://github.com/TadasBaltrusaitis/CLM-framework
 
 
