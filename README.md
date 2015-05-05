@@ -10,7 +10,7 @@ The code needs the follwoing libraries:
     2- tbb
     3- boost
     4- BLAS (is needed for dlib c++ library)
-    5- icub-main (receiving images from icub eyes as inputs)
+    5- icub-main (implemented on icub)
 
 # Get BLAS:
 
