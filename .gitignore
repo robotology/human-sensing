@@ -25,6 +25,7 @@ exe/CLM_Yarp_Gaze/Release/
 /Release/
 CMakeFiles/
 /bin/
+/build/
 Makefile
 cmake_install.cmake
 CMakeCache.txt
