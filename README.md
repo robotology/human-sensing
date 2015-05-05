@@ -5,7 +5,8 @@ The code has been tested on Ubuntu 14.04 LTS & Lubuntu 14.04 LTS
 
 The code needs the follwoing libraries:
 
-    1- OpenCV 3.0
+    1- BLAS
+    2- OpenCV 3.0
     2- tbb
     3- boost
     4- BLAS (is needed for dlib c++ library)
@@ -31,15 +32,23 @@ The code needs the follwoing libraries:
     make -j2
     sudo make install	
 
-4- Get Boost:
+# Get TBB:
+
+    sudo apt-get install libtbb-dev
+
+# Get Boost:
 
     sudo apt-get install libboost-all-dev
     
+# Get BLAS:
+
+    sudo apt-get install libopenblas-dev
+
 finally, build the main code and test it by running the SimpleCLM executable. 
   
-# iCub-main:
+# Get iCub-main:
 
-Install, icub-main from the following link,
+clone from the following link,
 
     https://github.com/robotology/icub-main
 
