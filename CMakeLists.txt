@@ -149,9 +149,9 @@ add_subdirectory(lib/3rdParty/dlib)
 add_subdirectory(lib/local/CLM)
 add_subdirectory(lib/local/FaceAnalyser)
 # executables
-# add_subdirectory(exe/SimpleCLMImg)
-add_subdirectory(exe/SimpleCLM)
-# add_subdirectory(exe/MultiTrackCLM)
-# add_subdirectory(exe/FeatureExtraction)
-add_subdirectory(exe/CLM_Yarp)            	# connected CLM to iCub through Yarp
-# add_subdirectory(exe/CLM_Yarp_Gaze)			# connected CLM to iCub through Yarp including Gaze control
+# add_subdirectory(modules/SimpleCLMImg)
+add_subdirectory(modules/SimpleCLM)
+# add_subdirectory(modules/MultiTrackCLM)
+# add_subdirectory(modules/FeatureExtraction)
+add_subdirectory(modules/CLM_Yarp)            	# connected CLM to iCub through Yarp
+# add_subdirectory(modules/CLM_Yarp_Gaze)			# connected CLM to iCub through Yarp including Gaze control
