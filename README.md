@@ -12,11 +12,11 @@ The code needs the follwoing libraries:
     4- dlib (for face detection)
     5- icub-main (implemented on icub)
 
-# Get BLAS:
+## Get BLAS:
 
     sudo apt-get install libopenblas-dev liblapack-dev 
 
-# Get OpenCV
+## Get OpenCV
 1- Install the dependencies:
 
     sudo apt-get install git libgtk2.0-dev pkg-config libavcodec-dev libavformat-dev libswscale-dev
@@ -32,24 +32,24 @@ The code needs the follwoing libraries:
     make -j2
     sudo make install	
 
-# Get TBB:
+## Get TBB:
 
     sudo apt-get install libtbb-dev
 
-# Get Boost:
+## Get Boost:
 
     sudo apt-get install libboost-all-dev
     
-# Get dlib:
+## Get dlib:
 
 Download the library (v18.xx) from the following link and install it:
 
     http://dlib.net/ 
 
 
-finally, build the main code and test it by running the SimpleCLM executable. 
+finally, build the main code and test it by running the `SimpleCLM` executable. 
   
-# Get iCub-main:
+## Get iCub-main:
 
 clone from the following link,
 
