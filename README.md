@@ -5,11 +5,11 @@ The code has been tested on Ubuntu 14.04 LTS & Lubuntu 14.04 LTS
 
 The code needs the follwoing libraries:
 
-    1- BLAS
+    1- BLAS (for dlib c++ library)
     2- OpenCV 3.0
     2- tbb
     3- boost
-    4- BLAS (is needed for dlib c++ library)
+    4- dlib (for face detection)
     5- icub-main (implemented on icub)
 
 # Get BLAS:
@@ -40,9 +40,12 @@ The code needs the follwoing libraries:
 
     sudo apt-get install libboost-all-dev
     
-# Get BLAS:
+# Get dlib:
 
-    sudo apt-get install libopenblas-dev
+Download the library (v18.xx) from the following link and install it:
+
+    http://dlib.net/ 
+
 
 finally, build the main code and test it by running the SimpleCLM executable. 
   
