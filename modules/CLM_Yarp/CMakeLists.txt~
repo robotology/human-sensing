@@ -21,4 +21,4 @@ if(UNIX)
     target_link_libraries(CLMYarp ${OpenCV_LIBS} ${Boost_LIBRARIES} ${TBB_LIBRARIES} ${YARP_LIBRARIES})
 endif(UNIX)
 
-install (TARGETS CLMYarp DESTINATION ${CMAKE_BINARY_DIR}/bin)
+install (TARGETS SimpleCLMYarp DESTINATION ${CMAKE_BINARY_DIR}/bin)
