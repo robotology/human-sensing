@@ -5,7 +5,12 @@
  * 
  * 
  * 
- * 
+ * output:
+ *  1- Sends the 3D pose of the Gaze to the port /clmgaze/3dpose/out
+ * this can be used to connect to the iKinGazeControl  module
+ *
+ * 2- Sends a bottle including the corners of a bounding box and the center of two eyes
+ * this can be used as an input for the face recognition module (for Vadim)
  * 
  * 
  * by: Reza Ahmadzadeh (reza.ahmadzadeh@iit.it)
@@ -115,7 +120,9 @@ private:
 	
     BufferedPort<ImageOf<PixelRgb> > imageIn;  // make a port for reading images
     BufferedPort<ImageOf<PixelRgb> > imageOut; // make a port for passing the result to
-    BufferedPort<Bottle> targetPort;
+    BufferedPort<Bottle> targetPort; // for Vadim
+
+    BufferedPort<Bottle> posePort; // for Ali
 	
 	IplImage* cvImage;
     IplImage* display;
@@ -169,7 +176,6 @@ private:
     Matrix H;                       // transformation matrx
 
 
-
 public:
 
     MyModule(){} 							// constructor
@@ -181,18 +187,19 @@ public:
         return 0.0; 						// 0 is equal to the real-time
     }
 
+
     // --------------------------------------------------------------
     bool configure(yarp::os::ResourceFinder &rf)
     {
-                                                    // open the ports
-        ok2 = imageIn.open("/clmgaze/image/in"); 	//("/icub/camcalib/left/out"); cannot be used static like this, the connection should be provided from outside
+
+        // --- open the ports ---
+        ok2 = imageIn.open("/clmgaze/image/in");
         ok2 = ok2 && imageOut.open("/clmgaze/image/out");
         if (!ok2)
         {
 			fprintf(stderr, "Error. Failed to open image ports. \n");
 			return false;
 		}	
-
 
         ok2 = targetPort.open("/clmgaze/pose/out");
         if (!ok2)
@@ -201,6 +208,13 @@ public:
             return false;
         }
 
+        ok2 = posePort.open("/clmgaze/3dpose/out");
+        if (!ok2)
+        {
+            fprintf(stderr,"Error. failed to open a port for the 3D pose. \n");
+            return false;
+        }
+        // ---
 
 		arguments.push_back("-f");							// provide two default arguments in case we want to use no real camera
 		arguments.push_back("../../videos/default.wmv"); 	// the video file 
@@ -211,12 +225,10 @@ public:
 		cy = 113.51; //0; (default)
 		clm_parameters = new CLMTracker::CLMParameters(arguments);
 
-        // checking the otehr face detections
-        cout <<  "Current Face Detector : "<<clm_parameters->curr_face_detector << endl;
-        clm_parameters->curr_face_detector = CLMTracker::CLMParameters::HAAR_DETECTOR;
-        cout <<  "Current Face Detector : "<<clm_parameters->curr_face_detector << endl;
-
-
+        // checking the otehr face detectors
+        //cout <<  "Current Face Detector : "<<clm_parameters->curr_face_detector << endl;
+        clm_parameters->curr_face_detector = CLMTracker::CLMParameters::HAAR_DETECTOR; // change to HAAR
+        //cout <<  "Current Face Detector : "<<clm_parameters->curr_face_detector << endl;
 
 		//CLMTracker::CLMParameters clm_parameters(arguments);
 		CLMTracker::get_video_input_output_params(files, depth_directories, pose_output_files, tracked_videos_output, landmark_output_files, landmark_3D_output_files, use_camera_plane_pose, arguments);
@@ -257,7 +269,6 @@ public:
 
 	
 		// Creating output files
-
 		if(!pose_output_files.empty())
 		{
 			pose_output_file.open (pose_output_files[f_n], ios_base::out);
@@ -277,14 +288,12 @@ public:
 	
 		INFO_STREAM( "Starting tracking");
 
-        gazeControl = true;
-        //YARP_REGISTER_DEVICES(icubmod)
+        gazeControl = true;  // true if you want to activate the gaze controller
         
         Property option;
         option.put("device","gazecontrollerclient");
         option.put("remote","/iKinGazeCtrl");
         option.put("local","/client/gaze");
-
 
         runGaze = true;   // change to use the gaze controller
         if (runGaze)
@@ -307,13 +316,12 @@ public:
                 return false;
             }
 
-            // latch the controller context in order to preserve
-            // it after closing the module
-            // the context contains the tracking mode, the neck limits and so on.
+            // latch the controller context in order to preserve it after closing the module
             igaze->storeContext(&startup_context_id);
 
         }
-        /*
+
+        /* --- Testing other things
         Property option;
         option.put("device", "remote_controlboard");
         option.put("local", "/test/client");   //local port names
@@ -403,7 +411,7 @@ public:
 		ImageOf<PixelRgb> *imgTmp = imageIn.read();  // read an image
 		if (imgTmp == NULL) 
 		{
-			FATAL_STREAM( "Failed to open video source" );
+            FATAL_STREAM( "Failed to read image!" );
 			return true;
 		}
 
@@ -422,6 +430,7 @@ public:
 			cy = captured_image.rows / 2.0f;
 			cx_undefined = true;
 		}
+
         /*
 		VideoWriter writerFace;
 		if (!write_settings)
@@ -583,8 +592,6 @@ public:
             // --------------------------------
 
 
-
-
 			if(detection_certainty > 1)
 				detection_certainty = 1;
 			if(detection_certainty < -1)
@@ -683,6 +690,13 @@ public:
                 pose_clm[3] = 1;
                 pose_robot = H*pose_clm;
 
+
+                /*
+                 * ------------------------------------------------------------------------------------------------
+                 * --- Uncomment this part if you want to send the commands to the gazze controller from inside ---
+                 * ------------------------------------------------------------------------------------------------
+                 *
+                 *
                 //cout << " >>>> looking at : "  << pose_robot[0] << " " << pose_robot[1] << " " << pose_robot[2] << endl;
                 // use the first 3 argument (3x1)
                 fp.resize(3);
@@ -695,6 +709,18 @@ public:
 
                 //igaze->getFixationPoint(x); // retrieve the current fixation point
                 //cout<<"final error = "<<norm(fp-x)<<endl; // return a measure of the displacement error
+
+                *------------------------------------------------------------------------------------------------
+                */
+
+                Bottle& fp = posePort.prepare();
+                fp.clear();
+                fp.addDouble(pose_robot[0]);
+                fp.addDouble(pose_robot[1]);
+                fp.addDouble(pose_robot[2]);
+                posePort.write();
+
+
             }
         }
         }
@@ -742,7 +768,10 @@ public:
 		delete clm_model;
 		//inPort.close();
 		//outPort.close();
+        targetPort.writeStrict();
         targetPort.close();
+        posePort.writeStrict();
+        posePort.close();
 		imageIn.close();
 		imageOut.close();
 		clientGazeCtrl.close();

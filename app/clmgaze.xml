@@ -44,6 +44,12 @@
           <protocol>udp</protocol>
       </connection>
 
+	<!-- if without executing the gaze commands from the inside of the code -->
+      <connection>
+          <from>/clmgaze/3dpose/out</from>
+          <to>/iKinGazeCtrl/xd:i</to>
+          <protocol>udp</protocol>
+      </connection>
 
 
 
