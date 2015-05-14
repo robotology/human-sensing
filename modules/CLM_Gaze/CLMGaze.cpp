@@ -1,7 +1,7 @@
 /**
  * This code is modified for the iCub humanoid robot through YARP connection.
  * The program reads the image from one camera (robot's eye) and tries to detect a face and exports the result on a new view.
- * 
+ * It also sends the estimated pose of the head to
  * 
  * 
  * 
@@ -16,6 +16,7 @@
 #include <yarp/os/Module.h>
 #include <yarp/os/Network.h>
 #include <yarp/sig/Vector.h>
+#include <yarp/os/Bottle.h>
 #include <yarp/dev/all.h>
 #include <yarp/dev/Drivers.h>
 #include <yarp/dev/ControlBoardInterfaces.h>
@@ -65,10 +66,11 @@ YARP_DECLARE_DEVICES(icubmod)
 #define STATE_WAIT 2
 #define STATE_STILL 3
 **/
+// --------------------------------------------------------------
 // ------------------
 // ----- Macros -----
 // ------------------
-
+// --------------------------------------------------------------
 #define INFO_STREAM( stream ) \
 std::cout << stream << std::endl
 
@@ -86,11 +88,11 @@ static void printErrorAndAbort( const std::string & error )
 
 #define FATAL_STREAM( stream ) \
 printErrorAndAbort( std::string( "Fatal error: " ) + stream )
-
+// --------------------------------------------------------------
 // ----------------------
 // ----- Namespaces -----
 // ----------------------
-
+// --------------------------------------------------------------
 using namespace std;
 using namespace cv;
 using namespace yarp::os;
@@ -98,21 +100,22 @@ using namespace yarp::sig;
 using namespace yarp::dev;
 using namespace yarp::math;
 
+// --------------------------------------------------------------
 // -----------------
 // ----- Class -----
 // -----------------
-
+// --------------------------------------------------------------
 class MyModule:public RFModule
 {
 
-protected:
+private:
 
 	//Mat cvImage;
 	//BufferedPort<Bottle> inPort, outPort;
 	
     BufferedPort<ImageOf<PixelRgb> > imageIn;  // make a port for reading images
     BufferedPort<ImageOf<PixelRgb> > imageOut; // make a port for passing the result to
-    BufferedPort<Vector> targetPort;
+    BufferedPort<Bottle> targetPort;
 	
 	IplImage* cvImage;
     IplImage* display;
@@ -128,7 +131,7 @@ protected:
 	vector<string> files, depth_directories, pose_output_files, tracked_videos_output, landmark_output_files, landmark_3D_output_files;
 
 	bool use_camera_plane_pose, done, cx_undefined, use_depth, write_settings, ok2, gazeControl;
-
+    bool runGaze; // set this value to true to run gaze control on the icub
 	int device, f_n, frame_count;
     int state, startup_context_id, jnt;
     int thickness;
@@ -178,7 +181,7 @@ public:
         return 0.0; 						// 0 is equal to the real-time
     }
 
-
+    // --------------------------------------------------------------
     bool configure(yarp::os::ResourceFinder &rf)
     {
                                                     // open the ports
@@ -190,14 +193,14 @@ public:
 			return false;
 		}	
 
-        /*
+
         ok2 = targetPort.open("/clmgaze/pose/out");
         if (!ok2)
         {
             fprintf(stderr,"Error. failed to open a port for the pose. \n");
             return false;
         }
-        */
+
 
 		arguments.push_back("-f");							// provide two default arguments in case we want to use no real camera
 		arguments.push_back("../../videos/default.wmv"); 	// the video file 
@@ -207,6 +210,14 @@ public:
 		cx = 157.858; //0; (default)
 		cy = 113.51; //0; (default)
 		clm_parameters = new CLMTracker::CLMParameters(arguments);
+
+        // checking the otehr face detections
+        cout <<  "Current Face Detector : "<<clm_parameters->curr_face_detector << endl;
+        clm_parameters->curr_face_detector = CLMTracker::CLMParameters::HAAR_DETECTOR;
+        cout <<  "Current Face Detector : "<<clm_parameters->curr_face_detector << endl;
+
+
+
 		//CLMTracker::CLMParameters clm_parameters(arguments);
 		CLMTracker::get_video_input_output_params(files, depth_directories, pose_output_files, tracked_videos_output, landmark_output_files, landmark_3D_output_files, use_camera_plane_pose, arguments);
 		CLMTracker::get_camera_params(device, fx, fy, cx, cy, arguments);    
@@ -275,64 +286,67 @@ public:
         option.put("local","/client/gaze");
 
 
-
-        if (!clientGazeCtrl.open(option))
+        runGaze = true;   // change to use the gaze controller
+        if (runGaze)
         {
-            fprintf(stderr,"Error. could not open the gaze controller!");
-            return false;
+            if (!clientGazeCtrl.open(option))
+            {
+                fprintf(stderr,"Error. could not open the gaze controller!");
+                return false;
+            }
+
+
+            igaze = NULL;
+            if (clientGazeCtrl.isValid())
+            {
+                clientGazeCtrl.view(igaze);     // open the view
+            }
+            else
+            {
+                INFO_STREAM( "could not open");
+                return false;
+            }
+
+            // latch the controller context in order to preserve
+            // it after closing the module
+            // the context contains the tracking mode, the neck limits and so on.
+            igaze->storeContext(&startup_context_id);
+
         }
-
-
-        igaze = NULL;
-        if (clientGazeCtrl.isValid())
-        {
-            clientGazeCtrl.view(igaze);     // open the view
-        }
-        else
-        {
-            INFO_STREAM( "could not open");
-            return false;
-        }
-
-        // latch the controller context in order to preserve
-        // it after closing the module
-        // the context contains the tracking mode, the neck limits and so on.
-        igaze->storeContext(&startup_context_id);
-
-        /**
+        /*
         Property option;
         option.put("device", "remote_controlboard");
         option.put("local", "/test/client");   //local port names
         //option.put("remote", "/icubSim/head"); // for simulation
         option.put("remote", "/icub/head");
-        **/
+        */
 
-        /**
+        /*
         Property option("(device gazecontrollerclient)");
         option.put("remote","/iKinGazeCtrl");
         option.put("local","/client/gaze"); //("local","/gaze_client");
-        **/
+        */
 
 
-        /**
+        /*
         clientGazeCtrl.view(pos);
         clientGazeCtrl.view(vel);
         clientGazeCtrl.view(encs);
-        **/
+        */
 
-        /**
-		// set trajectory time:
+        /*
+        // set trajectory time:
         igaze->setNeckTrajTime(0.8);
         igaze->setEyesTrajTime(0.4);
 
-		// put the gaze in tracking mode, so that
-		// when the torso moves, the gaze controller
-		// will compensate for it
+        // put the gaze in tracking mode, so that
+        // when the torso moves, the gaze controller
+        // will compensate for it
         igaze->setTrackingMode(true);
         igaze->bindNeckPitch();
-        **/
-		   
-        /**
+        */
+
+        /*
           // when not using gaze controller
         jnt = 0;
 
@@ -375,12 +389,10 @@ public:
          command[4]=0;
          command[5]=0;
          pos->positionMove(command.data()); // just to test
-        **/
-
+        */
 
         return true;
     }
-
     // --------------------------------------------------------------
 	bool updateModule()
 	{
@@ -479,12 +491,108 @@ public:
 		{
 			CLMTracker::Draw(captured_image, *clm_model);
 
+
+            // ---------------------------
+            // REZA - for Vadim
+            // ---------------------------
+            //
+            // 1- Finding the center of the eyes
+            //
+            // eye features are at 36-48 (6 feature for each eye)
+            double mean_xx_right_eye = 0;
+            double mean_yy_right_eye = 0;
+            double mean_xx_left_eye = 0;
+            double mean_yy_left_eye = 0;
+
+
+            for (int ii = 36; ii < 48; ii++)
+            {
+                double xx = clm_model->detected_landmarks.at<double>(ii);
+                double yy = clm_model->detected_landmarks.at<double>(ii+clm_model->pdm.NumberOfPoints());
+
+
+                //cv::putText(captured_image, "+", cv::Point(xx,yy), CV_FONT_HERSHEY_SIMPLEX, 0.5, CV_RGB(255,255,0));
+                if (ii < 42){
+                    //cv::circle(captured_image,cv::Point(xx,yy),3,CV_RGB(255,255,0));
+                    mean_xx_right_eye = mean_xx_right_eye + xx;
+                    mean_yy_right_eye = mean_yy_right_eye + yy;
+                }
+                else
+                {
+                    //cv::circle(captured_image,cv::Point(xx,yy),3,CV_RGB(0,255,0));
+                    mean_xx_left_eye = mean_xx_left_eye + xx;
+                    mean_yy_left_eye = mean_yy_left_eye + yy;
+                }
+            }
+            mean_xx_left_eye = mean_xx_left_eye / 6;
+            mean_yy_left_eye = mean_yy_left_eye / 6;
+            mean_xx_right_eye = mean_xx_right_eye / 6;
+            mean_yy_right_eye = mean_yy_right_eye / 6;
+
+            /*
+            cout << mean_xx_left_eye << endl;
+            cout << mean_yy_left_eye << endl;
+            cout << mean_xx_right_eye << endl;
+            cout << mean_yy_right_eye << endl;
+            */
+
+            //cv::circle(captured_image,cv::Point(mean_xx_left_eye,mean_yy_left_eye),10,CV_RGB(255,255,0));
+            //cv::circle(captured_image,cv::Point(mean_xx_right_eye,mean_yy_right_eye),10,CV_RGB(0,255,0));
+
+
+            // 2- Finding the corner of the box
+
+            // initialize with the x,y of the first landmark
+            double xx_min = clm_model->detected_landmarks.at<double>(0);
+            double xx_max = clm_model->detected_landmarks.at<double>(0);
+            double yy_min = clm_model->detected_landmarks.at<double>(clm_model->pdm.NumberOfPoints());
+            double yy_max = clm_model->detected_landmarks.at<double>(clm_model->pdm.NumberOfPoints());
+
+            for (int ii=0; ii<clm_model->pdm.NumberOfPoints(); ii++)
+            {
+                double xx = clm_model->detected_landmarks.at<double>(ii);
+                double yy = clm_model->detected_landmarks.at<double>(ii+clm_model->pdm.NumberOfPoints());
+                // finding the corners
+                if (xx < xx_min)
+                    xx_min = xx;
+                if (xx > xx_max)
+                    xx_max = xx;
+                if (yy < yy_min)
+                    yy_min = yy;
+                if (yy > yy_max);
+                    yy_max = yy;
+            }
+
+            //cv::circle(captured_image,cv::Point(xx_min,yy_min),10,CV_RGB(255,255,255));
+            //cv::circle(captured_image,cv::Point(xx_max,yy_max),10,CV_RGB(255,255,255));
+            //cout << "[" << xx_min << "," << xx_max  << "," << yy_min << "," << yy_max << "]" <<endl;
+            //cout << "[" << mean_xx_left_eye << "," << mean_yy_left_eye  << "," << mean_xx_right_eye << "," << mean_yy_right_eye << "]" <<endl;
+
+            Bottle& poseVadim = targetPort.prepare();
+            poseVadim.clear();
+            poseVadim.addDouble(xx_min);
+            poseVadim.addDouble(yy_min);
+            poseVadim.addDouble(xx_max);
+            poseVadim.addDouble(yy_max);
+            poseVadim.addDouble(mean_xx_left_eye);
+            poseVadim.addDouble(mean_yy_left_eye);
+            poseVadim.addDouble(mean_xx_right_eye);
+            poseVadim.addDouble(mean_yy_right_eye);
+
+            targetPort.write();
+            // --------------------------------
+
+
+
+
 			if(detection_certainty > 1)
 				detection_certainty = 1;
 			if(detection_certainty < -1)
 				detection_certainty = -1;
 
+            // cout << "Certainty : " << detection_certainty << "---" << visualisation_boundary << endl;
 			detection_certainty = (detection_certainty + 1)/(visualisation_boundary +1);
+            cout << "Normalized Certainty : " << detection_certainty << endl;
 
 			// A rough heuristic for box around the face width
             thickness = (int)std::ceil(2.0* ((double)captured_image.cols) / 640.0);
@@ -554,9 +662,10 @@ public:
         }
         */
 
-        cout << "CLM Estimated pose and quaternion : "  << pose_estimate_CLM[0] << " " << pose_estimate_CLM[1] << " " << pose_estimate_CLM[2] << " " << pose_estimate_CLM[3] << " " << pose_estimate_CLM[4] << " " << pose_estimate_CLM[5] << endl;
+        //cout << "CLM Estimated pose and quaternion : "  << pose_estimate_CLM[0] << " " << pose_estimate_CLM[1] << " " << pose_estimate_CLM[2] << " " << pose_estimate_CLM[3] << " " << pose_estimate_CLM[4] << " " << pose_estimate_CLM[5] << endl;
 
-
+        if (runGaze)
+        {
         if (detection_success)
         {
             if (abs(pose_estimate_CLM[0]) < 1000 & abs(pose_estimate_CLM[1])< 1000 & abs(pose_estimate_CLM[2]) < 1000 )
@@ -574,7 +683,7 @@ public:
                 pose_clm[3] = 1;
                 pose_robot = H*pose_clm;
 
-                cout << "Pose to look at : "  << pose_robot[0] << " " << pose_robot[1] << " " << pose_robot[2] << endl;
+                //cout << " >>>> looking at : "  << pose_robot[0] << " " << pose_robot[1] << " " << pose_robot[2] << endl;
                 // use the first 3 argument (3x1)
                 fp.resize(3);
                 fp[0]=pose_robot[0];
@@ -588,7 +697,7 @@ public:
                 //cout<<"final error = "<<norm(fp-x)<<endl; // return a measure of the displacement error
             }
         }
-
+        }
         //if(!tracked_videos_output.empty())
         //{
         //    writerFace << captured_image;     // output the tracked video
@@ -599,7 +708,7 @@ public:
 
 		return true;
 	}
-    // ---------------------------------------------------------
+    // --------------------------------------------------------------
     bool interruptModule()
     {
         cout<<"Interrupting your module, for port cleanup"<<endl;
@@ -608,12 +717,24 @@ public:
         
         if (clientGazeCtrl.isValid())
         {
-            igaze->restoreContext(startup_context_id); // ... and then retrieve the stored context_0
+
+            cout << "restoring the head context ..." << endl;
+            fp.resize(3);
+            fp[0]=-1;
+            fp[1]=0;
+            fp[2]=0;
+
+            igaze->lookAtFixationPoint(fp); // move the gaze to the desired fixation point
+            igaze->waitMotionDone();
+
+
+            //igaze->restoreContext(startup_context_id); // ... and then retrieve the stored context_0
+
             //igaze->lookAtFixationPoint(fp);
         }
         return true;
     }
-    // ---------------------------------------------------------
+    // --------------------------------------------------------------
     bool close()
     {
 		cout<<"Calling close function\n";
@@ -621,7 +742,7 @@ public:
 		delete clm_model;
 		//inPort.close();
 		//outPort.close();
-        //targetPort.close();
+        targetPort.close();
 		imageIn.close();
 		imageOut.close();
 		clientGazeCtrl.close();
@@ -632,15 +753,17 @@ public:
 		
         return true;
     }	
-    
+    // --------------------------------------------------------------
 
-private:
+protected:
 
 };
 
+// --------------------------------------------------------------
 // ----------------
 // ----- Main -----
 // ----------------
+// --------------------------------------------------------------
 
 int main (int argc, char **argv)
 {
