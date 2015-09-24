@@ -155,3 +155,5 @@ add_subdirectory(modules/SimpleCLM)
 # add_subdirectory(modules/FeatureExtraction)
 add_subdirectory(modules/CLM_Yarp)            	# connected CLM to iCub through Yarp
 add_subdirectory(modules/CLM_Gaze)			# connected CLM to iCub through Yarp including Gaze control
+add_subdirectory(modules/CLMH)   		# CLM variant for Hagen including the movements of the eye and head (e.g. randomly)
+
