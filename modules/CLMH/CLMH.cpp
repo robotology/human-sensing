@@ -931,9 +931,7 @@ public:
             igaze->waitMotionDone();
 
 
-            //igaze->restoreContext(startup_context_id); // ... and then retrieve the stored context_0
-
-            //igaze->lookAtFixationPoint(fp);
+ 
         }
         return true;
     }
@@ -973,70 +971,6 @@ protected:
 
 int main (int argc, char **argv)
 {
-    /*
-    clock_t s1 = clock();
-    for (int ii=0; ii<1000000; ii++)
-    {
-        for (int jj=0; jj<1000000; jj++)
-        {
-            ii = ii + jj*ii + ii/(jj+1);
-        }
-    }
-    std::default_random_engine generator;
-    std::normal_distribution<double> distribution(5.0,1.0);
-
-    cout << distribution(generator) << endl;
-    cout << distribution(generator) << endl;
-    cout << distribution(generator) << endl;
-    cout << "finished" << endl;
-    clock_t s2 = clock();
-
-    cout << diffclock(s2,s1) << endl;
-
-    return 0;
-    */
-
-/*
-    int gazeChangeFlag = 1;
-    bool oneIter = false;
-
-
-    for (int ii=0; ii<20; ii++)
-    {
-        if (gazeChangeFlag == 1)
-        {
-            gazeChangeFlag = 2;
-            //oneIter = ~oneIter;
-            oneIter = ~oneIter;
-
-        }
-        else if (gazeChangeFlag == 2 & oneIter)
-        {
-            gazeChangeFlag = 1;
-            //oneIter = ~oneIter;
-        }
-        else if (gazeChangeFlag == 2 & ~oneIter)
-        {
-            gazeChangeFlag = 3;
-            //oneIter = ~oneIter;
-        }
-        else if (gazeChangeFlag == 3)
-        {
-            gazeChangeFlag = 1;
-            oneIter = false;
-        }
-
-        cout << "flag is : " << gazeChangeFlag << "bool value : " << oneIter <<endl;
-    }
-
-    int output;
-    for (int jj=0; jj<10; jj++)
-    {
-        output = 1 + (rand() % (int)(3 - 1 + 1));
-                cout << output << endl;
-    }
-    return 0;
-*/
 
 
     YARP_REGISTER_DEVICES(icubmod);
