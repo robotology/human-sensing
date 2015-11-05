@@ -141,7 +141,21 @@ public:
 
 		CLMTracker::get_video_input_output_params(files, depth_directories, pose_output_files, tracked_videos_output, landmark_output_files, landmark_3D_output_files, use_camera_plane_pose, arguments);
 		CLMTracker::get_camera_params(device, fx, fy, cx, cy, arguments);    
-
+        
+        //get custom model folder location
+        Property config;
+        config.fromConfigFile(rf.findFile("from").c_str());
+        
+        //if(config != NULL)
+        //{
+            Bottle &fileLoc = config.findGroup("path_to_file");
+            
+            string modelPath = fileLoc.find("modelFile").asString().c_str();
+            std::cout << "fromFile" << modelPath << std::endl;
+            
+            clm_parameters->model_location = modelPath;
+        //}
+        std::cout << "default" << clm_parameters->model_location << std::endl;
 		clm_model = new CLMTracker::CLM(clm_parameters->model_location);	
 		
 		done = false;
@@ -439,8 +453,11 @@ int main (int argc, char **argv)
 	MyModule thisModule;
 	ResourceFinder rf;
 	cout<<"Object initiated!"<<endl;
-	thisModule.configure(rf);
-	thisModule.runModule();
+	
+	rf.configure(argc,argv);
+	
+	//thisModule.configure(rf);
+	thisModule.runModule(rf);
 	return 0;
 }
 

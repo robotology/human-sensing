@@ -1,14 +1,16 @@
   <application>
       <!-- Generic information-->
-      <name>CLM_GAZE</name>
+      <name>CLM_GAZE_H</name>
       <description>Template Application</description>
       <version></version>
 
       <authors>
-          <author email=""> author.name </author>
+          <author email="reza.ahmadzadeh@iit.it"> Reza Ahmadzadeh </author>
       </authors>
 
       <!-- Required modules -->
+
+	<!--
       <module>
           <name>yarpview</name>
           <parameters>--x 100</parameters>
@@ -16,6 +18,8 @@
           <stdio></stdio>
           <prefix>/input</prefix>
       </module>
+
+-->
 
       <module>
           <name>yarpview</name>
@@ -25,12 +29,16 @@
           <prefix>/output</prefix>
       </module>
 
+
+
       <!-- Required connections -->
+	<!--
       <connection>
           <from>/icub/camcalib/left/out</from>
           <to>/input/yarpview/img:i</to>
           <protocol>udp</protocol>
       </connection>
+	-->
 
       <connection>
           <from>/icub/camcalib/left/out</from>
@@ -44,6 +52,12 @@
           <protocol>udp</protocol>
       </connection>
 
+	<!-- if without executing the gaze commands from the inside of the code -->
+      <connection>
+          <from>/clmgaze/centerPose/out</from>
+          <to>/iKinGazeCtrl/xd:i</to>
+          <protocol>udp</protocol>
+      </connection>
 
 
 
