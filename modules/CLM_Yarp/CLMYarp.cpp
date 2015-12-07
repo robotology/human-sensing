@@ -16,13 +16,15 @@
 #include <yarp/os/Module.h>
 #include <yarp/os/Network.h>
 #include <yarp/sig/Vector.h>
+#include <yarp/os/Time.h>
 // opencv (this version of the code uses opencv 3.0)
 /**
 #include <cv.h>
-#include <highgui.h>
+include <highgui.h>
 **/
 #include <opencv2/videoio/videoio.hpp>  // Video write
 #include <opencv2/videoio/videoio_c.h>  // Video write
+//#include <opencv2/highgui/highgui.h>
 
 // c++
 /**
@@ -82,6 +84,7 @@ class MyModule:public RFModule
 	
     BufferedPort<ImageOf<PixelRgb> > imageIn;  // make a port for reading images
     BufferedPort<ImageOf<PixelRgb> > imageOut; // make a port for passing the result to
+    BufferedPort<ImageOf<PixelRgb> > imageSegOut; // make a port for passing the result to
 	
 	IplImage* cvImage;
     IplImage* display;
@@ -122,8 +125,9 @@ public:
     bool configure(yarp::os::ResourceFinder &rf)
     {
         
-        ok2 = imageIn.open("/test/image/in");                           // open the ports
-        ok2 = ok2 && imageOut.open("/test/image/out");                  //
+        ok2 = imageIn.open("/CLM/image/in");                           // open the ports
+        ok2 = ok2 && imageOut.open("/CLM/image/out");
+        ok2 = ok2 && imageSegOut.open("/CLM/imageSeg/out");                  //
 		if (!ok2) {
 			fprintf(stderr, "Error. Failed to open image ports. \n");
 			return false;
@@ -232,7 +236,7 @@ public:
 			return true;
 		}
 		
-
+		bool faceAvailableFlag = false;
 		IplImage *cvImage = (IplImage*)imgTmp->getIplImage();        
 		ImageOf<PixelRgb> &outImage = imageOut.prepare(); //get an output image
 		outImage.resize(imgTmp->width(), imgTmp->height());		
@@ -240,7 +244,7 @@ public:
 		display = (IplImage*) outImage.getIplImage();
         //Mat captured_image = display;
         Mat captured_image = cvarrToMat(display);
-
+        Mat segFace = Mat::zeros(captured_image.size(), CV_8UC3);
 
 		// If optical centers are not defined just use center of image
 		if(cx_undefined)
@@ -315,12 +319,100 @@ public:
 		// Visualising the results
 		// Drawing the facial landmarks on the face and the bounding box around it if tracking is successful and initialised
 		double detection_certainty = clm_model->detection_certainty;
-
+		Mat faceMask;
+		Mat captureCopy;
+		captured_image.copyTo(captureCopy);
 		
 		// Only draw if the reliability is reasonable, the value is slightly ad-hoc
 		if(detection_certainty < visualisation_boundary)
 		{
-			CLMTracker::Draw(captured_image, *clm_model);
+			//CLMTracker::Draw(captured_image, *clm_model);
+			//Daniel Extracting Landmarks
+			int idx = clm_model->patch_experts.GetViewIdx(clm_model->params_global, 0);
+			Mat_<double>& shape2D = clm_model->detected_landmarks;
+			Mat_<int>& visibilities = clm_model->patch_experts.visibilities[0][idx];
+			int n = shape2D.rows/2;
+			
+			int numFacePoints = 17;
+			int numEyeBrowPoints = 10;
+
+			Point facePoints[1][numFacePoints+numEyeBrowPoints];
+			Scalar colour;
+			faceAvailableFlag = false;
+			int maxX = 0;
+			int minX = 1000;
+			int maxY = 0;
+			int minY = 1000;
+			int imgW = captureCopy.cols;
+			int imgH = captureCopy.rows;
+
+			for( int i = 0; i < n; ++i)
+			{	
+				if(i<numFacePoints)
+				{
+					facePoints[0][numFacePoints-i-1] = Point((int)shape2D.at<double>(i), (int)shape2D.at<double>(i +n));
+					colour = Scalar(0,255,0);
+				}
+				else if(i<numEyeBrowPoints+numFacePoints)
+				{
+					facePoints[0][i] = Point((int)shape2D.at<double>(i), (int)shape2D.at<double>(i +n));
+				}
+				else
+				{
+					const Point* ppt[1] = { facePoints[0] };
+  					int npt[] = { numFacePoints+numEyeBrowPoints };
+  					faceMask=Mat::zeros(captured_image.size(), CV_8UC3);
+					fillPoly( faceMask, ppt, npt, 1, Scalar( 255, 255, 255 ), 8 );
+					colour = Scalar(255,0,0);
+					faceAvailableFlag = true;
+				}
+
+				if(visibilities.at<int>(i))
+				{
+					int xpoint = (int)shape2D.at<double>(i);
+					int ypoint = (int)shape2D.at<double>(i +n);
+					if(xpoint > maxX && xpoint < imgW)
+					{
+						maxX = xpoint;
+					}
+
+					if(xpoint < minX && xpoint > 0)
+					{
+						minX = xpoint;
+					}
+
+					if(ypoint > maxY && ypoint < imgH)
+					{
+						maxY = ypoint;
+					}
+
+					if(ypoint < minY && ypoint > 0)
+					{
+						minY = ypoint;
+					}
+
+					Point featurePoint(xpoint, ypoint);
+
+					// A rough heuristic for drawn point size
+					int thickness = (int)std::ceil(5.0* ((double)captured_image.cols) / 640.0);
+					int thickness_2 = (int)std::ceil(1.5* ((double)captured_image.cols) / 640.0);
+
+					cv::circle(captured_image, featurePoint, 1, Scalar(0,0,255), thickness);
+					cv::circle(captured_image, featurePoint, 1, colour, thickness_2);
+				}	
+
+			}
+
+			captureCopy.copyTo(segFace,faceMask);
+			//imshow("faceMask", segFace);
+			//waitKey(1);
+
+			Rect boundingBox = Rect(Point(maxX,maxY), Point(minX,minY));
+			segFace(boundingBox).copyTo(captureCopy);
+			resize(captureCopy,segFace,Size(400,400));
+			GaussianBlur(segFace, segFace, Size(7,7), 1, 1);
+			//imshow("Rect mask", segFace);
+			//waitKey(1);
 
 			if(detection_certainty > 1)
 				detection_certainty = 1;
@@ -335,7 +427,7 @@ public:
 			Vec6d pose_estimate_to_draw = CLMTracker::GetCorrectedPoseCameraPlane(*clm_model, fx, fy, cx, cy, *clm_parameters);
 
 			// Draw it in reddish if uncertain, blueish if certain
-			CLMTracker::DrawBox(captured_image, pose_estimate_to_draw, Scalar((1-detection_certainty)*255.0,0, detection_certainty*255), thickness, fx, fy, cx, cy);
+			//CLMTracker::DrawBox(captured_image, pose_estimate_to_draw, Scalar((1-detection_certainty)*255.0,0, detection_certainty*255), thickness, fx, fy, cx, cy);
 
 		}
 
@@ -403,8 +495,21 @@ public:
 			writerFace << captured_image;
 		}
 
-
-
+		if(faceAvailableFlag)
+		{
+			ImageOf<PixelRgb> &outSegImage = imageSegOut.prepare(); //get an output image
+			IplImage* IPLfromMat = new IplImage(segFace);
+			outSegImage.resize(IPLfromMat->width,IPLfromMat->height);
+			IplImage * iplYarpImage = (IplImage*)outSegImage.getIplImage();
+			if (IPL_ORIGIN_TL == IPLfromMat->origin){
+					cvCopy(IPLfromMat, iplYarpImage, 0);
+			}
+			else{
+					cvFlip(IPLfromMat, iplYarpImage, 0);
+			}
+			//cvCvtColor(iplYarpImage, iplYarpImage, CV_BGR2RGB);
+			imageSegOut.write();
+		}
 		// Update the frame count
 		frame_count++;
 

@@ -58,7 +58,6 @@
 // others
 #include <gsl/gsl_math.h>
 #include <deque>
-YARP_DECLARE_DEVICES(icubmod)
 
 /**
 #define CTRL_THREAD_PER 0.02 // [s]
@@ -796,8 +795,6 @@ protected:
 
 int main (int argc, char **argv)
 {
-
-    YARP_REGISTER_DEVICES(icubmod);
     Network yarp;
 
     if (!yarp.checkNetwork())
