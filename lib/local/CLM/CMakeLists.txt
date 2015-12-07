@@ -33,4 +33,4 @@ include_directories(${CLM_SOURCE_DIR}/include)
 add_library( CLM ${SOURCE} ${HEADERS})
 
 install (TARGETS CLM DESTINATION bin)
-install (FILES HEADERS DESTINATION include)
+install (FILES ${HEADERS} DESTINATION include)
