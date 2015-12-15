@@ -248,11 +248,12 @@ public:
 		arguments.push_back("../../videos/default.wmv"); 	// the video file 
 		device = 0;   										// camera
 
-        // camera parameters: Black - Blue, Blue 640x480, others
+        // --- camera parameters: Black - Blue, Blue 640x480, others
         fx = 232.921; //225.904; //443; //211; //225.904; //409.9; //225.904; //500; (default)
         fy = 232.43; //227.041; //444; //211; //227.041;//409.023; //227.041; //500; (default)
         cx = 162.91; //157.875; //344; //161; //157.858; //337.575; //157.858; //0; (default)
         cy = 125.98; //113.51; //207; //128; //113.51; //250.798; //113.51; //0; (default)
+
 		clm_parameters = new CLMTracker::CLMParameters(arguments);
 
         // checking the otehr face detectors
@@ -774,15 +775,28 @@ public:
                 //std::random_device rd;
                 std::default_random_engine generator(std::random_device{}());
                 std::uniform_int_distribution<int> distribution(1,5); // use (1,3) for using only eyes and mouth // use (1,5) for 5 points
+                std::uniform_real_distribution<double> real_distribution(0,1);
+
+                double weights[] = {1, 1, 1,0.5,0.2};
+
 
                 // cout << "time to keep : " << 3 + timeToKeepAGaze << " diffclock : " << diffclock(endTime,beginTime) << endl;
                 double currentDiff = abs(diffclock(endTime,beginTime));
                 if (currentDiff > CYCLING_TIME)
                 {
                     gazeChangeFlag = distribution(generator);
+                    double rnd = real_distribution(generator);
+                    // if a random number is less than the weights of the extracted flag change it
+                    // this weighs the results according to the weight vector
+                    //
+                    while (rnd > weights[gazeChangeFlag-1])
+                    {
+                        gazeChangeFlag = distribution(generator);
+                    }
+
+                    // check for not having the previous rand again
                     while (gazeChangeFlag == oldGazeChangeFlag)
                     {
-                       //gazeChangeFlag = 1 + (rand() % (int)(3 - 1 + 1));
                         gazeChangeFlag = distribution(generator); //disUniform(generatorUniform);
                     }
                     oldGazeChangeFlag = gazeChangeFlag;
@@ -791,7 +805,7 @@ public:
                     endTime = beginTime; //clock();
                     currentDiff = 0.0;
 
-                    cout << "################ Changing Gaze >>> " << "timing : " << currentDiff << " looking at : " << gazeChangeFlag << endl;
+                    cout << "################ Changing Gaze >>> " << "timing : " << currentDiff << " looking at : " << gazeChangeFlag << " chance: " << rnd << endl;
 
                     /*
                     // cycling through different gaze flags
@@ -876,8 +890,8 @@ public:
                 {
                     cout << "looking at outside " << endl;
                     pose_clm_left_corner.resize(4);
-                    pose_clm_left_corner[0] = pose_estimate_CLM[0]/1000 - 0.2;//mean_xx_left_eye / 1000; //convert to [m]
-                    pose_clm_left_corner[1] = pose_estimate_CLM[1]/1000 - 0.2; //mean_yy_left_eye / 1000;
+                    pose_clm_left_corner[0] = pose_estimate_CLM[0]/1000 - 0.1;//mean_xx_left_eye / 1000; //convert to [m]
+                    pose_clm_left_corner[1] = pose_estimate_CLM[1]/1000 - 0.1; //mean_yy_left_eye / 1000;
                     pose_clm_left_corner[2] = pose_estimate_CLM[2]/1000;
                     pose_clm_left_corner[3] = 1;
                     //cout << pose_clm_left_corner[0] << " , " << pose_clm_left_corner[1] << " , " << pose_clm_left_corner[2] << endl;
@@ -924,7 +938,7 @@ public:
             fp.resize(3);
             fp[0]=-1;
             fp[1]=0;
-            fp[2]=0;
+            fp[2]=0.4;
 
             igaze->lookAtFixationPoint(fp); // move the gaze to the desired fixation point
             igaze->waitMotionDone();
