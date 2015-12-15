@@ -75,6 +75,8 @@ YARP_DECLARE_DEVICES(icubmod)
 #define STATE_WAIT 2
 #define STATE_STILL 3
 **/
+
+#define CYCLING_TIME 50.0       // the time elapsed between each gaze switching other possible values (30,50,70)
 // --------------------------------------------------------------
 // ------------------
 // ----- Macros -----
@@ -155,7 +157,7 @@ private:
 	int device, f_n, frame_count;
     int state, startup_context_id, jnt;
     int thickness;
-    int gazeChangeFlag;
+    int gazeChangeFlag, oldGazeChangeFlag;
 
 	float fx,fy,cx,cy; 							// parameters of the camera
 
@@ -191,8 +193,12 @@ private:
     Matrix H;                       // transformation matrx
 
 
-    std::default_random_engine generator;
-    std::normal_distribution<double> distribution;
+    //std::default_random_engine generator;
+    //std::normal_distribution<double> distribution;
+    //std::random_device rd;
+    //std::mt19937 generatorUniform;
+    //std::uniform_int_distribution<> disUniform;
+
     clock_t beginTime, endTime;
     double timeToKeepAGaze;
     bool oneIter;
@@ -241,10 +247,12 @@ public:
 		arguments.push_back("-f");							// provide two default arguments in case we want to use no real camera
 		arguments.push_back("../../videos/default.wmv"); 	// the video file 
 		device = 0;   										// camera
-        fx = 225.904; //443; //211; //225.904; //409.9; //225.904; //500; (default)
-        fy = 227.041; //444; //211; //227.041;//409.023; //227.041; //500; (default)
-        cx = 157.875; //344; //161; //157.858; //337.575; //157.858; //0; (default)
-        cy = 113.51; //207; //128; //113.51; //250.798; //113.51; //0; (default)
+
+        // camera parameters: Black - Blue, Blue 640x480, others
+        fx = 232.921; //225.904; //443; //211; //225.904; //409.9; //225.904; //500; (default)
+        fy = 232.43; //227.041; //444; //211; //227.041;//409.023; //227.041; //500; (default)
+        cx = 162.91; //157.875; //344; //161; //157.858; //337.575; //157.858; //0; (default)
+        cy = 125.98; //113.51; //207; //128; //113.51; //250.798; //113.51; //0; (default)
 		clm_parameters = new CLMTracker::CLMParameters(arguments);
 
         // checking the otehr face detectors
@@ -344,11 +352,18 @@ public:
         }
 
         // create a normal distribution PDF for timing the gaze change
+        /*
         generator;
         std::normal_distribution<double> distribution(5.0,1.0);
         beginTime = clock();
         timeToKeepAGaze = distribution(generator);
+
+        */
+
+
+
         gazeChangeFlag = 1;
+        oldGazeChangeFlag = gazeChangeFlag;
         oneIter = false;
 
         /* --- Testing other things
@@ -530,7 +545,7 @@ public:
 		{
 			CLMTracker::Draw(captured_image, *clm_model);
 
-
+            /*
             // ---------------------------
             // REZA - for Vadim
             // ---------------------------
@@ -568,16 +583,6 @@ public:
             mean_xx_right_eye = mean_xx_right_eye / 6;
             mean_yy_right_eye = mean_yy_right_eye / 6;
 
-            /*
-            cout << mean_xx_left_eye << endl;
-            cout << mean_yy_left_eye << endl;
-            cout << mean_xx_right_eye << endl;
-            cout << mean_yy_right_eye << endl;
-            */
-
-            //cv::circle(captured_image,cv::Point(mean_xx_left_eye,mean_yy_left_eye),10,CV_RGB(255,255,0));
-            //cv::circle(captured_image,cv::Point(mean_xx_right_eye,mean_yy_right_eye),10,CV_RGB(0,255,0));
-
 
             // 2- Finding the corner of the box
 
@@ -602,10 +607,6 @@ public:
                     yy_max = yy;
             }
 
-            //cv::circle(captured_image,cv::Point(xx_min,yy_min),10,CV_RGB(255,255,255));
-            //cv::circle(captured_image,cv::Point(xx_max,yy_max),10,CV_RGB(255,255,255));
-            //cout << "[" << xx_min << "," << xx_max  << "," << yy_min << "," << yy_max << "]" <<endl;
-            //cout << "[" << mean_xx_left_eye << "," << mean_yy_left_eye  << "," << mean_xx_right_eye << "," << mean_yy_right_eye << "]" <<endl;
 
             Bottle& poseVadim = targetPort.prepare();
             poseVadim.clear();
@@ -620,7 +621,7 @@ public:
 
             targetPort.write();
             // --------------------------------
-
+            */
 
 			if(detection_certainty > 1)
 				detection_certainty = 1;
@@ -629,7 +630,7 @@ public:
 
             // cout << "Certainty : " << detection_certainty << "---" << visualisation_boundary << endl;
 			detection_certainty = (detection_certainty + 1)/(visualisation_boundary +1);
-            cout << "Normalized Certainty : " << detection_certainty << endl;
+            //cout << "Normalized Certainty : " << detection_certainty << endl;
 
 			// A rough heuristic for box around the face width
             thickness = (int)std::ceil(2.0* ((double)captured_image.cols) / 640.0);
@@ -756,50 +757,6 @@ public:
                 pose_robot = H*pose_clm;
                 */
 
-                /*
-                // ============= METHOD - 1 (using counters) ==================
-                static int lookCounter = 0;
-                // using a counter
-
-                //int face = 1 + rand() % 100;
-                // int face = 1 + rand() % 3;
-
-
-                if (lookCounter < 100)
-                {
-                    cout << "looking at center " << lookCounter <<endl;
-                    pose_clm.resize(4);
-                    pose_clm[0] = pose_estimate_CLM[0] / 1000; //convert to [m]
-                    pose_clm[1] = pose_estimate_CLM[1] / 1000;
-                    pose_clm[2] = pose_estimate_CLM[2] / 1000;
-                    pose_clm[3] = 1;
-                    //cout << pose_clm[0] << " , " << pose_clm[1] << " , " << pose_clm[2] << endl;
-                    pose_robot = H * pose_clm;
-                    //cout << pose_robot[0] << " , " << pose_robot[1] << " , " << pose_robot[2] << endl;
-                    lookCounter += 1;
-
-                    //cout << lookCounter << endl;
-                }
-                else if (lookCounter >= 100 && lookCounter < 120)
-                {
-                    cout << "looking at corner "  << lookCounter <<endl;
-                    pose_clm_left_corner.resize(4);
-                    pose_clm_left_corner[0] = pose_estimate_CLM[0]/1000 + 0.1; //mean_xx_left_eye / 1000; //convert to [m]
-                    pose_clm_left_corner[1] = pose_estimate_CLM[1]/1000; //mean_yy_left_eye / 1000;
-                    pose_clm_left_corner[2] = pose_estimate_CLM[2] / 1000;
-                    pose_clm_left_corner[3] = 1;
-                    //cout << pose_clm_left_corner[0] << " , " << pose_clm_left_corner[1] << " , " << pose_clm_left_corner[2] << endl;
-                    pose_robot = H * pose_clm_left_corner;
-                    //cout << pose_robot[0] << " , " << pose_robot[1] << " , " << pose_robot[2] << endl;
-                    lookCounter += 1;
-
-                }
-                else
-                {
-                    lookCounter = 0;
-                }
-                */
-
 
 
 
@@ -808,17 +765,33 @@ public:
                 endTime = clock();
                 // cout << "Flag : " << gazeChangeFlag << endl;
                 // start timing
-                timeToKeepAGaze = distribution(generator);
+
+                // for normal distro
+                //timeToKeepAGaze = distribution(generator);
+
+                // for uniform
+                //disUniform(generatorUniform);
+                //std::random_device rd;
+                std::default_random_engine generator(std::random_device{}());
+                std::uniform_int_distribution<int> distribution(1,5); // use (1,3) for using only eyes and mouth // use (1,5) for 5 points
+
                 // cout << "time to keep : " << 3 + timeToKeepAGaze << " diffclock : " << diffclock(endTime,beginTime) << endl;
-                if (abs(diffclock(endTime,beginTime)) > 40.0)
+                double currentDiff = abs(diffclock(endTime,beginTime));
+                if (currentDiff > CYCLING_TIME)
                 {
-                    cout << "############################### Changing Gaze >>> " << endl;
+                    gazeChangeFlag = distribution(generator);
+                    while (gazeChangeFlag == oldGazeChangeFlag)
+                    {
+                       //gazeChangeFlag = 1 + (rand() % (int)(3 - 1 + 1));
+                        gazeChangeFlag = distribution(generator); //disUniform(generatorUniform);
+                    }
+                    oldGazeChangeFlag = gazeChangeFlag;
 
+                    beginTime = clock();
+                    endTime = beginTime; //clock();
+                    currentDiff = 0.0;
 
-                    //randomly
-                    //int output;
-                    gazeChangeFlag = 1 + (rand() % (int)(3 - 1 + 1));
-                    cout << "looking at : " << gazeChangeFlag << endl;
+                    cout << "################ Changing Gaze >>> " << "timing : " << currentDiff << " looking at : " << gazeChangeFlag << endl;
 
                     /*
                     // cycling through different gaze flags
@@ -843,9 +816,10 @@ public:
                         gazeChangeFlag = 1;
                     }
                     */
-                    beginTime = clock();
-                    endTime = clock();
-                    timeToKeepAGaze = distribution(generator);
+
+
+                    //timeToKeepAGaze = distribution(generator);
+                    //cout << "||||||||||| Time for gazing" << timeToKeepAGaze << endl;
 
                 }
 
@@ -885,7 +859,32 @@ public:
                     pose_robot = H * pose_clm_left_corner;
                     //cout << pose_robot[0] << " , " << pose_robot[1] << " , " << pose_robot[2] << endl;
                 }
+                else if (gazeChangeFlag == 4)
+                {
+                    cout << "looking at face " << endl;
+                    pose_clm_left_corner.resize(4);
+                    pose_clm_left_corner[0] = pose_estimate_CLM[0]/1000 + 0.07;//mean_xx_left_eye / 1000; //convert to [m]
+                    pose_clm_left_corner[1] = pose_estimate_CLM[1]/1000+ 0.07; //mean_yy_left_eye / 1000;
+                    pose_clm_left_corner[2] = pose_estimate_CLM[2]/1000;
+                    pose_clm_left_corner[3] = 1;
+                    //cout << pose_clm_left_corner[0] << " , " << pose_clm_left_corner[1] << " , " << pose_clm_left_corner[2] << endl;
+                    pose_robot = H * pose_clm_left_corner;
+                    //cout << pose_robot[0] << " , " << pose_robot[1] << " , " << pose_robot[2] << endl;
 
+                }
+                else if (gazeChangeFlag == 5)
+                {
+                    cout << "looking at outside " << endl;
+                    pose_clm_left_corner.resize(4);
+                    pose_clm_left_corner[0] = pose_estimate_CLM[0]/1000 - 0.2;//mean_xx_left_eye / 1000; //convert to [m]
+                    pose_clm_left_corner[1] = pose_estimate_CLM[1]/1000 - 0.2; //mean_yy_left_eye / 1000;
+                    pose_clm_left_corner[2] = pose_estimate_CLM[2]/1000;
+                    pose_clm_left_corner[3] = 1;
+                    //cout << pose_clm_left_corner[0] << " , " << pose_clm_left_corner[1] << " , " << pose_clm_left_corner[2] << endl;
+                    pose_robot = H * pose_clm_left_corner;
+                    //cout << pose_robot[0] << " , " << pose_robot[1] << " , " << pose_robot[2] << endl;
+
+                }
 
 
                 Bottle& fp = posePort.prepare();
@@ -894,7 +893,7 @@ public:
                 fp.addDouble(pose_robot[1]);
                 fp.addDouble(pose_robot[2]);
                 posePort.write();
-                cout << pose_robot[0] << " , " << pose_robot[1] << " , " << pose_robot[2] << endl;
+                cout << "pose robot:" << pose_robot[0] << " , " << pose_robot[1] << " , " << pose_robot[2] << endl;
 
 
 
@@ -931,7 +930,9 @@ public:
             igaze->waitMotionDone();
 
 
- 
+            //igaze->restoreContext(startup_context_id); // ... and then retrieve the stored context_0
+
+            //igaze->lookAtFixationPoint(fp);
         }
         return true;
     }
@@ -971,8 +972,6 @@ protected:
 
 int main (int argc, char **argv)
 {
-
-
     YARP_REGISTER_DEVICES(icubmod);
     Network yarp;
 
