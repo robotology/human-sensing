@@ -244,7 +244,7 @@ public:
 		display = (IplImage*) outImage.getIplImage();
         //Mat captured_image = display;
         Mat captured_image = cvarrToMat(display);
-        Mat segFace = Mat::zeros(captured_image.size(), CV_8UC3);
+        Mat segFace;
 
 		// If optical centers are not defined just use center of image
 		if(cx_undefined)
@@ -321,12 +321,14 @@ public:
 		double detection_certainty = clm_model->detection_certainty;
 		Mat faceMask;
 		Mat captureCopy;
+		Mat croppedFace;
 		captured_image.copyTo(captureCopy);
 		
 		// Only draw if the reliability is reasonable, the value is slightly ad-hoc
 		if(detection_certainty < visualisation_boundary)
 		{
 			//CLMTracker::Draw(captured_image, *clm_model);
+
 			//Daniel Extracting Landmarks
 			int idx = clm_model->patch_experts.GetViewIdx(clm_model->params_global, 0);
 			Mat_<double>& shape2D = clm_model->detected_landmarks;
@@ -335,8 +337,14 @@ public:
 			
 			int numFacePoints = 17;
 			int numEyeBrowPoints = 10;
+			int numNoseBridgePoints = 4;
 
-			Point facePoints[1][numFacePoints+numEyeBrowPoints];
+			//Point facePoints[1][numFacePoints+numEyeBrowPoints];
+			vector<Point> facePointsVec(numFacePoints+numEyeBrowPoints,Point(0,0));
+			vector<Point> noseBridgePoints(numNoseBridgePoints,Point(0,0));
+
+			RotatedRect minFaceRect;
+
 			Scalar colour;
 			faceAvailableFlag = false;
 			int maxX = 0;
@@ -348,51 +356,24 @@ public:
 
 			for( int i = 0; i < n; ++i)
 			{	
+				Point featurePoint = Point((int)shape2D.at<double>(i), (int)shape2D.at<double>(i +n));
 				if(i<numFacePoints)
 				{
-					facePoints[0][numFacePoints-i-1] = Point((int)shape2D.at<double>(i), (int)shape2D.at<double>(i +n));
+					facePointsVec[numFacePoints-i-1] = featurePoint;
 					colour = Scalar(0,255,0);
 				}
 				else if(i<numEyeBrowPoints+numFacePoints)
 				{
-					facePoints[0][i] = Point((int)shape2D.at<double>(i), (int)shape2D.at<double>(i +n));
+					facePointsVec[i] = featurePoint;
 				}
 				else
 				{
-					const Point* ppt[1] = { facePoints[0] };
-  					int npt[] = { numFacePoints+numEyeBrowPoints };
-  					faceMask=Mat::zeros(captured_image.size(), CV_8UC3);
-					fillPoly( faceMask, ppt, npt, 1, Scalar( 255, 255, 255 ), 8 );
-					colour = Scalar(255,0,0);
 					faceAvailableFlag = true;
 				}
 
+
 				if(visibilities.at<int>(i))
 				{
-					int xpoint = (int)shape2D.at<double>(i);
-					int ypoint = (int)shape2D.at<double>(i +n);
-					if(xpoint > maxX && xpoint < imgW)
-					{
-						maxX = xpoint;
-					}
-
-					if(xpoint < minX && xpoint > 0)
-					{
-						minX = xpoint;
-					}
-
-					if(ypoint > maxY && ypoint < imgH)
-					{
-						maxY = ypoint;
-					}
-
-					if(ypoint < minY && ypoint > 0)
-					{
-						minY = ypoint;
-					}
-
-					Point featurePoint(xpoint, ypoint);
-
 					// A rough heuristic for drawn point size
 					int thickness = (int)std::ceil(5.0* ((double)captured_image.cols) / 640.0);
 					int thickness_2 = (int)std::ceil(1.5* ((double)captured_image.cols) / 640.0);
@@ -402,18 +383,42 @@ public:
 				}	
 
 			}
+			Size imageSize = captured_image.size();
+			faceMask=Mat::ones(imageSize, CV_8UC3);
+			minFaceRect = minAreaRect(Mat(facePointsVec));
 
-			captureCopy.copyTo(segFace,faceMask);
-			//imshow("faceMask", segFace);
-			//waitKey(1);
+			float RectAngle = minFaceRect.angle;
+			Size minRectSize = minFaceRect.size;
+			Point2f center = minFaceRect.center;
 
-			Rect boundingBox = Rect(Point(maxX,maxY), Point(minX,minY));
-			segFace(boundingBox).copyTo(captureCopy);
-			resize(captureCopy,segFace,Size(400,400));
+			if (RectAngle < -45.)
+			{	
+				RectAngle += 90.0;
+	            swap(minRectSize.width, minRectSize.height);
+        	}
+
+        	Mat M = getRotationMatrix2D(minFaceRect.center, RectAngle, 1.0);
+        	warpAffine(captureCopy, segFace, M, captureCopy.size(), INTER_CUBIC);
+        	center.y -= minRectSize.height*0.25;
+        	minRectSize.height *= 1.5;
+        	getRectSubPix(segFace,minRectSize,center,croppedFace);
+
+			Point2f rect_points[4]; 
+			minFaceRect.points( rect_points );
+
+	        for( int j = 0; j < 4; j++ )
+	        {
+	        	line(captured_image, rect_points[j], rect_points[(j+1)%4], colour, 1, 8 );
+	        }
+	        rectangle(segFace, Rect((center-Point2f(minRectSize.width/2,minRectSize.height/2)), minRectSize), Scalar(0,255,0));
+
+			imshow("facePoints", segFace);
+			waitKey(1);
+			
+			resize(croppedFace,segFace,Size(400,400));
 			GaussianBlur(segFace, segFace, Size(7,7), 1, 1);
-			//imshow("Rect mask", segFace);
-			//waitKey(1);
 
+			//-------------
 			if(detection_certainty > 1)
 				detection_certainty = 1;
 			if(detection_certainty < -1)
@@ -427,7 +432,7 @@ public:
 			Vec6d pose_estimate_to_draw = CLMTracker::GetCorrectedPoseCameraPlane(*clm_model, fx, fy, cx, cy, *clm_parameters);
 
 			// Draw it in reddish if uncertain, blueish if certain
-			//CLMTracker::DrawBox(captured_image, pose_estimate_to_draw, Scalar((1-detection_certainty)*255.0,0, detection_certainty*255), thickness, fx, fy, cx, cy);
+			CLMTracker::DrawBox(captured_image, pose_estimate_to_draw, Scalar((1-detection_certainty)*255.0,0, detection_certainty*255), thickness, fx, fy, cx, cy);
 
 		}
 
@@ -513,7 +518,7 @@ public:
 		// Update the frame count
 		frame_count++;
 
-		imageOut.write();
+		//imageOut.write();
 		
 		return true;
 	}

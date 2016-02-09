@@ -906,7 +906,6 @@ void Draw(cv::Mat img, const Mat_<double>& shape2D)
 
 		cv::circle(img, featurePoint, 1, Scalar(0,0,255), thickness);
 		cv::circle(img, featurePoint, 1, Scalar(255,0,0), thickness_2);
-
 	}
 	
 }

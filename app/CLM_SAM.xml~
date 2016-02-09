@@ -1,0 +1,33 @@
+<application>
+  <name>CLM_Yarp</name>
+  <module>
+  <name>CLMYarp</name>
+    <parameters>--from /home/icub/human-sensing/app/CLM_Yarp/conf/CLMYarp.ini</parameters>
+    <node>localhost</node>
+  </module>
+  <module>
+  <name>yarpview</name>
+    <parameters>--name /CLM/outView</parameters>
+    <node>localhost</node>
+  </module>
+  <module>
+  <name>yarpview</name>
+    <parameters>--name /CLM/segOutView</parameters>
+    <node>localhost</node>
+  </module>
+  <connection>
+    <from>/icub/cam/left</from>
+    <to>/CLM/image/in</to>
+    <protocol>udp+mjpeg</protocol>
+  </connection>
+  <connection>
+    <from>/CLM/image/out</from>
+    <to>/CLM/outView</to>
+    <protocol>udp</protocol>
+  </connection>
+  <connection>
+    <from>/CLM/imageSeg/out</from>
+    <to>/CLM/segOutView</to>
+    <protocol>udp</protocol>
+  </connection>
+</application>
