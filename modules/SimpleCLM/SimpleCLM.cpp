@@ -303,11 +303,11 @@ int main (int argc, char **argv)
 			string fpsSt("FPS:");
 			fpsSt += fpsC;
 			cv::putText(captured_image, fpsSt, cv::Point(10,20), CV_FONT_HERSHEY_SIMPLEX, 0.5, CV_RGB(255,0,0));		
-			
+
 			if(!clm_parameters.quiet_mode)
 			{
 				namedWindow("tracking_result",1);		
-				imshow("tracking_result", captured_image);
+                imshow("tracking_result", captured_image);
 
 				if(!depth_image.empty())
 				{

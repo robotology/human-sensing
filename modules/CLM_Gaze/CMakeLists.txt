@@ -20,7 +20,7 @@ if(WIN32)
     target_link_libraries(CLMGaze ${OpenCVLibraries})
 endif(WIN32)
 if(UNIX)
-    target_link_libraries(CLMGaze ${OpenCV_LIBS} ${Boost_LIBRARIES} ${TBB_LIBRARIES} ${YARP_LIBRARIES} icubmod)
+    target_link_libraries(CLMGaze ${OpenCV_LIBS} ${Boost_LIBRARIES} ${TBB_LIBRARIES} ${YARP_LIBRARIES})
 endif(UNIX)
 
 install (TARGETS CLMGaze DESTINATION ${CMAKE_BINARY_DIR}/bin)

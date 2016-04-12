@@ -26,7 +26,7 @@ if(WIN32)
 endif(WIN32)
 if(UNIX)
     # target_link_libraries(SimpleCLMYarpGaze ${OpenCV_LIBS} ${Boost_LIBRARIES} ${TBB_LIBRARIES} ${YARP_LIBRARIES} icubmod)
-    target_link_libraries(CLMH ${OpenCV_LIBS} ${Boost_LIBRARIES} ${TBB_LIBRARIES} ${YARP_LIBRARIES} icubmod)
+    target_link_libraries(CLMH ${OpenCV_LIBS} ${OpenCV_LIBRARIES} ${Boost_LIBRARIES} ${TBB_LIBRARIES} ${YARP_LIBRARIES})
 endif(UNIX)
 
 #install (TARGETS SimpleCLMYarpGaze DESTINATION ${CMAKE_BINARY_DIR}/bin)

@@ -340,7 +340,7 @@ public:
 		fpsSt += fpsC;
 		cv::putText(captured_image, fpsSt, cv::Point(10,20), CV_FONT_HERSHEY_SIMPLEX, 0.5, CV_RGB(255,0,0));		
 		
-		
+        /**
 		if(!clm_parameters->quiet_mode)
 		{
 			namedWindow("tracking_result",1);		
@@ -352,6 +352,7 @@ public:
 				imshow("depth", depth_image/2000.0);
 			}
 		}
+        */
 
 		// Output the detected facial landmarks
 		if(!landmark_output_files.empty())

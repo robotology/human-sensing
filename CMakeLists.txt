@@ -150,7 +150,7 @@ add_subdirectory(lib/local/CLM)
 add_subdirectory(lib/local/FaceAnalyser)
 # executables
 # add_subdirectory(modules/SimpleCLMImg)
-add_subdirectory(modules/SimpleCLM)
+# add_subdirectory(modules/SimpleCLM)
 # add_subdirectory(modules/MultiTrackCLM)
 # add_subdirectory(modules/FeatureExtraction)
 add_subdirectory(modules/CLM_Yarp)            	# connected CLM to iCub through Yarp

@@ -62,7 +62,7 @@
 // others
 #include <gsl/gsl_math.h>
 #include <deque>
-YARP_DECLARE_DEVICES(icubmod)
+YARP_DECLARE_PLUGINS(icubmod)
 
 /**
 #define CTRL_THREAD_PER 0.02 // [s]
@@ -258,7 +258,7 @@ public:
 
         // checking the otehr face detectors
         //cout <<  "Current Face Detector : "<<clm_parameters->curr_face_detector << endl;
-        clm_parameters->curr_face_detector = CLMTracker::CLMParameters::HAAR_DETECTOR; // change to HAAR
+        //clm_parameters->curr_face_detector = CLMTracker::CLMParameters::HAAR_DETECTOR; // change to HAAR
         //cout <<  "Current Face Detector : "<<clm_parameters->curr_face_detector << endl;
 
 		//CLMTracker::CLMParameters clm_parameters(arguments);
@@ -658,7 +658,7 @@ public:
 		fpsSt += fpsC;
 		cv::putText(captured_image, fpsSt, cv::Point(10,20), CV_FONT_HERSHEY_SIMPLEX, 0.5, CV_RGB(255,0,0));		
 		
-		
+        /*
 		if(!clm_parameters->quiet_mode)
 		{
 			namedWindow("tracking_result",1);		
@@ -669,6 +669,7 @@ public:
                 imshow("depth", depth_image/2000.0);    // Division needed for visualisation purposes
 			}
 		}
+        */
 
 		// Output the detected facial landmarks
         /*
@@ -986,7 +987,7 @@ protected:
 
 int main (int argc, char **argv)
 {
-    YARP_REGISTER_DEVICES(icubmod);
+    //YARP_REGISTER_DEVICES(icubmod);
     Network yarp;
 
     if (!yarp.checkNetwork())
