@@ -51,7 +51,7 @@
 #include <string>
 #include <iomanip>
 
-#include "faceLandmarks_IDL.h"
+#include "faceLandmarks_IDLServer.h"
 
 #define DISPLAY_LANDMARKS           VOCAB4('d','i','s','p')
 
@@ -107,7 +107,7 @@ public:
     bool    execReq(const yarp::os::Bottle &command, yarp::os::Bottle &reply);
 };
 
-class FACEModule:public yarp::os::RFModule, public faceLandmarks_IDL
+class FACEModule:public yarp::os::RFModule, public faceLandmarks_IDLServer
 {
     /* module parameters */
     std::string             moduleName;
