@@ -11,7 +11,7 @@
    <description-long>
        This module is configured to find human face using the open-source dlib library. It detect human faces that are looking more or less towards the camera. It makes use of the dlib library in order to extract the facial landmarks and uses the now classic Histogram of Oriented Gradients (HOG) feature combined with a linear classifier, an image pyramid, and sliding window detection scheme.
 
-   \image html faceLandmarks.png "faceLandmarks @ work"
+   \image html faceLandmarks.png "faceLandmarks at work"
    </description-long>
    
    <arguments>
