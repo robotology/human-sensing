@@ -15,18 +15,6 @@
  * Public License for more details
  */
 
-/**
- \defgroup faceLandmarks Face extraction and recognition module
- 
- Face extraction module that is able to learn and recognize faces
- 
- \section tested_os_sec Tested OS
- Windows, Linux
- 
- \author Vadim Tikhanoff
- */
-
-
 #include "faceLandmarks.h"
 
 using namespace yarp::os;
