@@ -1,0 +1,59 @@
+
+  /**
+  *
+  * @ingroup  
+  * \defgroup faceLandmarks faceLandmarks
+  * This module is configured to find human faces that are looking more or less towards the camera.
+  * Version:1.0
+  * \author  Vadim Tikhanoff vadim.tikhanoff@iit.it
+  * \n
+  * \copyright Released under the terms of the GNU GPL v2.0
+  * \section intro_sec Description
+  *
+  
+       This module is configured to find human face using the open-source dlib library. It detect human faces that are looking more or less towards the camera. It makes use of the dlib library in order to extract the facial landmarks and uses the now classic Histogram of Oriented Gradients (HOG) feature combined with a linear classifier, an image pyramid, and sliding window detection scheme.
+
+   \image html faceLandmarks.png "faceLandmarks at work"
+   
+  * \section parameters_sec Parameters     
+  
+  *- --name: To specify the module's name; all the open ports will be tagged with the prefix /name
+  *- --from: Configuration file name
+  * \section inputports_sec Input Ports
+  * 
+  *- /faceLandmarks/image:i [Image]  [default carrier:]: 
+            Receives stream of camera images.
+           
+  *
+  
+  * \section outputports_sec Output Ports
+  * 
+  *- /faceLandmarks/image:o [Image]  [default carrier:]: 
+            Stream out an image with the result of the face extraction.
+           
+  *
+  
+  *- /faceLandmarks/target:o [yarp::os::Bottle]  [default carrier:]: 
+            Stream out a yarp list containing the faces bounding box, in descending order.
+           
+  *
+  
+  *- /faceLandmarks/faceLandmarks:o [yarp::os::Bottle]  [default carrier:]: 
+            Stream out a yarp list containing the landmarks information.
+           
+  *
+  
+  *
+  * \section services_sec Services
+  * 
+  *- /faceLandmarks/rpc:i
+  *  [rpc-server]: 
+  * service port
+  * . This service is described in faceLandmarks_IDLServer (faceLandmarks.thrift)
+  * 
+  *
+  * 
+  *
+  *
+  **/
+

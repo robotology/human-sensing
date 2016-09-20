@@ -1,0 +1,44 @@
+\section{face\+Landmarks}
+\label{group__faceLandmarks}\index{face\+Landmarks@{face\+Landmarks}}
+
+
+~\newline
+ This module is configured to find human faces that are looking more or less towards the camera.  
+
+
+~\newline
+ This module is configured to find human faces that are looking more or less towards the camera. 
+
+Version\+:1.\+0 \begin{DoxyAuthor}{Author}
+Vadim Tikhanoff \href{mailto:vadim.tikhanoff@iit.it}{\tt vadim.\+tikhanoff@iit.\+it} ~\newline
+ 
+\end{DoxyAuthor}
+\begin{DoxyCopyright}{Copyright}
+Released under the terms of the G\+NU G\+PL v2.\+0 
+\end{DoxyCopyright}
+\hypertarget{group__yarpOpenPose_intro_sec}{}\subsection{Description}\label{group__yarpOpenPose_intro_sec}
+\begin{DoxyVerb}This module is configured to find human face using the open-source dlib library. It detect human faces that are looking more or less towards the camera. It makes use of the dlib library in order to extract the facial landmarks and uses the now classic Histogram of Oriented Gradients (HOG) feature combined with a linear classifier, an image pyramid, and sliding window detection scheme.
+\end{DoxyVerb}
+
+
+ \hypertarget{group__yarpOpenPose_parameters_sec}{}\subsection{Parameters}\label{group__yarpOpenPose_parameters_sec}
+~\newline
+
+\begin{DoxyItemize}
+\item --name\+: To specify the module\textquotesingle{}s name; all the open ports will be tagged with the prefix /name
+\item --from\+: Configuration file name 
+\end{DoxyItemize}\hypertarget{group__yarpOpenPose_inputports_sec}{}\subsection{Input Ports}\label{group__yarpOpenPose_inputports_sec}
+
+\begin{DoxyItemize}
+\item /face\+Landmarks/image\+:i \mbox{[}Image\mbox{]} \mbox{[}default carrier\+:\mbox{]}\+: Receives stream of camera images.
+\end{DoxyItemize}\hypertarget{group__yarpOpenPose_outputports_sec}{}\subsection{Output Ports}\label{group__yarpOpenPose_outputports_sec}
+
+\begin{DoxyItemize}
+\item /face\+Landmarks/image\+:o \mbox{[}Image\mbox{]} \mbox{[}default carrier\+:\mbox{]}\+: Stream out an image with the result of the face extraction.
+\item /face\+Landmarks/target\+:o \mbox{[}yarp\+::os\+::\+Bottle\mbox{]} \mbox{[}default carrier\+:\mbox{]}\+: Stream out a yarp list containing the faces bounding box, in descending order.
+\item /face\+Landmarks/face\+Landmarks\+:o \mbox{[}yarp\+::os\+::\+Bottle\mbox{]} \mbox{[}default carrier\+:\mbox{]}\+: Stream out a yarp list containing the landmarks information.
+\end{DoxyItemize}\hypertarget{group__yarpOpenPose_services_sec}{}\subsection{Services}\label{group__yarpOpenPose_services_sec}
+
+\begin{DoxyItemize}
+\item /face\+Landmarks/rpc\+:i \mbox{[}rpc-\/server\mbox{]}\+: service port . This service is described in \mbox{\hyperlink{classfaceLandmarks__IDLServer}{face\+Landmarks\+\_\+\+I\+D\+L\+Server}} (face\+Landmarks.\+thrift) 
+\end{DoxyItemize}

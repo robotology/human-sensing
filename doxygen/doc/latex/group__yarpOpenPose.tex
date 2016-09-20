@@ -1,0 +1,39 @@
+\section{yarp\+Open\+Pose}
+\label{group__yarpOpenPose}\index{yarp\+Open\+Pose@{yarp\+Open\+Pose}}
+
+
+~\newline
+ This yarp module is configured to estimate human pose based on Open\+Pose, a library for real-\/time multi-\/person keypoint detection and multi-\/threading.  
+
+
+~\newline
+ This yarp module is configured to estimate human pose based on Open\+Pose, a library for real-\/time multi-\/person keypoint detection and multi-\/threading. 
+
+Version\+:1.\+0 \begin{DoxyAuthor}{Author}
+Vadim Tikhanoff \href{mailto:vadim.tikhanoff@iit.it}{\tt vadim.\+tikhanoff@iit.\+it} ~\newline
+ 
+\end{DoxyAuthor}
+\begin{DoxyCopyright}{Copyright}
+Released under the terms of the G\+NU G\+PL v2.\+0 
+\end{DoxyCopyright}
+\hypertarget{group__yarpOpenPose_intro_sec}{}\subsection{Description}\label{group__yarpOpenPose_intro_sec}
+\begin{DoxyVerb}This yarp module is configured to estimate human pose based on OpenPose, a library for real-time multi-person keypoint detection and multi-threading. It makes use of Caffe and OpenCV.
+\end{DoxyVerb}
+
+
+ \hypertarget{group__yarpOpenPose_parameters_sec}{}\subsection{Parameters}\label{group__yarpOpenPose_parameters_sec}
+~\newline
+
+\begin{DoxyItemize}
+\item --name\+: To specify the module\textquotesingle{}s name; all the open ports will be tagged with the prefix /name
+\item --from\+: Configuration file name 
+\end{DoxyItemize}\hypertarget{group__yarpOpenPose_inputports_sec}{}\subsection{Input Ports}\label{group__yarpOpenPose_inputports_sec}
+
+\begin{DoxyItemize}
+\item /yarp\+Open\+Pose/image\+:i \mbox{[}Image\mbox{]} \mbox{[}default carrier\+:\mbox{]}\+: Receives stream of camera images.
+\end{DoxyItemize}\hypertarget{group__yarpOpenPose_outputports_sec}{}\subsection{Output Ports}\label{group__yarpOpenPose_outputports_sec}
+
+\begin{DoxyItemize}
+\item /yarp\+Open\+Pose/image\+:o \mbox{[}Image\mbox{]} \mbox{[}default carrier\+:\mbox{]}\+: Stream out an image with the result of the pose estimation.
+\item /yarp\+Open\+Pose/target\+:o \mbox{[}yarp\+::os\+::\+Bottle\mbox{]} \mbox{[}default carrier\+:\mbox{]}\+: Stream out a yarp list containing the poses of each bodypart (string Xpos Ypos Confidence).
+\end{DoxyItemize}\hypertarget{group__yarpOpenPose_services_sec}{}\subsection{Services}\label{group__yarpOpenPose_services_sec}

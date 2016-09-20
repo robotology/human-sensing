@@ -1,0 +1,81 @@
+\section{face\+Landmarks\+\_\+\+I\+D\+L\+Server Class Reference}
+\label{classfaceLandmarks__IDLServer}\index{face\+Landmarks\+\_\+\+I\+D\+L\+Server@{face\+Landmarks\+\_\+\+I\+D\+L\+Server}}
+
+
+\mbox{\hyperlink{classfaceLandmarks__IDLServer}{face\+Landmarks\+\_\+\+I\+D\+L\+Server}} Interface.  
+
+
+
+
+{\ttfamily \#include $<$face\+Landmarks\+\_\+\+I\+D\+L\+Server.\+h$>$}
+
+
+
+Inherits Wire.
+
+
+
+Inherited by F\+A\+C\+E\+Module.
+
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+virtual bool \mbox{\hyperlink{classfaceLandmarks__IDLServer_a934f57ae7521327fe9e3dcc15aa4324a}{display}} (const std\+::string \&element, const std\+::string \&value)
+\item 
+virtual bool \mbox{\hyperlink{classfaceLandmarks__IDLServer_a545407b4071a1a8a3392881194dd1a56}{quit}} ()
+\begin{DoxyCompactList}\small\item\em Quit the module. \end{DoxyCompactList}\item 
+\mbox{\label{classfaceLandmarks__IDLServer_ade7e4da491c388dc5df623b543158d67}} 
+virtual bool {\bfseries read} (yarp\+::os\+::\+Connection\+Reader \&connection) Y\+A\+R\+P\+\_\+\+O\+V\+E\+R\+R\+I\+DE
+\item 
+\mbox{\label{classfaceLandmarks__IDLServer_a2fd82dc219f996b065de76c634000334}} 
+virtual std\+::vector$<$ std\+::string $>$ {\bfseries help} (const std\+::string \&function\+Name=\char`\"{}-\/-\/all\char`\"{})
+\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+\mbox{\hyperlink{classfaceLandmarks__IDLServer}{face\+Landmarks\+\_\+\+I\+D\+L\+Server}} Interface. 
+
+Definition at line 17 of file face\+Landmarks\+\_\+\+I\+D\+L\+Server.\+h.
+
+
+
+\subsection{Member Function Documentation}
+\mbox{\label{classfaceLandmarks__IDLServer_a934f57ae7521327fe9e3dcc15aa4324a}} 
+\index{face\+Landmarks\+\_\+\+I\+D\+L\+Server@{face\+Landmarks\+\_\+\+I\+D\+L\+Server}!display@{display}}
+\index{display@{display}!face\+Landmarks\+\_\+\+I\+D\+L\+Server@{face\+Landmarks\+\_\+\+I\+D\+L\+Server}}
+\subsubsection{\texorpdfstring{display()}{display()}}
+{\footnotesize\ttfamily virtual bool face\+Landmarks\+\_\+\+I\+D\+L\+Server\+::display (\begin{DoxyParamCaption}\item[{const std\+::string \&}]{element,  }\item[{const std\+::string \&}]{value }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [virtual]}}
+
+
+\begin{DoxyItemize}
+\item Selects what to draw (defaults landmarks on)
+\item 
+\begin{DoxyParams}{Parameters}
+{\em element} & specifies which element is requested (landmarks $\vert$ points $\vert$ labels $\vert$ dark-\/mode) \\
+\hline
+{\em value} & specifies its value (on $\vert$ off)\\
+\hline
+\end{DoxyParams}
+
+\item \begin{DoxyReturn}{Returns}
+true/false on success/failure 
+\end{DoxyReturn}
+
+\end{DoxyItemize}\mbox{\label{classfaceLandmarks__IDLServer_a545407b4071a1a8a3392881194dd1a56}} 
+\index{face\+Landmarks\+\_\+\+I\+D\+L\+Server@{face\+Landmarks\+\_\+\+I\+D\+L\+Server}!quit@{quit}}
+\index{quit@{quit}!face\+Landmarks\+\_\+\+I\+D\+L\+Server@{face\+Landmarks\+\_\+\+I\+D\+L\+Server}}
+\subsubsection{\texorpdfstring{quit()}{quit()}}
+{\footnotesize\ttfamily virtual bool face\+Landmarks\+\_\+\+I\+D\+L\+Server\+::quit (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [virtual]}}
+
+
+
+Quit the module. 
+
+\begin{DoxyReturn}{Returns}
+true/false on success/failure 
+\end{DoxyReturn}
+
+
+The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/vtikha/\+Dev/robot-\/code/human-\/sensing/face\+Landmarks/idl\+\_\+dox/face\+Landmarks\+\_\+\+I\+D\+L\+Server.\+h\end{DoxyCompactItemize}

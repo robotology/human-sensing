@@ -11,7 +11,7 @@
    <description-long>
        This yarp module is configured to estimate human pose based on OpenPose, a library for real-time multi-person keypoint detection and multi-threading. It makes use of Caffe and OpenCV.
 
-   <!--\image html faceLandmarks.png "faceLandmarks at work" -->
+   \image html yarpOpenPose.png "yarpOpenPose at work"
    </description-long>
 
    <arguments>
