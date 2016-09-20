@@ -1,3 +1,0 @@
-CLM clm-z.txt
-FaceDetConversion haarAlign.txt
-DetectionValidator detection_validation/validator_general_66.txt
