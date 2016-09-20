@@ -5,12 +5,12 @@
 # faceLandmarks.thrift
 
 /**
-* faceLandmarks_IDL
+* faceLandmarks_IDLServer
 *
 * Interface. 
 */
 
-service faceLandmarks_IDL
+service faceLandmarks_IDLServer
 {
   /**
   * Turns on or off the display of the landmarks
