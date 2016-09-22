@@ -158,7 +158,7 @@ bool FACEManager::open()
     yarp::os::Network::connect("/icub/camcalib/left/out", "/faceLandmarks/image:i");
     yarp::os::Network::connect("/faceLandmarks/image:o", "/view/faces");
     
-    displayLandmarks = false;
+    displayLandmarks = true;
     
     return true;
 }
