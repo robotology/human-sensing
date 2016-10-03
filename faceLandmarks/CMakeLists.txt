@@ -4,7 +4,8 @@
 # 
 
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8.9)
-project(faceLandmarks)
+SET(PROJECTNAME faceLandmarks)
+project(${PROJECTNAME})
 
 find_package(YARP)
 find_package(ICUB)

@@ -32,6 +32,7 @@ int main(int argc, char * argv[])
     rf.setVerbose( true );
     rf.setDefaultContext( "faceLandmarks" );
     rf.setDefaultConfigFile( "faceLandmarks.ini" );
+    rf.setDefault("name","faceLandmarks");
     
     rf.configure( argc, argv );
 
