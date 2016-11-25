@@ -15,7 +15,8 @@
    </description-long>
    
    <arguments>
-   <param default="faceLandmarks" desc="To specify the module's name; all the open ports will be tagged with the prefix /name">name</param>
+        <param default="faceLandmarks" desc="To specify the module's name; all the open ports will be tagged with the prefix /name">name</param>
+        <param default="faceLandmarks.ini" desc="Configuration file name">from</param>   
    </arguments>
 
    <authors>
