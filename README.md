@@ -2,6 +2,9 @@
 This repository contains software related to human sensing.
 It is currently under major overhauling and all previous software + documentation has been kept in the ***under-review*** branch and will soon be transferred to ***master***. in the meanwhile, if parts of the code is required please use the following git command if you already have a version pf the repo: ```git checkout under-review``` otherwise directly clone the under-review branch: ```git clone -b under-review https://github.com/robotology/human-sensing.git```
 
+##Progress on repository restructuring
+Project updates can be found [here](https://github.com/robotology/human-sensing/projects/1)
+
 ## Installation
 
 #### Dependencies
