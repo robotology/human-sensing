@@ -4,7 +4,7 @@ It is currently under major overhauling and all previous software + documentatio
 
 ## Installation
 
-##### Dependencies
+#### Dependencies
 In order to compile and run modules in this repository you will need to install the following dependencies.
 Installation are standards and instructions can be found in the following links. Specific installation for ```dlib``` can be found below.
 - [YARP](https://github.com/robotology/yarp)
@@ -13,19 +13,38 @@ Installation are standards and instructions can be found in the following links.
 - [OpenCV](http://opencv.org/downloads.html)
 -  dlib
 
-##### dlib Installation
+#### dlib Installation
 On macOS:
 
     brew install homebrew/science/dlib
+    brew install homebrew/dupes/bzip2
 
 On macOS:
 
     sudo apt-get install libdlib-dev
+    sudo apt-get install bzip2
 
 On Windows:
 
-    download dlib @ http://dlib.net/
+    download dlib from http://dlib.net/
     generate cmake and make install
+
+#### Compilation
+
+While in the root folder of ```human-sensing``` do:
+
+    mkdir build
+    cd build
+    ccmake ..
+
+##### side note
+Some modules require the ```shape_predictor_68_face_landmarks.dat``` file to correctly run.
+As the file is >60MB it is not included in the repository but if the user sets the ```DOWNLOAD_FACE_LANDMARKS_DAT``` to ```ON```.
+Cmake will automatically take care of downloading the required file, unzip it and install it correctly.
+If you prefer to do it on your own, please download the ```.dat``` file from [here](http://dlib.net/files/shape_predictor_68_face_landmarks.dat.bz2), unzip it and copy it to the ```build``` directory.
+
+    configure & generate
+    make install
 
 ## Documentation
 Online documentation is available here: [http://robotology.github.com/human-sensing](http://robotology.github.com/human-sensing).
