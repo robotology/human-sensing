@@ -5,12 +5,27 @@ It is currently under major overhauling and all previous software + documentatio
 ## Installation
 
 ##### Dependencies
+In order to compile and run modules in this repository you will need to install the following dependencies.
+Installation are standards and instructions can be found in the following links. Specific installation for ```dlib``` can be found below.
 - [YARP](https://github.com/robotology/yarp)
 - [iCub](https://github.com/robotology/icub-main)
 - [icub-contrib-common](https://github.com/robotology/icub-contrib-common)
 - [OpenCV](http://opencv.org/downloads.html)
-- [dlib](http://dlib.net/)
-- [BLAS](http://www.netlib.org/blas/)
+-  dlib
+
+##### dlib Installation
+On macOS:
+
+    brew install homebrew/science/dlib
+
+On macOS:
+
+    sudo apt-get install libdlib-dev
+
+On Windows:
+
+    download dlib @ http://dlib.net/
+    generate cmake and make install
 
 ## Documentation
 Online documentation is available here: [http://robotology.github.com/human-sensing](http://robotology.github.com/human-sensing).

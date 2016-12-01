@@ -7,6 +7,8 @@ ipch/
 *.psess
 *.pdb
 *.a
+*.dat
+*.bz2
 lib/local/CLM/Debug/
 lib/local/CLM/Release/
 lib/local/Puppets/Debug/
@@ -30,4 +32,3 @@ Makefile
 cmake_install.cmake
 CMakeCache.txt
 videos/images_track/
-
