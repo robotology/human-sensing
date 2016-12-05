@@ -19,7 +19,7 @@ Installation are standards and instructions can be found in the following links.
 #### dlib Installation
 On macOS:
 
-    brew install homebrew/science/dlib
+    brew install homebrew/science/dlib (this installs version 19.2)
     brew install homebrew/dupes/bzip2
 
 On Linux (Xenial 16.04):
