@@ -22,12 +22,12 @@ On macOS:
     brew install homebrew/science/dlib
     brew install homebrew/dupes/bzip2
 
-On macOS:
+On Linux (Xenial 16.04):
 
     sudo apt-get install libdlib-dev
     sudo apt-get install bzip2
 
-On Windows:
+On Linux < 16.04 or Windows:
 
     download dlib from http://dlib.net/
     generate cmake and make install
