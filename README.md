@@ -24,10 +24,11 @@ On macOS:
 
 On Linux (Xenial 16.04):
 
-    sudo apt-get install libdlib-dev
+    sudo apt-get update
+    sudo apt-get install libdlib-dev (this installs version 18.18-1, if a more recent version is required please download manually as described below)
     sudo apt-get install bzip2
 
-On Linux < 16.04 or Windows:
+On Linux < 16.04 or dlib version > 18.18-1 or Windows (more details soon):
 
     download dlib from http://dlib.net/
     generate cmake and make install
