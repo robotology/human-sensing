@@ -25,8 +25,8 @@ On macOS:
 On Linux (Xenial 16.04):
 
     sudo apt-get update
+    sudo apt-get install bzip2 libpng-dev libjpeg-dev libblas-dev liblapack-dev libsqlite3-dev
     sudo apt-get install libdlib-dev (this installs version 18.18-1, if a more recent version is required please download manually as described below)
-    sudo apt-get install bzip2
 
 I have just noted that there is a bug in the dlib package:
 
@@ -39,7 +39,7 @@ CMake looks for the static library ```libdlib.a``` while the package installs th
 Unfortunately until the developers update their package it is required to run the following command:
 
     sudo sed -i '17s/^/#/' /usr/lib/cmake/dlib/dlib-none.cmake
-This actually comments out the line that checks for the ```libdlib.a``` file.
+This command actually comments out the line that checks for the ```libdlib.a``` file, and you are good to go.
 
 On Linux < 16.04 or dlib version > 18.18-1 or Windows (more details soon):
 
