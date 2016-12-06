@@ -17,18 +17,23 @@
 
 #include "faceLandmarks.h"
 
-using namespace yarp::os;
-
 int main(int argc, char * argv[])
 {
     /* initialize yarp network */
-    Network::init();
+    yarp::os::Network::init();
+    
+    yarp::os::Network yarp;
+    if (!yarp.checkNetwork())
+    {
+        yError()<<"YARP server not available!";
+        return 1;
+    }
 
     /* create the module */
     FACEModule module;
 
     /* prepare and configure the resource finder */
-    ResourceFinder rf;
+    yarp::os::ResourceFinder rf;
     rf.setVerbose( true );
     rf.setDefaultContext( "faceLandmarks" );
     rf.setDefaultConfigFile( "faceLandmarks.ini" );
@@ -38,7 +43,7 @@ int main(int argc, char * argv[])
 
     /* run the module: runModule() calls configure first and, if successful, it then runs */
     module.runModule(rf);
-    Network::fini();
+    yarp::os::Network::fini();
 
     return 0;
 }
