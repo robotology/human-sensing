@@ -58,7 +58,6 @@ option(DOWNLOAD_FACE_LANDMARKS_DAT "download face landmarks dataset" OFF)
 set(BZIP2FILE shape_predictor_68_face_landmarks.dat)
 
 if (DOWNLOAD_FACE_LANDMARKS_DAT)
-  print(${CMAKE_BINARY_DIR}/${BZIP2FILE})
   if (NOT EXISTS ${CMAKE_SOURCE_DIR}/${BZIP2FILE}.bz2 AND NOT EXISTS ${CMAKE_BINARY_DIR}/${BZIP2FILE})
     file(DOWNLOAD http://dlib.net/files/${BZIP2FILE}.bz2 ${CMAKE_BINARY_DIR}/${BZIP2FILE}.bz2 STATUS status LOG log SHOW_PROGRESS)
     find_program(BZIP2_EXECUTABLE bzip2)
