@@ -28,6 +28,19 @@ On Linux (Xenial 16.04):
     sudo apt-get install libdlib-dev (this installs version 18.18-1, if a more recent version is required please download manually as described below)
     sudo apt-get install bzip2
 
+I have just noted that there is a bug in the dlib package:
+
+    CMake Error at /usr/lib/cmake/dlib/dlib.cmake:76 (message):
+    The imported target "dlib::dlib" references the file
+     "/usr/lib/libdlib.a"
+     ...
+
+CMake looks for the static library ```libdlib.a``` while the package installs the dynamic one instead ```libdlib.so```.
+Unfortunately until the developers update their package it is required to run the following command:
+
+    sudo sed -i '17s/^/#/' /usr/lib/cmake/dlib/dlib-none.cmake
+This actually comments out the line that checks for the ```libdlib.a``` file.
+
 On Linux < 16.04 or dlib version > 18.18-1 or Windows (more details soon):
 
     download dlib from http://dlib.net/
