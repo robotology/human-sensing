@@ -238,6 +238,7 @@ void FACEManager::onRead(yarp::sig::ImageOf<yarp::sig::PixelRgb> &img)
 
         if (landmarksOutPort.getOutputCount()>0)
         {
+            landmarks.clear();
             yarp::os::Bottle &landM = landmarks.addList();
             for (int f=1; f<shapes[i].num_parts(); f++)
             {
@@ -259,6 +260,8 @@ void FACEManager::onRead(yarp::sig::ImageOf<yarp::sig::PixelRgb> &img)
         rightEye.y = d.part(43).y()/2 + ((d.part(46).y()/2) - (d.part(43).y()/2))/2;
         leftEye.x  = d.part(36).x()/2 + ((d.part(39).x()/2) - (d.part(36).x()/2))/2;
         leftEye.y  = d.part(38).y()/2 + ((d.part(41).y()/2) - (d.part(38).y()/2))/2;
+
+        //yDebug("rightEye %d %d leftEye %d %d ", rightEye.x, rightEye.y, leftEye.x, leftEye.y);
 
         //draw center of each eye
         circle(imgMat, leftEye , 2, cv::Scalar( 0, 0, 255 ), -1);
