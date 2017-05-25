@@ -1,4 +1,4 @@
-# human-sensing
+# human-sensing-SAM
 This repository contains software related to human sensing
 
 The code has been tested on Ubuntu 14.04 LTS & Ubuntu 16.04 LTS
