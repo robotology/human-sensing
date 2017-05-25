@@ -55,11 +55,12 @@ clone from the following link,
 
     https://github.com/robotology/icub-main
 
+## Clone and build this repository
 
+Add `CLM_MODEL_DIR=$SRC_FOLDER/human-sensing-SAM/app/CLM_Yarp/conf` to your ~/.bashrc
 
-
-
-
+## Usage:
+CLMYarp --from $CLM_MODEL_DIR
 
 
 Note: A bunch of video files for testing the code and the main source-code of CLM can be found at:
