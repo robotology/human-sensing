@@ -24,7 +24,7 @@ The code needs the follwoing libraries:
 
     sudo apt-get install libboost-all-dev
 
-### OpenCV-3.2.0 (object tracking; optional)
+### OpenCV-3.2.0
 **`OpenCV-3.0.0`** or higher (**`OpenCV-3.2.0`** is recommended) is a required dependency:
 
 1. Download `OpenCV`: `git clone https://github.com/opencv/opencv.git`.
