@@ -16,22 +16,6 @@ The code needs the follwoing libraries:
 
     sudo apt-get install libopenblas-dev liblapack-dev 
 
-## Get OpenCV
-1- Install the dependencies:
-
-    sudo apt-get install git libgtk2.0-dev pkg-config libavcodec-dev libavformat-dev libswscale-dev
-    sudo apt-get install python-dev python-numpy libtbb2 libtbb-dev libjpeg-dev libpng-dev libtiff-dev   libjasper-dev libdc1394-22-dev checkinstall
-  
-2- Download the source code: 
-
-    https://github.com/Itseez/opencv/archive/3.0.0-beta.zip
-
-3- build and install:
-
-    cmake -D CMAKE_BUILD_TYPE=RELEASE -D CMAKE_INSTALL_PREFIX=/usr/local -D WITH_TBB=ON -D BUILD_SHARED_LIBS=OFF ..
-    make -j2
-    sudo make install	
-
 ## Get TBB:
 
     sudo apt-get install libtbb-dev
@@ -39,6 +23,19 @@ The code needs the follwoing libraries:
 ## Get Boost:
 
     sudo apt-get install libboost-all-dev
+
+### OpenCV-3.2.0 (object tracking; optional)
+**`OpenCV-3.0.0`** or higher (**`OpenCV-3.2.0`** is recommended) is a required dependency:
+
+1. Download `OpenCV`: `git clone https://github.com/opencv/opencv.git`.
+2. Checkout the correct branch: `git checkout 3.2.0`.
+3. Download the external modules: `git clone https://github.com/opencv/opencv_contrib.git`.
+4. Checkout the correct branch: `git checkout 3.2.0`.
+5. Configure `OpenCV` by filling in the cmake var **`OPENCV_EXTRA_MODULES_PATH`** with the path pointing to `opencv_contrib/modules` and then toggling on the var **`BUILD_opencv_tracking`**.
+6. Compile `OpenCV`.
+
+### YARP, icub-main and icub-contrib-common
+First, follow the [installation instructions](http://wiki.icub.org/wiki/Linux:Installation_from_sources) for `yarp`, `icub-main` and `icub-contrib-common`.
     
 ## Get dlib:
 
@@ -46,14 +43,7 @@ Download the library (v18.xx) from the following link and install it:
 
     http://dlib.net/ 
 
-
 finally, build the main code and test it by running the `SimpleCLM` executable. 
-  
-## Get iCub-main:
-
-clone from the following link,
-
-    https://github.com/robotology/icub-main
 
 ## Clone and build this repository
 
