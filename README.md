@@ -1,7 +1,7 @@
 # human-sensing
 This repository contains software related to human sensing
 
-The code has been tested on Ubuntu 14.04 LTS & Lubuntu 14.04 LTS
+The code has been tested on Ubuntu 14.04 LTS & Ubuntu 16.04 LTS
 
 The code needs the follwoing libraries:
 
@@ -60,7 +60,7 @@ clone from the following link,
 Add `CLM_MODEL_DIR=$SRC_FOLDER/human-sensing-SAM/app/CLM_Yarp/conf` to your ~/.bashrc
 
 ## Usage:
-CLMYarp --from $CLM_MODEL_DIR
+`CLMYarp --from $CLM_MODEL_DIR`
 
 
 Note: A bunch of video files for testing the code and the main source-code of CLM can be found at:
