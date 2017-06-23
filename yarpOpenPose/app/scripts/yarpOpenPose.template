@@ -1,0 +1,26 @@
+<application>
+    <name>Squeleton Detection Application</name>
+
+     <module>
+        <name>yarpOpenPose</name>
+        <node>node1</node>
+    </module>
+
+    <module>
+        <name>yarpview</name>
+        <node>node1</node>
+        <parameters>--name /out --x 0 --y 0 --p 33 /parameters>
+    </module>
+    <connection>
+        <from>/icub/camcalib/left/out</from>
+        <to>/yarpOpenPose/image:i</to>
+        <protocol>udp</protocol>
+    </connection>
+
+    <connection>
+    <from>/yarpOpenPose/image:o</from>
+    <to>/out</to>
+    <protocol>udp</protocol>
+    </connection>
+
+</application>
