@@ -337,7 +337,7 @@ public:
         std::tie(outputSize, netInputSize, poseModel, scaleMode, heatMapTypes, heatMapsScaleMode) = gflagsToOpParameters();
 
         const op::WrapperStructPose wrapperStructPose{netInputSize, outputSize, scaleMode, num_gpu, num_gpu_start, num_scales, scale_gap,
-                                                      !no_render_output, poseModel, !FLAGS_disable_blending, (float)alpha_pose, (float)alpha_heatmap,
+                                                      !no_render_output, poseModel, !disable_blending, (float)alpha_pose, (float)alpha_heatmap,
                                                       part_to_show, model_folder, heatMapTypes, heatMapsScaleMode};
 
         opWrapper.configure(wrapperStructPose, op::WrapperStructInput{}, op::WrapperStructOutput{});
