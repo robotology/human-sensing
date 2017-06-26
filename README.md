@@ -18,7 +18,10 @@ Table of Contents
 ## Repository structure
 The human sensing repository contains the following directories and modules:
 1. `faceLandmarks`: This yarp module module is configured to find human faces that are looking more or less towards the camera. It makes use of the dlib library in order to extract the facial landmarks and uses the  Histogram of Oriented Gradients (HOG) feature combined with a linear classifier, an image pyramid, and sliding window detection scheme.
-<img src="img/faces.png" width="200">
+
+|<img src="img/faces.png" width="200">|
+|:---:|
+|faces|
 
 2. `yarpOpenPose`: This yarp module is configured to estimate human pose based on OpenPose, a library for real-time multi-person keypoint detection and multi-threading. It makes use of Caffe and OpenCV.
 <img src="img/poses.png" width="200">
