@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<?xml-stylesheet type="text/xsl" href="yarpmanifest.xsl"?>
+
+<module>
+
+   <name>yarpOpenPose</name>
+   <description>This yarp module is configured to estimate human pose based on OpenPose, a library for real-time multi-person keypoint detection and multi-threading.</description>
+   <copypolicy>Released under the terms of the GNU GPL v2.0</copypolicy>
+   <version>1.0</version>
+
+   <description-long>
+       This yarp module is configured to estimate human pose based on OpenPose, a library for real-time multi-person keypoint detection and multi-threading. It makes use of Caffe and OpenCV.
+
+   <!--\image html faceLandmarks.png "faceLandmarks at work" -->
+   </description-long>
+
+   <arguments>
+        <param default="yarpOpenPose" desc="To specify the module's name; all the open ports will be tagged with the prefix /name">name</param>
+        <param default="yarpOpenPose.ini" desc="Configuration file name">from</param>
+   </arguments>
+
+   <authors>
+       <author email="vadim.tikhanoff@iit.it"> Vadim Tikhanoff </author>
+   </authors>
+
+   <data>
+       <input>
+           <type>Image</type>
+           <port>/yarpOpenPose/image:i</port>
+           <required>no</required>
+           <priority>no</priority>
+           <description>
+            Receives stream of camera images.
+           </description>
+       </input>
+       <output>
+           <type>Image</type>
+           <port>/yarpOpenPose/image:o</port>
+           <description>
+            Stream out an image with the result of the pose estimation.
+           </description>
+       </output>
+       <output>
+           <type>yarp::os::Bottle</type>
+           <port>/yarpOpenPose/target:o</port>
+           <description>
+            Stream out a yarp list containing the poses of each bodypart (string Xpos Ypos Confidence).
+           </description>
+       </output>
+   </data>
+
+</module>
