@@ -7,6 +7,7 @@ Table of Contents
 * [Required Dependencies](#generic_dep)
 * [OpenPose Installation](#openposeinstallation)
 * [Compilation](#compilation)
+* [Parameters](#parameters)
 
 #### Requirements
 
@@ -47,3 +48,27 @@ While in the root folder of `yarpOpenPose` do:
     mkdir build
     cd build
     ccmake ..
+    configure and generate
+    make install
+
+#### Parameters
+The required parameters can be modified at runtime using the installed **yarpOpenPose.ini** file
+
+* **model_name**: Model to be used e.g. COCO, MPI, MPI_4_layers.
+* **model_folder**: Folder where the pose models (COCO and MPI) are located.
+* **net_resolution**: The resolution of the net, multiples of 16.
+* **img_resolution**: The resolution of the image (display and output).
+* **num_gpu**: The number of GPU devices to use.
+* **num_gpu_start**: The GPU device start number.
+* **num_scales**: Number of scales to average.
+* **scale_gap**: Scale gap between scales. No effect unless num_scales>1. Initial scale is always 1. If you want to change the initial scale, you actually want to multiply the net_resolution by your desired initial scale.
+* **scale_mode**: Scaling of the (x,y) coordinates of the final pose data array (op::Datum::pose), i.e. the scale of the (x,y) coordinates that will be saved with the write_pose & write_pose_json flags. Select 0 to scale it to the original source resolution, 1 to scale it to the net output size (set with net_resolution), 2 to scale it to the final output size (set with resolution), 3 to scale it in the range [0,1], and 4 for range [-1,1]. Non related with num_scales and scale_gap.
+* **heatmaps_add_parts**: If true, it will add the body part heatmaps to the final op::Datum::poseHeatMaps array (program speed will decrease). Not required for our library, enable it only if you intend to process this information later. If more than one add_heatmaps_X flag is enabled, it will place then in sequential memory order: body parts + bkg + PAFs. It will follow the order on POSE_BODY_PART_MAPPING in include/openpose/pose/poseParameters.hpp.
+* **heatmaps_add_bkg**: Same functionality as add_heatmaps_parts, but adding the heatmap corresponding to background.
+* **heatmaps_add_PAFs**: Same functionality as add_heatmaps_parts, but adding the PAFs.
+* **heatmaps_scale_mode**: Set 0 to scale op::Datum::poseHeatMaps in the range [0,1], 1 for [-1,1]; and 2 for integer rounded [0,255].
+* **no_render_output**: If false, it will fill image with the original image + desired part to be shown. If true, it will leave them empty.
+* **part_to_show**: Part to show from the start.
+* **disable_blending**: If false, it will blend the results with the original frame. If true, it will only display the results.
+* **alpha_pose**: Blending factor (range 0-1) for the body part rendering. 1 will show it completely, 0 will hide it.
+* **alpha_heatmap**: Blending factor (range 0-1) between heatmap and original frame. 1 will only show the heatmap, 0 will only show the frame.
