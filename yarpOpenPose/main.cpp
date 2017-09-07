@@ -166,7 +166,7 @@ public:
     /********************************************************/
     void work(std::shared_ptr<std::vector<op::Datum>>& datumsPtr)
     {
-/*        if (datumsPtr != nullptr && !datumsPtr->empty())
+        if (datumsPtr != nullptr && !datumsPtr->empty())
         {
             yarp::os::Bottle &peopleBottle = targetPort.prepare();
             peopleBottle.clear();
@@ -177,7 +177,7 @@ public:
             op::Array<float> pose(tDatumsNoPtr.size());
             for (auto i = 0; i < tDatumsNoPtr.size(); i++)
             {
-                pose = tDatumsNoPtr[i].poseKeyPoints;
+                pose = tDatumsNoPtr[i].poseKeypoints;
 
                 if (!pose.empty() && pose.getNumberDimensions() != 3)
                     op::error("pose.getNumberDimensions() != 3.", __LINE__, __FUNCTION__, __FILE__);
@@ -204,7 +204,7 @@ public:
             if (peopleBottle.size())
                 targetPort.write();
         }
-   */ }
+    }
 };
 
 /**********************************************************/
