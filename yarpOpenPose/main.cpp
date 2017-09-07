@@ -14,7 +14,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
  * Public License for more details
  */
-
 // C++ std library dependencies
 #include <atomic>
 #include <chrono>
@@ -167,7 +166,7 @@ public:
     /********************************************************/
     void work(std::shared_ptr<std::vector<op::Datum>>& datumsPtr)
     {
-        if (datumsPtr != nullptr && !datumsPtr->empty())
+/*        if (datumsPtr != nullptr && !datumsPtr->empty())
         {
             yarp::os::Bottle &peopleBottle = targetPort.prepare();
             peopleBottle.clear();
@@ -205,7 +204,7 @@ public:
             if (peopleBottle.size())
                 targetPort.write();
         }
-    }
+   */ }
 };
 
 /**********************************************************/
@@ -267,12 +266,13 @@ private:
     int                         num_gpu_start;
     int                         num_scales;
     float                       scale_gap;
-    int                         scale_mode;
+    int                         keypoint_scale;
     bool                        heatmaps_add_parts;
     bool                        heatmaps_add_bkg;
     bool                        heatmaps_add_PAFs;
     int                         heatmaps_scale_mode;
-    bool                        no_render_output;
+    //bool                        no_render_output;
+    int                         render_pose;
     int                         part_to_show;
     bool                        disable_blending;
     double                      alpha_pose;
@@ -302,7 +302,7 @@ public:
         scale_gap = rf.check("scale_gap", yarp::os::Value("0.3"), "Scale gap between scales. No effect unless num_scales>1. Initial scale is always 1. If you want to change the initial scale,"
                                                                 " you actually want to multiply the `net_resolution` by your desired initial scale.(float)").asDouble();
 
-        scale_mode = rf.check("scale_mode", yarp::os::Value("0"), "Scaling of the (x,y) coordinates of the final pose data array (op::Datum::pose), i.e. the scale of the (x,y) coordinates that"
+        keypoint_scale = rf.check("keypoint_scale", yarp::os::Value("0"), "Scaling of the (x,y) coordinates of the final pose data array (op::Datum::pose), i.e. the scale of the (x,y) coordinates that"
                                                                 " will be saved with the `write_pose` & `write_pose_json` flags. Select `0` to scale it to the original source resolution, `1`"
                                                                 " to scale it to the net output size (set with `net_resolution`), `2` to scale it to the final output size (set with "
                                                                 " `resolution`), `3` to scale it in the range [0,1], and 4 for range [-1,1]. Non related with `num_scales` and `scale_gap`.(int)").asInt();
@@ -315,7 +315,8 @@ public:
 
         heatmaps_add_PAFs = rf.check("heatmaps_add_PAFs", yarp::os::Value("false"),"Same functionality as `add_heatmaps_parts`, but adding the PAFs.(bool)").asBool();
         heatmaps_scale_mode = rf.check("heatmaps_scale_mode", yarp::os::Value("2"), "Set 0 to scale op::Datum::poseHeatMaps in the range [0,1], 1 for [-1,1]; and 2 for integer rounded [0,255].(int)").asInt();
-        no_render_output = rf.check("no_render_output", yarp::os::Value("false"), "If false, it will fill image with the original image + desired part to be shown. If true, it will leave them empty.(bool)").asBool();
+        //no_render_output = rf.check("no_render_output", yarp::os::Value("false"), "If false, it will fill image with the original image + desired part to be shown. If true, it will leave them empty.(bool)").asBool();
+        render_pose = rf.check("render_pose", yarp::os::Value("2"), "Set to 0 for no rendering, 1 for CPU rendering (slightly faster), and 2 for GPU rendering").asInt();
         part_to_show = rf.check("part_to_show", yarp::os::Value("0"),"Part to show from the start.(int)").asInt();
         disable_blending = rf.check("disable_blending", yarp::os::Value("false"), "If false, it will blend the results with the original frame. If true, it will only display the results.").asBool();
         alpha_pose = rf.check("alpha_pose", yarp::os::Value("0.6"), "Blending factor (range 0-1) for the body part rendering. 1 will show it completely, 0 will hide it.(double)").asDouble();
@@ -328,18 +329,44 @@ public:
         yDebug() << "Starting yarpOpenPose";
 
         // Applying user defined configuration
-        cv::Size outputSize;
-        cv::Size netInputSize;
-        op::PoseModel poseModel;
-        op::ScaleMode scaleMode;
-        std::vector<op::HeatMapType> heatMapTypes;
-        op::ScaleMode heatMapsScaleMode;
-        std::tie(outputSize, netInputSize, poseModel, scaleMode, heatMapTypes, heatMapsScaleMode) = gflagsToOpParameters();
+        //cv::Size outputSize;
+        //cv::Size netInputSize;
+        //op::PoseModel poseModel;
+        //op::ScaleMode scaleMode;
+        //std::vector<op::HeatMapType> heatMapTypes;
+        //op::ScaleMode heatMapsScaleMode;
+        //std::tie(outputSize, netInputSize, poseModel, scaleMode, heatMapTypes, heatMapsScaleMode) = gflagsToOpParameters();
 
-        const op::WrapperStructPose wrapperStructPose{netInputSize, outputSize, scaleMode, num_gpu, num_gpu_start, num_scales, scale_gap,
+        // Applying user defined configuration
+        auto outputSize = op::flagsToPoint(img_resolution, img_resolution);
+        // netInputSize
+        auto netInputSize = op::flagsToPoint(net_resolution, net_resolution);
+        //pose model
+        op::PoseModel poseModel = gflagToPoseModel(model_name);
+        // scaleMode
+        op::ScaleMode keypointScale = op::flagsToScaleMode(keypoint_scale);
+
+        // heatmaps to add
+        std::vector<op::HeatMapType> heatMapTypes = gflagToHeatMaps(heatmaps_add_parts, heatmaps_add_bkg, heatmaps_add_PAFs);
+        op::check(heatmaps_scale_mode >= 0 && heatmaps_scale_mode <= 2, "Non valid `heatmaps_scale_mode`.", __LINE__, __FUNCTION__, __FILE__);
+        op::ScaleMode heatMapsScaleMode = (heatmaps_scale_mode == 0 ? op::ScaleMode::PlusMinusOne : (heatmaps_scale_mode == 1 ? op::ScaleMode::ZeroToOne : op::ScaleMode::UnsignedChar ));
+
+        /*const op::WrapperStructPose wrapperStructPose{netInputSize, outputSize, scaleMode, num_gpu, num_gpu_start, num_scales, scale_gap,
                                                       !no_render_output, poseModel, !disable_blending, (float)alpha_pose, (float)alpha_heatmap,
                                                       part_to_show, model_folder, heatMapTypes, heatMapsScaleMode};
+       */
+        const op::WrapperStructPose wrapperStructPose{netInputSize, outputSize, keypointScale, num_gpu, num_gpu_start, num_scales, scale_gap,
+                                                      op::flagsToRenderMode(render_pose), poseModel, !disable_blending, (float)alpha_pose, (float)alpha_heatmap,
+                                                      part_to_show, model_folder, heatMapTypes, heatMapsScaleMode, 0.05};
 
+       /*
+	const op::WrapperStructPose wrapperStructPose{netInputSize, outputSize, keypointScale, FLAGS_num_gpu,
+                                                  FLAGS_num_gpu_start, FLAGS_scale_number, (float)FLAGS_scale_gap,
+                                                  op::flagsToRenderMode(FLAGS_render_pose), poseModel,
+                                                  !FLAGS_disable_blending, (float)FLAGS_alpha_pose,
+                                                  (float)FLAGS_alpha_heatmap, FLAGS_part_to_show, FLAGS_model_folder,
+                                                  heatMapTypes, heatMapScale, (float)FLAGS_render_threshold};
+        */
         opWrapper.configure(wrapperStructPose, op::WrapperStructInput{}, op::WrapperStructOutput{});
 
         yDebug() << "Starting thread(s)";
@@ -413,7 +440,7 @@ public:
         return heatMapTypes;
     }
 
-    /**********************************************************/
+    /*********************************************************
     // Google flags into program variables
     std::tuple<cv::Size, cv::Size, op::PoseModel, op::ScaleMode, std::vector<op::HeatMapType>, op::ScaleMode> gflagsToOpParameters()
     {
