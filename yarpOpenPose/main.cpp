@@ -271,12 +271,12 @@ private:
     bool                        heatmaps_add_bkg;
     bool                        heatmaps_add_PAFs;
     int                         heatmaps_scale_mode;
-    //bool                        no_render_output;
     int                         render_pose;
     int                         part_to_show;
     bool                        disable_blending;
     double                      alpha_pose;
     double                      alpha_heatmap;
+    double                      render_threshold;
 
     ImageInput                  *inputClass;
     ImageProcessing             *processingClass;
@@ -321,21 +321,13 @@ public:
         disable_blending = rf.check("disable_blending", yarp::os::Value("false"), "If false, it will blend the results with the original frame. If true, it will only display the results.").asBool();
         alpha_pose = rf.check("alpha_pose", yarp::os::Value("0.6"), "Blending factor (range 0-1) for the body part rendering. 1 will show it completely, 0 will hide it.(double)").asDouble();
         alpha_heatmap = rf.check("alpha_heatmap", yarp::os::Value("0.7"), "Blending factor (range 0-1) between heatmap and original frame. 1 will only show the heatmap, 0 will only show the frame.(double)").asDouble();
+        render_threshold = rf.check("render_threshold", yarp::os::Value("0.05"), "Only estimated keypoints whose score confidences are higher than this threshold will be rendered. Generally, a high threshold (> 0.5) will only render very clear body parts.(double)").asDouble();
 
         setName(moduleName.c_str());
         rpcPort.open(("/"+getName("/rpc")).c_str());
         closing = false;
 
         yDebug() << "Starting yarpOpenPose";
-
-        // Applying user defined configuration
-        //cv::Size outputSize;
-        //cv::Size netInputSize;
-        //op::PoseModel poseModel;
-        //op::ScaleMode scaleMode;
-        //std::vector<op::HeatMapType> heatMapTypes;
-        //op::ScaleMode heatMapsScaleMode;
-        //std::tie(outputSize, netInputSize, poseModel, scaleMode, heatMapTypes, heatMapsScaleMode) = gflagsToOpParameters();
 
         // Applying user defined configuration
         auto outputSize = op::flagsToPoint(img_resolution, img_resolution);
@@ -351,22 +343,10 @@ public:
         op::check(heatmaps_scale_mode >= 0 && heatmaps_scale_mode <= 2, "Non valid `heatmaps_scale_mode`.", __LINE__, __FUNCTION__, __FILE__);
         op::ScaleMode heatMapsScaleMode = (heatmaps_scale_mode == 0 ? op::ScaleMode::PlusMinusOne : (heatmaps_scale_mode == 1 ? op::ScaleMode::ZeroToOne : op::ScaleMode::UnsignedChar ));
 
-        /*const op::WrapperStructPose wrapperStructPose{netInputSize, outputSize, scaleMode, num_gpu, num_gpu_start, num_scales, scale_gap,
-                                                      !no_render_output, poseModel, !disable_blending, (float)alpha_pose, (float)alpha_heatmap,
-                                                      part_to_show, model_folder, heatMapTypes, heatMapsScaleMode};
-       */
         const op::WrapperStructPose wrapperStructPose{netInputSize, outputSize, keypointScale, num_gpu, num_gpu_start, num_scales, scale_gap,
                                                       op::flagsToRenderMode(render_pose), poseModel, !disable_blending, (float)alpha_pose, (float)alpha_heatmap,
-                                                      part_to_show, model_folder, heatMapTypes, heatMapsScaleMode, 0.05};
+                                                      part_to_show, model_folder, heatMapTypes, heatMapsScaleMode, (float)render_threshold};
 
-       /*
-	const op::WrapperStructPose wrapperStructPose{netInputSize, outputSize, keypointScale, FLAGS_num_gpu,
-                                                  FLAGS_num_gpu_start, FLAGS_scale_number, (float)FLAGS_scale_gap,
-                                                  op::flagsToRenderMode(FLAGS_render_pose), poseModel,
-                                                  !FLAGS_disable_blending, (float)FLAGS_alpha_pose,
-                                                  (float)FLAGS_alpha_heatmap, FLAGS_part_to_show, FLAGS_model_folder,
-                                                  heatMapTypes, heatMapScale, (float)FLAGS_render_threshold};
-        */
         opWrapper.configure(wrapperStructPose, op::WrapperStructInput{}, op::WrapperStructOutput{});
 
         yDebug() << "Starting thread(s)";
@@ -440,29 +420,6 @@ public:
         return heatMapTypes;
     }
 
-    /*********************************************************
-    // Google flags into program variables
-    std::tuple<cv::Size, cv::Size, op::PoseModel, op::ScaleMode, std::vector<op::HeatMapType>, op::ScaleMode> gflagsToOpParameters()
-    {
-        // outputSize
-        cv::Size outputSize;
-        auto nRead = sscanf(img_resolution.c_str(), "%dx%d", &outputSize.width, &outputSize.height);
-        op::checkE(nRead, 2, "Error, resolution format (" +  img_resolution + ") invalid, should be e.g., 960x540 ", __LINE__, __FUNCTION__, __FILE__);
-        // netInputSize
-        cv::Size netInputSize;
-        nRead = sscanf(net_resolution.c_str(), "%dx%d", &netInputSize.width, &netInputSize.height);
-        op::checkE(nRead, 2, "Error, net resolution format (" +  net_resolution + ") invalid, should be e.g., 656x368 (multiples of 16)", __LINE__, __FUNCTION__, __FILE__);
-        // poseModel
-        const auto poseModel = gflagToPoseModel(model_name);
-        // scaleMode
-        const auto scaleMode = gflagToScaleMode(scale_mode);
-        // heatmaps to add
-        const auto heatMapTypes = gflagToHeatMaps(heatmaps_add_parts, heatmaps_add_bkg, heatmaps_add_PAFs);
-        op::check(heatmaps_scale_mode >= 0 && heatmaps_scale_mode <= 2, "Non valid `heatmaps_scale_mode`.", __LINE__, __FUNCTION__, __FILE__);
-        const auto heatMapsScaleMode = (heatmaps_scale_mode == 0 ? op::ScaleMode::PlusMinusOne : (heatmaps_scale_mode == 1 ? op::ScaleMode::ZeroToOne : op::ScaleMode::UnsignedChar ));
-        // return
-        return std::make_tuple(outputSize, netInputSize, poseModel, scaleMode, heatMapTypes, heatMapsScaleMode);
-    }
     /**********************************************************/
     bool close()
     {
