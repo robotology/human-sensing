@@ -277,6 +277,7 @@ private:
     double                      alpha_pose;
     double                      alpha_heatmap;
     double                      render_threshold;
+    bool                        body_enable;
 
     ImageInput                  *inputClass;
     ImageProcessing             *processingClass;
@@ -322,6 +323,7 @@ public:
         alpha_pose = rf.check("alpha_pose", yarp::os::Value("0.6"), "Blending factor (range 0-1) for the body part rendering. 1 will show it completely, 0 will hide it.(double)").asDouble();
         alpha_heatmap = rf.check("alpha_heatmap", yarp::os::Value("0.7"), "Blending factor (range 0-1) between heatmap and original frame. 1 will only show the heatmap, 0 will only show the frame.(double)").asDouble();
         render_threshold = rf.check("render_threshold", yarp::os::Value("0.05"), "Only estimated keypoints whose score confidences are higher than this threshold will be rendered. Generally, a high threshold (> 0.5) will only render very clear body parts.(double)").asDouble();
+        body_enable = rf.check("body_enable", yarp::os::Value("true"), "Disable body keypoint detection. Option only possible for faster (but less accurate) face. (bool)").asBool();
 
         setName(moduleName.c_str());
         rpcPort.open(("/"+getName("/rpc")).c_str());
@@ -343,12 +345,18 @@ public:
         op::check(heatmaps_scale_mode >= 0 && heatmaps_scale_mode <= 2, "Non valid `heatmaps_scale_mode`.", __LINE__, __FUNCTION__, __FILE__);
         op::ScaleMode heatMapsScaleMode = (heatmaps_scale_mode == 0 ? op::ScaleMode::PlusMinusOne : (heatmaps_scale_mode == 1 ? op::ScaleMode::ZeroToOne : op::ScaleMode::UnsignedChar ));
 
-        const op::WrapperStructPose wrapperStructPose{netInputSize, outputSize, keypointScale, num_gpu, num_gpu_start, num_scales, scale_gap,
+
+        yDebug() << "dbg1";
+
+
+        const op::WrapperStructPose wrapperStructPose{body_enable, netInputSize, outputSize, keypointScale, num_gpu, num_gpu_start, num_scales, scale_gap,
                                                       op::flagsToRenderMode(render_pose), poseModel, !disable_blending, (float)alpha_pose, (float)alpha_heatmap,
                                                       part_to_show, model_folder, heatMapTypes, heatMapsScaleMode, (float)render_threshold};
 
+        yDebug() << "dbg2";
         opWrapper.configure(wrapperStructPose, op::WrapperStructInput{}, op::WrapperStructOutput{});
 
+        yDebug() << "dbg3";
         yDebug() << "Starting thread(s)";
         attach(rpcPort);
         opWrapper.start();

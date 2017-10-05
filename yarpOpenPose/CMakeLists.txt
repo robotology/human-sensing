@@ -25,6 +25,10 @@ include(ICUBcontribOptions)
 icubcontrib_set_default_prefix()
 
 find_package(openpose REQUIRED)
+find_package(Caffe REQUIRED)
+find_package(OpenCV 3 REQUIRED)
+find_package(CUDA REQUIRED)
+
 include_directories(${openpose_INCLUDE_DIRS})
 include_directories(${YARP_INCLUDE_DIRS})
 include_directories(${OpenCV_INCLUDE_DIRS})
@@ -32,13 +36,10 @@ include_directories(${CUDA_INCLUDE_DIRS})
 include_directories(${CUDA_INCLUDE_DIRS})
 include_directories(${Caffe_INCLUDE_DIRS})
 
-find_package(OpenCV 3 REQUIRED)
-find_package(CUDA REQUIRED)
-find_package(Caffe REQUIRED)
-
 add_definitions(-DUSE_CAFFE)
 
 message("YARP_LIBRARIES = ${YARP_LIBRARIES}")
+message("Caffe_INCLUDE_DIRS = ${Caffe_INCLUDE_DIRS}")
 foreach(target ${YARP_LIBRARIES})
     get_property(x TARGET ${target} PROPERTY INTERFACE_LINK_LIBRARIES)
     message("    ${target} -> ${x}")
