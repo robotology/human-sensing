@@ -34,7 +34,7 @@ Note: These requirements assume the default configuration (i.e. --net_resolution
 
     $ git clone https://github.com/CMU-Perceptual-Computing-Lab/openpose.git
 
-Follow the installation procedure at the following link [manual compilation](https://github.com/CMU-Perceptual-Computing-Lab/openpose/blob/master/doc/installation.md#installation---manual-compilation).
+Follow the installation procedure at the following link [manual compilation](https://github.com/CMU-Perceptual-Computing-Lab/openpose/blob/master/doc/installation_cmake.md).
 
 ####Side note
 Instead of installing the library with `make install`I suggest to add to your `bash` of export the `openpose_ROOT` variable:
