@@ -75,3 +75,12 @@ The required parameters can be modified at runtime using the installed **yarpOpe
 * **alpha_heatmap**: Blending factor (range 0-1) between heatmap and original frame. 1 will only show the heatmap, 0 will only show the frame.(double)
 * **render_threshold**: Only estimated keypoints whose score confidences are higher than this threshold will be rendered. Generally, a high threshold (> 0.5) will only render very clear body parts.(double)
 * **body_enable**: Disable body keypoint detection. Option only possible for faster (but less accurate) face. (bool)
+* **hand_enable**: "Enables hand keypoint detection. It will share some parameters from the body pose, e.g." `model_folder`. Analogously to `--face`, it will also slow down the performance, increase the required GPU memory and its speed depends on the number of people.(int)"
+* **hand_net_resolution**: "Multiples of 16 and squared. Analogous to `net_resolution` but applied to the hand keypoint (string)"
+* **hand_scale_number**: "Analogous to `scale_number` but applied to the hand keypoint detector.(int)"
+* **hand_scale_range**: "Analogous purpose than `scale_gap` but applied to the hand keypoint detector. Total range between smallest and biggest scale. The scales will be centered in ratio 1. E.g. if scaleRange = 0.4 and scalesNumber = 2, then there will be 2 scales, 0.8 and 1.2.(double)"
+* **hand_tracking**: "Adding hand tracking might improve hand keypoints detection for webcam (if the frame rate is high enough, i.e. >7 FPS per GPU) and video. This is not person ID tracking, it simply looks for hands in positions at which hands were located in previous frames, but it does not guarantee the same person ID among frames (bool)"
+* **hand_alpha_pose**: "Analogous to `alpha_pose` but applied to hand.(double)"
+* **hand_alpha_heatmap**: "Analogous to `alpha_heatmap` but applied to hand.(double)"
+* **hand_render_threshold**: "Analogous to `render_threshold`, but applied to the hand keypoints.(double)"
+* **hand_render**: "Analogous to `render_pose` but applied to the hand. Extra option: -1 to use the same(int)"
