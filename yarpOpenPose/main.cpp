@@ -278,6 +278,15 @@ private:
     double                      alpha_heatmap;
     double                      render_threshold;
     bool                        body_enable;
+    bool                        hand_enable;
+    std::string                 hand_net_resolution;
+    int                         hand_scale_number;
+    double                      hand_scale_range;
+    bool                        hand_tracking;
+    double                      hand_alpha_pose;
+    double                      hand_alpha_heatmap;
+    double                      hand_render_threshold;
+    int                         hand_render;
 
     ImageInput                  *inputClass;
     ImageProcessing             *processingClass;
@@ -317,13 +326,29 @@ public:
         heatmaps_add_PAFs = rf.check("heatmaps_add_PAFs", yarp::os::Value("false"),"Same functionality as `add_heatmaps_parts`, but adding the PAFs.(bool)").asBool();
         heatmaps_scale_mode = rf.check("heatmaps_scale_mode", yarp::os::Value("2"), "Set 0 to scale op::Datum::poseHeatMaps in the range [0,1], 1 for [-1,1]; and 2 for integer rounded [0,255].(int)").asInt();
         //no_render_output = rf.check("no_render_output", yarp::os::Value("false"), "If false, it will fill image with the original image + desired part to be shown. If true, it will leave them empty.(bool)").asBool();
-        render_pose = rf.check("render_pose", yarp::os::Value("2"), "Set to 0 for no rendering, 1 for CPU rendering (slightly faster), and 2 for GPU rendering").asInt();
+        render_pose = rf.check("render_pose", yarp::os::Value("2"), "Set to 0 for no rendering, 1 for CPU rendering (slightly faster), and 2 for GPU rendering(int)").asInt();
         part_to_show = rf.check("part_to_show", yarp::os::Value("0"),"Part to show from the start.(int)").asInt();
         disable_blending = rf.check("disable_blending", yarp::os::Value("false"), "If false, it will blend the results with the original frame. If true, it will only display the results.").asBool();
         alpha_pose = rf.check("alpha_pose", yarp::os::Value("0.6"), "Blending factor (range 0-1) for the body part rendering. 1 will show it completely, 0 will hide it.(double)").asDouble();
         alpha_heatmap = rf.check("alpha_heatmap", yarp::os::Value("0.7"), "Blending factor (range 0-1) between heatmap and original frame. 1 will only show the heatmap, 0 will only show the frame.(double)").asDouble();
         render_threshold = rf.check("render_threshold", yarp::os::Value("0.05"), "Only estimated keypoints whose score confidences are higher than this threshold will be rendered. Generally, a high threshold (> 0.5) will only render very clear body parts.(double)").asDouble();
         body_enable = rf.check("body_enable", yarp::os::Value("true"), "Disable body keypoint detection. Option only possible for faster (but less accurate) face. (bool)").asBool();
+        hand_enable = rf.check("hand_enable", yarp::os::Value("false"), "Enables hand keypoint detection. It will share some parameters from the body pose, e.g."
+                                                                " `model_folder`. Analogously to `--face`, it will also slow down the performance, increase"
+                                                                " the required GPU memory and its speed depends on the number of people.(int)").asBool();
+        hand_net_resolution = rf.check("hand_net_resolution", yarp::os::Value("368x368"), "Multiples of 16 and squared. Analogous to `net_resolution` but applied to the hand keypoint (string)").asString();
+        hand_scale_number = rf.check("hand_scale_number", yarp::os::Value("1"), "Analogous to `scale_number` but applied to the hand keypoint detector.(int)").asInt();
+        hand_scale_range = rf.check("hand_scale_range", yarp::os::Value("0.4"), "Analogous purpose than `scale_gap` but applied to the hand keypoint detector. Total range"
+                                                                " between smallest and biggest scale. The scales will be centered in ratio 1. E.g. if"
+                                                                " scaleRange = 0.4 and scalesNumber = 2, then there will be 2 scales, 0.8 and 1.2.(double)").asDouble();
+        hand_tracking = rf.check("hand_tracking", yarp::os::Value("false"), "Adding hand tracking might improve hand keypoints detection for webcam (if the frame rate"
+                                                                " is high enough, i.e. >7 FPS per GPU) and video. This is not person ID tracking, it"
+                                                                " simply looks for hands in positions at which hands were located in previous frames, but"
+                                                                " it does not guarantee the same person ID among frames (bool)").asBool();
+        hand_alpha_pose = rf.check("hand_alpha_pose", yarp::os::Value("0.6"), "Analogous to `alpha_pose` but applied to hand.(double)").asDouble();
+        hand_alpha_heatmap = rf.check("hand_alpha_heatmap", yarp::os::Value("0.7"), "Analogous to `alpha_heatmap` but applied to hand.(double)").asDouble();
+        hand_render_threshold = rf.check("hand_render_threshold", yarp::os::Value("0.2"), "Analogous to `render_threshold`, but applied to the hand keypoints.(double)").asDouble();
+        hand_render = rf.check("hand_render", yarp::os::Value("-1"), "Analogous to `render_pose` but applied to the hand. Extra option: -1 to use the same(int)").asInt();
 
         setName(moduleName.c_str());
         rpcPort.open(("/"+getName("/rpc")).c_str());
@@ -339,18 +364,25 @@ public:
         op::PoseModel poseModel = gflagToPoseModel(model_name);
         // scaleMode
         op::ScaleMode keypointScale = op::flagsToScaleMode(keypoint_scale);
+        // handNetInputSize
+        auto handNetInputSize = op::flagsToPoint(hand_net_resolution, hand_net_resolution);
 
         // heatmaps to add
         std::vector<op::HeatMapType> heatMapTypes = gflagToHeatMaps(heatmaps_add_parts, heatmaps_add_bkg, heatmaps_add_PAFs);
         op::check(heatmaps_scale_mode >= 0 && heatmaps_scale_mode <= 2, "Non valid `heatmaps_scale_mode`.", __LINE__, __FUNCTION__, __FILE__);
         op::ScaleMode heatMapsScaleMode = (heatmaps_scale_mode == 0 ? op::ScaleMode::PlusMinusOne : (heatmaps_scale_mode == 1 ? op::ScaleMode::ZeroToOne : op::ScaleMode::UnsignedChar ));
 
-
+        // Pose configuration
         const op::WrapperStructPose wrapperStructPose{body_enable, netInputSize, outputSize, keypointScale, num_gpu, num_gpu_start, num_scales, scale_gap,
                                                       op::flagsToRenderMode(render_pose), poseModel, !disable_blending, (float)alpha_pose, (float)alpha_heatmap,
                                                       part_to_show, model_folder, heatMapTypes, heatMapsScaleMode, (float)render_threshold};
 
-        opWrapper.configure(wrapperStructPose, op::WrapperStructInput{}, op::WrapperStructOutput{});
+        // Hand configuration
+        const op::WrapperStructHand wrapperStructHand{hand_enable, handNetInputSize, hand_scale_number, (float)hand_scale_range,
+                                                                                                    hand_tracking, op::flagsToRenderMode(hand_render, render_pose),
+                                                                                                    (float)hand_alpha_pose, (float)hand_alpha_heatmap, (float)hand_render_threshold};
+
+        opWrapper.configure(wrapperStructPose, wrapperStructHand, op::WrapperStructInput{}, op::WrapperStructOutput{});
 
         yDebug() << "Starting thread(s)";
         attach(rpcPort);
@@ -366,6 +398,8 @@ public:
         outputClass->initializationOnThread();
         processingClass->initializationOnThread();
 
+        yarp::os::Network::connect("/icub/camcalib/left/out", "/yarpOpenPose/image:i", "udp");
+        yarp::os::Network::connect("/yarpOpenPose/image:o", "/out", "udp");
         yDebug() << "Running processses";
 
         return true;
