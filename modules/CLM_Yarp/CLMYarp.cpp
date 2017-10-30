@@ -83,7 +83,7 @@ class MyModule:public RFModule
 {
 	
     BufferedPort<ImageOf<PixelRgb> > imageIn;  // make a port for reading images
-    BufferedPort<ImageOf<PixelRgb> > imageOut; // make a port for passing the result to
+    // BufferedPort<ImageOf<PixelRgb> > imageOut; // make a port for passing the result to
     BufferedPort<ImageOf<PixelRgb> > imageSegOut; // make a port for passing the result to
 	
 	IplImage* cvImage;
@@ -125,9 +125,9 @@ public:
     bool configure(yarp::os::ResourceFinder &rf)
     {
         
-        ok2 = imageIn.open("/CLM/image/in");                           // open the ports
-        ok2 = ok2 && imageOut.open("/CLM/image/out");
-        ok2 = ok2 && imageSegOut.open("/CLM/imageSeg/out");                  //
+        ok2 = imageIn.open("/miro/rob01/platform/camr@/clm_in");                          // open the ports
+        // ok2 = ok2 && imageOut.open("/sam/rob01/platform/camr@/clm_in");
+        ok2 = ok2 && imageSegOut.open("/sam/segmentedface@/clm_in");                  //
 		if (!ok2) {
 			fprintf(stderr, "Error. Failed to open image ports. \n");
 			return false;
@@ -184,11 +184,7 @@ public:
 		ImageOf<PixelRgb> *imgTmp = imageIn.read();  				// read an image
 		if (imgTmp != NULL) 
 		{ 
-			IplImage *cvImage = (IplImage*)imgTmp->getIplImage();        
-			ImageOf<PixelRgb> &outImage = imageOut.prepare(); 		//get an output image
-			outImage.resize(imgTmp->width(), imgTmp->height());		
-			outImage = *imgTmp;
-			display = (IplImage*) outImage.getIplImage();
+			display = (IplImage*)imgTmp->getIplImage();
             //Mat captured_image = display;                         // opencv < 3.0
             Mat captured_image = cvarrToMat(display);               // opencv 3.0
 		}
@@ -237,11 +233,11 @@ public:
 		}
 		
 		bool faceAvailableFlag = false;
-		IplImage *cvImage = (IplImage*)imgTmp->getIplImage();        
-		ImageOf<PixelRgb> &outImage = imageOut.prepare(); //get an output image
-		outImage.resize(imgTmp->width(), imgTmp->height());		
-		outImage = *imgTmp;
-		display = (IplImage*) outImage.getIplImage();
+		// IplImage *cvImage = (IplImage*)imgTmp->getIplImage();        
+		// ImageOf<PixelRgb> &outImage = imageOut.prepare(); //get an output image
+		// outImage.resize(imgTmp->width(), imgTmp->height());		
+		// outImage = *imgTmp;
+		display = (IplImage*)imgTmp->getIplImage();  
         //Mat captured_image = display;
         Mat captured_image = cvarrToMat(display);
         Mat segFace;
@@ -536,7 +532,7 @@ public:
 		delete clm_parameters;
 		delete clm_model;
 		imageIn.close();
-		imageOut.close();
+		// imageOut.close();
 		
 		
 		clm_model->Reset();
