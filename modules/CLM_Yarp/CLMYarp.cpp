@@ -83,7 +83,6 @@ class MyModule:public RFModule
 {
 	
     BufferedPort<ImageOf<PixelRgb> > imageIn;  // make a port for reading images
-    // BufferedPort<ImageOf<PixelRgb> > imageOut; // make a port for passing the result to
     BufferedPort<ImageOf<PixelRgb> > imageSegOut; // make a port for passing the result to
 	
 	IplImage* cvImage;
@@ -124,16 +123,6 @@ public:
 
     bool configure(yarp::os::ResourceFinder &rf)
     {
-        
-        ok2 = imageIn.open("/miro/rob01/platform/camr@/clm_in");                          // open the ports
-        // ok2 = ok2 && imageOut.open("/sam/rob01/platform/camr@/clm_in");
-        ok2 = ok2 && imageSegOut.open("/sam/segmentedface@/clm_in");                  //
-		if (!ok2) {
-			fprintf(stderr, "Error. Failed to open image ports. \n");
-			return false;
-		}	
-
-
 		arguments.push_back("-f");							// provide two default arguments in case we want to use no real camera
 		arguments.push_back("../../videos/default.wmv"); 	// the video file 
 		device = 0;   										// camera
@@ -158,6 +147,13 @@ public:
             std::cout << "fromFile" << modelPath << std::endl;
             
             clm_parameters->model_location = modelPath;
+
+            ok2 = imageIn.open(fileLoc.find("inputPort").asString().c_str());
+	        ok2 = ok2 && imageSegOut.open(fileLoc.find("outputPort").asString().c_str());                  //
+			if (!ok2) {
+				fprintf(stderr, "Error. Failed to open image ports. \n");
+				return false;
+			}	
         //}
         std::cout << "default" << clm_parameters->model_location << std::endl;
 		clm_model = new CLMTracker::CLM(clm_parameters->model_location);	
@@ -233,12 +229,7 @@ public:
 		}
 		
 		bool faceAvailableFlag = false;
-		// IplImage *cvImage = (IplImage*)imgTmp->getIplImage();        
-		// ImageOf<PixelRgb> &outImage = imageOut.prepare(); //get an output image
-		// outImage.resize(imgTmp->width(), imgTmp->height());		
-		// outImage = *imgTmp;
-		display = (IplImage*)imgTmp->getIplImage();  
-        //Mat captured_image = display;
+		display = (IplImage*)imgTmp->getIplImage();
         Mat captured_image = cvarrToMat(display);
         Mat segFace;
 
@@ -513,8 +504,6 @@ public:
 		}
 		// Update the frame count
 		frame_count++;
-
-		//imageOut.write();
 		
 		return true;
 	}
@@ -532,7 +521,6 @@ public:
 		delete clm_parameters;
 		delete clm_model;
 		imageIn.close();
-		// imageOut.close();
 		
 		
 		clm_model->Reset();
