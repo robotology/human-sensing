@@ -91,7 +91,7 @@ class MyModule:public RFModule
 	
 	vector<string> arguments;					// The arguments from the input 
 	vector<string> files, depth_directories, pose_output_files, tracked_videos_output, landmark_output_files, landmark_3D_output_files;
-	bool use_camera_plane_pose, done, cx_undefined, use_depth, write_settings, ok2;
+	bool use_camera_plane_pose, done, cx_undefined, use_depth, write_settings, ok2, visualise;
 	int device, f_n, frame_count;
 	float fx,fy,cx,cy; 							// parameters of the camera
 	string current_file;
@@ -154,6 +154,17 @@ public:
 				fprintf(stderr, "Error. Failed to open image ports. \n");
 				return false;
 			}	
+
+			string vis = fileLoc.find("visualise").asString().c_str();
+			std::transform(vis.begin(), vis.end(), vis.begin(), ::tolower);
+			if (vis == "true")
+			{
+				visualise = true;
+			}
+			else
+			{
+				visualise = false;
+			}
         //}
         std::cout << "default" << clm_parameters->model_location << std::endl;
 		clm_model = new CLMTracker::CLM(clm_parameters->model_location);	
@@ -399,8 +410,12 @@ public:
 	        }
 	        rectangle(segFace, Rect((center-Point2f(minRectSize.width/2,minRectSize.height/2)), minRectSize), Scalar(0,255,0));
 
-			imshow("facePoints", segFace);
-			waitKey(1);
+	        if (visualise)
+	        {
+	        	imshow("facePoints", segFace);
+				waitKey(1);
+	        }
+			
 			
 			resize(croppedFace,segFace,Size(400,400));
 			GaussianBlur(segFace, segFace, Size(7,7), 1, 1);
@@ -432,22 +447,32 @@ public:
 		}
 		
 		// Write out the framerate on the image before displaying it
-		char fpsC[255];
-		sprintf(fpsC, "%d", (int)fps);
-		string fpsSt("FPS:");
-		fpsSt += fpsC;
-		cv::putText(captured_image, fpsSt, cv::Point(10,20), CV_FONT_HERSHEY_SIMPLEX, 0.5, CV_RGB(255,0,0));		
+		if (visualise)
+	    {
+			char fpsC[255];
+			sprintf(fpsC, "%d", (int)fps);
+			string fpsSt("FPS:");
+			fpsSt += fpsC;
+			cv::putText(captured_image, fpsSt, cv::Point(10,20), CV_FONT_HERSHEY_SIMPLEX, 0.5, CV_RGB(255,0,0));	
+		}	
 		
 		
 		if(!clm_parameters->quiet_mode)
 		{
-			namedWindow("tracking_result",1);		
-			imshow("tracking_result", captured_image);
+			if (visualise)
+	        {
+	        	namedWindow("tracking_result",1);		
+				imshow("tracking_result", captured_image);
+	        }
+			
 
 			if(!depth_image.empty())
 			{
 				// Division needed for visualisation purposes
-				imshow("depth", depth_image/2000.0);
+				if (visualise)
+	        	{
+					imshow("depth", depth_image/2000.0);
+				}
 			}
 		}
 
