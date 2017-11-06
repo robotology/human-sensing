@@ -200,26 +200,30 @@ void FACEManager::onRead(yarp::sig::ImageOf<yarp::sig::PixelRgb> &img)
     // Get the image from the yarp port
     imgMat = cv::cvarrToMat((IplImage*)img.getIplImage());
 
+
+    // Change to dlib's image format. No memory is copied.
+    //dlib::cv_image<dlib::bgr_pixel> dlibimg(imgMat);
+
     // Convert the opencv image to dlib format
-    dlib::array2d<dlib::rgb_pixel> imgDlib;
-    assign_image(imgDlib, dlib::cv_image<dlib::bgr_pixel>(imgMat));
+    dlib::array2d<dlib::rgb_pixel> dlibimg;
+    assign_image(dlibimg, dlib::cv_image<dlib::bgr_pixel>(imgMat));
+    //dlib::cv_image<dlib::bgr_pixel> dlibimg(imgMat);
 
     // Make the image larger so we can detect small faces. 2x
-    pyramid_up(imgDlib);
+    pyramid_up(dlibimg);
 
     // Now tell the face detector to give us a list of bounding boxes
     // around all the faces in the image.
-    std::vector<dlib::rectangle> dets = faceDetector(imgDlib);
+    int count = 0;
+    std::vector<dlib::rectangle> dets = faceDetector(dlibimg);
 
     std::vector<dlib::full_object_detection> shapes;
+
     for (unsigned long j = 0; j < dets.size(); ++j)
     {
-        dlib::full_object_detection shape = sp(imgDlib, dets[j]);
+        dlib::full_object_detection shape = sp(dlibimg, dets[j]);
         shapes.push_back(shape);
     }
-
-    cv::Mat gray = imgMat;
-    cv::cvtColor(gray, gray, CV_BGR2GRAY);
 
     std::vector<std::pair<int, double >> idTargets;
 

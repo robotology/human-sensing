@@ -77,15 +77,15 @@ private:
     yarp::os::BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelRgb> >    imageOutPort;           //output port Image
     yarp::os::BufferedPort<yarp::os::Bottle>                            targetOutPort;          //target port
     yarp::os::BufferedPort<yarp::os::Bottle>                            landmarksOutPort;
-    
+
     cv::Mat                             imgMat;
-    
+
     dlib::frontal_face_detector         faceDetector;
     dlib::shape_predictor               sp;
     cv::Scalar                          color;
-    
+
     cv::Point                           leftEye, rightEye;
-    
+
     void    drawLandmarks(cv::Mat &mat, const dlib::full_object_detection &d);
     
 public:
@@ -114,21 +114,21 @@ class FACEModule:public yarp::os::RFModule, public faceLandmarks_IDLServer
     std::string             predictorFile;
     std::string             handlerPortName;
     yarp::os::RpcServer     rpcPort;                //rpc port
-    
+
     /* pointer to a new thread */
     FACEManager            *faceManager;
     bool                    closing;
     std::string             cntxHomePath;
 
 public:
-    
+
     bool configure(yarp::os::ResourceFinder &rf); // configure all the module parameters and return true if successful
     bool interruptModule();                       // interrupt, e.g., the ports
     bool close();                                 // close and shut down the module
 
     double getPeriod();
     bool updateModule();
-    
+
     //IDL interfaces
     /**
      * function that attaches the rpcServer port for IDL
