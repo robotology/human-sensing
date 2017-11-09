@@ -155,10 +155,7 @@ bool FACEManager::open()
     dlib::deserialize(predictorFile.c_str()) >> sp;
 
     color = cv::Scalar( 0, 255, 0 );
-
-    yarp::os::Network::connect("/icub/camcalib/left/out", "/faceLandmarks/image:i");
-    yarp::os::Network::connect("/faceLandmarks/image:o", "/view/faces");
-
+    
     displayLandmarks = true;
 
     return true;
