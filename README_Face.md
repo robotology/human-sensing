@@ -20,7 +20,7 @@ Table of Contents
 On macOS:
 
     brew install homebrew/science/dlib (this installs version 19.2)
-    brew install homebrew/dupes/bzip2
+    brew install bzip2
 
 On Linux (Xenial 16.04):
 
