@@ -87,7 +87,7 @@ private:
     cv::Point                           leftEye, rightEye;
 
     void    drawLandmarks(cv::Mat &mat, const dlib::full_object_detection &d);
-    
+
 public:
     /**
      * constructor
@@ -99,6 +99,9 @@ public:
 
     yarp::os::Semaphore         mutex;
     bool                        displayLandmarks;
+    bool                        displayPoints;
+    bool                        displayLabels;
+    bool                        displayDarkMode;
 
     bool    open();
     void    close();
@@ -137,7 +140,7 @@ public:
     /**
      * function that handles an IDL message - display on/off
      */
-    bool display(const std::string& value);
+    bool display(const std::string& element, const std::string& value);
     /**
      * function that handles an IDL message - quit
      */

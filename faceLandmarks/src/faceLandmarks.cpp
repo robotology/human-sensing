@@ -93,20 +93,80 @@ bool FACEModule::attach(yarp::os::RpcServer &source)
 }
 
 /**********************************************************/
-bool FACEModule::display(const std::string& value)
+bool FACEModule::display(const std::string& element, const std::string& value)
 {
-    if (value=="on")
+    bool returnVal = false;
+
+    if (element == "landmarks" || element == "points" || element == "labels" || element == "dark-mode")
     {
-        faceManager->displayLandmarks=true;
-        return true;
-    }
-    else if (value=="off")
-    {
-        faceManager->displayLandmarks = false;
-        return true;
+        if (element == "landmarks")
+        {
+            if (value=="on")
+            {
+                faceManager->displayLandmarks=true;
+                returnVal = true;
+            }
+            else if (value=="off")
+            {
+                faceManager->displayLandmarks = false;
+                returnVal = true;
+            }
+            else
+                yInfo() << "error setting value for landmarks";
+        }
+        if (element == "points")
+        {
+            if (value=="on")
+            {
+                faceManager->displayPoints=true;
+                returnVal = true;
+            }
+            else if (value=="off")
+            {
+                faceManager->displayPoints = false;
+                returnVal = true;
+            }
+            else
+                yInfo() << "error setting value for points";
+        }
+        if (element == "labels")
+        {
+            if (value=="on")
+            {
+                faceManager->displayLabels=true;
+                returnVal = true;
+            }
+            else if (value=="off")
+            {
+                faceManager->displayLabels = false;
+                returnVal = true;
+            }
+            else
+                yInfo() << "error setting value for labels";
+        }
+        if (element == "dark-mode")
+        {
+            if (value=="on")
+            {
+                faceManager->displayDarkMode=true;
+                returnVal = true;
+            }
+            else if (value=="off")
+            {
+                faceManager->displayDarkMode = false;
+                returnVal = true;
+            }
+            else
+                yInfo() << "error setting value for darkMode";
+        }
+        //yInfo() << "should now display \"landmarks\" " << faceManager->displayLandmarks << "\"points\"" << faceManager->displayPoints << "\"labels\"" << faceManager->displayLabels  << "\"dark-mode\"" << faceManager->displayDarkMode;
     }
     else
-        return false;
+    {
+        returnVal = false;
+        yInfo() << "Error in display request";
+    }
+    return returnVal;
 }
 
 /**********************************************************/
@@ -157,6 +217,9 @@ bool FACEManager::open()
     color = cv::Scalar( 0, 255, 0 );
 
     displayLandmarks = true;
+    displayPoints = false;
+    displayLabels = false;
+    displayDarkMode = false;
 
     return true;
 }
@@ -197,7 +260,6 @@ void FACEManager::onRead(yarp::sig::ImageOf<yarp::sig::PixelRgb> &img)
     // Get the image from the yarp port
     imgMat = cv::cvarrToMat((IplImage*)img.getIplImage());
 
-
     // Change to dlib's image format. No memory is copied.
     //dlib::cv_image<dlib::bgr_pixel> dlibimg(imgMat);
 
@@ -234,21 +296,51 @@ void FACEManager::onRead(yarp::sig::ImageOf<yarp::sig::PixelRgb> &img)
 
         const dlib::full_object_detection& d = shapes[i];
 
+        if (displayDarkMode)
+            imgMat.setTo(cv::Scalar(0, 0, 0));
+
         if (displayLandmarks)
             drawLandmarks(imgMat, d);
 
-        if (landmarksOutPort.getOutputCount()>0)
+        //if (landmarksOutPort.getOutputCount()>0)
+        //{
+        landmarks.clear();
+        yarp::os::Bottle &landM = landmarks.addList();
+        for (int f=1; f<shapes[i].num_parts(); f++)
         {
-            landmarks.clear();
-            yarp::os::Bottle &landM = landmarks.addList();
-            for (int f=1; f<shapes[i].num_parts(); f++)
-            {
 
-                if (f != 17 || f != 22 || f != 27 || f != 42 || f != 48)
+            if (f != 17 || f != 22 || f != 27 || f != 42 || f != 48)
+            {
+                yarp::os::Bottle &temp = landM.addList();
+                temp.addInt(d.part(f).x()/2);
+                temp.addInt(d.part(f).y()/2);
+            }
+        }
+    //}
+
+        if (displayPoints || displayLabels)
+        {
+            int pointSize = landmarks.get(0).asList()->size();
+
+            if (displayPoints)
+            {
+                for (size_t i = 0; i < pointSize; i++)
                 {
-                    yarp::os::Bottle &temp = landM.addList();
-                    temp.addInt(d.part(f).x()/2);
-                    temp.addInt(d.part(f).y()/2);
+                    int pointx = landmarks.get(0).asList()->get(i).asList()->get(0).asInt();
+                    int pointy = landmarks.get(0).asList()->get(i).asList()->get(1).asInt();
+                    cv::Point center(pointx, pointy);
+                    circle(imgMat, center, 3, cv::Scalar(255, 0 , 0), -1, 8);
+                }
+            }
+            if (displayLabels)
+            {
+                for (size_t i = 0; i < pointSize; i++)
+                {
+                    int pointx = landmarks.get(0).asList()->get(i).asList()->get(0).asInt();
+                    int pointy = landmarks.get(0).asList()->get(i).asList()->get(1).asInt();
+                    cv::Point center(pointx, pointy);
+                    std::string s = std::to_string(i);
+                    putText(imgMat, s, cvPoint(pointx, pointy), cv::FONT_HERSHEY_COMPLEX_SMALL, 0.6, cvScalar(200,200,250), 1, CV_AA);
                 }
             }
         }

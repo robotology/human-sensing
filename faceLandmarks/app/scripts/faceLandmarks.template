@@ -14,13 +14,13 @@
     <connection>
         <from>/icub/camcalib/left/out</from>
         <to>/faceLandmarks/image:i</to>
-        <protocol>udp</protocol>
+        <protocol>fast_tcp</protocol>
     </connection>
 
     <connection>
     <from>/faceLandmarks/image:o</from>
     <to>/faces</to>
-    <protocol>udp</protocol>
+    <protocol>fast_tcp</protocol>
     </connection>
-    
+
 </application>

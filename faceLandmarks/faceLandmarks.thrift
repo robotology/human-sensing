@@ -7,21 +7,22 @@
 /**
 * faceLandmarks_IDLServer
 *
-* Interface. 
+* Interface.
 */
 
 service faceLandmarks_IDLServer
 {
   /**
   * Turns on or off the display of the landmarks
-  * @param value (on/off) specifies if diplay is on or off
+  * @param element specifies which element is requested (landmarks | points | labels | dark-mode)
+  @param value specifies its value (on | off)
   * @return true/false on success/failure
   */
-  bool display(1:string value);
+  bool display(1:string element, 2:string value);
 
   /**
   * Quit the module.
   * @return true/false on success/failure
   */
-  bool quit();  
+  bool quit();
 }
