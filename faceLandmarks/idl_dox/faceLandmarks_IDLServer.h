@@ -18,17 +18,18 @@ class faceLandmarks_IDLServer : public yarp::os::Wire {
 public:
   faceLandmarks_IDLServer();
   /**
-   * Turns on or off the display of the landmarks
-   * @param value (on/off) specifies if diplay is on or off
-   * @return true/false on success/failure
+   * * Selects what to draw (defaults landmarks on)
+   * * @param element specifies which element is requested (landmarks | points | labels | dark-mode)
+   * @param value specifies its value (on | off)
+   * * @return true/false on success/failure
    */
-  virtual bool display(const std::string& value);
+  virtual bool display(const std::string& element, const std::string& value);
   /**
    * Quit the module.
    * @return true/false on success/failure
    */
   virtual bool quit();
-  virtual bool read(yarp::os::ConnectionReader& connection);
+  virtual bool read(yarp::os::ConnectionReader& connection) YARP_OVERRIDE;
   virtual std::vector<std::string> help(const std::string& functionName="--all");
 };
 
