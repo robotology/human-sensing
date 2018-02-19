@@ -13,7 +13,7 @@
 service faceLandmarks_IDLServer
 {
   /**
-  * Turns on or off the display of the landmarks
+  * Selects what to draw (defaults landmarks on)
   * @param element specifies which element is requested (landmarks | points | labels | dark-mode)
   @param value specifies its value (on | off)
   * @return true/false on success/failure
