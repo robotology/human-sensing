@@ -155,7 +155,7 @@ bool FACEManager::open()
     dlib::deserialize(predictorFile.c_str()) >> sp;
 
     color = cv::Scalar( 0, 255, 0 );
-    
+
     displayLandmarks = true;
 
     return true;
@@ -243,10 +243,12 @@ void FACEManager::onRead(yarp::sig::ImageOf<yarp::sig::PixelRgb> &img)
             yarp::os::Bottle &landM = landmarks.addList();
             for (int f=1; f<shapes[i].num_parts(); f++)
             {
+
                 if (f != 17 || f != 22 || f != 27 || f != 42 || f != 48)
                 {
-                    landM.addInt(d.part(f).x()/2);
-                    landM.addInt(d.part(f).y()/2);
+                    yarp::os::Bottle &temp = landM.addList();
+                    temp.addInt(d.part(f).x()/2);
+                    temp.addInt(d.part(f).y()/2);
                 }
             }
         }
