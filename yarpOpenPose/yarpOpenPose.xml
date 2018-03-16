@@ -30,21 +30,21 @@
            <required>no</required>
            <priority>no</priority>
            <description>
-            Receives stream of camera images.
+               Receives stream of camera images.
            </description>
        </input>
        <output>
            <type>Image</type>
            <port>/yarpOpenPose/image:o</port>
            <description>
-            Stream out an image with the result of the pose estimation.
+               Stream out an image with the result of the pose estimation.
            </description>
        </output>
        <output>
            <type>yarp::os::Bottle</type>
            <port>/yarpOpenPose/target:o</port>
            <description>
-            Stream out a yarp list containing the poses of each bodypart (string Xpos Ypos Confidence).
+               Stream out a yarp list containing the poses of each bodypart (string Xpos Ypos Confidence).
            </description>
        </output>
    </data>
