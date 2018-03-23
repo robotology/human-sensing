@@ -172,7 +172,7 @@ public:
             peopleBottle.clear();
             yarp::os::Bottle &mainList = peopleBottle.addList();
             auto& tDatumsNoPtr = *datumsPtr;
-            // Record people pose data
+            //Record people pose data
             //std::vector<op::Array<float>> pose(tDatumsNoPtr.size());
             op::Array<float> pose(tDatumsNoPtr.size());
             for (auto i = 0; i < tDatumsNoPtr.size(); i++)
@@ -398,8 +398,6 @@ public:
         outputClass->initializationOnThread();
         processingClass->initializationOnThread();
 
-        yarp::os::Network::connect("/icub/camcalib/left/out", "/yarpOpenPose/image:i", "udp");
-        yarp::os::Network::connect("/yarpOpenPose/image:o", "/out", "udp");
         yDebug() << "Running processses";
 
         return true;
