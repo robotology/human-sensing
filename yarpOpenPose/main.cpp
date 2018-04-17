@@ -173,7 +173,6 @@ public:
             yarp::os::Bottle &mainList = peopleBottle.addList();
             auto& tDatumsNoPtr = *datumsPtr;
             //Record people pose data
-            //std::vector<op::Array<float>> pose(tDatumsNoPtr.size());
             op::Array<float> pose(tDatumsNoPtr.size());
             for (auto i = 0; i < tDatumsNoPtr.size(); i++)
             {
@@ -213,6 +212,7 @@ class ImageOutput : public op::WorkerConsumer<std::shared_ptr<std::vector<op::Da
 private:
     std::string moduleName;
     yarp::os::BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelRgb> > outPort;
+    yarp::os::BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelRgb> > outPortPropag;
 public:
 
     /********************************************************/
@@ -225,12 +225,14 @@ public:
     void initializationOnThread()
     {
         outPort.open("/" + moduleName + "/image:o");
+        outPortPropag.open("/" + moduleName + "/propag:o");
     }
 
     /********************************************************/
     ~ImageOutput()
     {
         outPort.close();
+        outPortPropag.close();
     }
 
     /********************************************************/
@@ -239,12 +241,18 @@ public:
         if (datumsPtr != nullptr && !datumsPtr->empty())
         {
             yarp::sig::ImageOf<yarp::sig::PixelRgb> &outImage  = outPort.prepare();
+            yarp::sig::ImageOf<yarp::sig::PixelRgb> &outImagePropag  = outPortPropag.prepare();
+
             outImage.resize(datumsPtr->at(0).cvOutputData.cols, datumsPtr->at(0).cvOutputData.rows);
+            outImagePropag.resize(datumsPtr->at(0).cvOutputData.cols, datumsPtr->at(0).cvOutputData.rows);
 
             IplImage colour = datumsPtr->at(0).cvOutputData;
-            outImage.resize(colour.width, colour.height);
             cvCopy( &colour, (IplImage *) outImage.getIplImage());
             outPort.write();
+
+            IplImage colourOrig = datumsPtr->at(0).cvInputData;
+            cvCopy( &colourOrig, (IplImage *) outImagePropag.getIplImage());
+            outPortPropag.write();
         }
         else
             op::log("Nullptr or empty datumsPtr found.", op::Priority::Max, __LINE__, __FUNCTION__, __FILE__);
