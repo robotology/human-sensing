@@ -244,7 +244,7 @@ public:
             yarp::sig::ImageOf<yarp::sig::PixelRgb> &outImagePropag  = outPortPropag.prepare();
 
             outImage.resize(datumsPtr->at(0).cvOutputData.cols, datumsPtr->at(0).cvOutputData.rows);
-            outImagePropag.resize(datumsPtr->at(0).cvOutputData.cols, datumsPtr->at(0).cvOutputData.rows);
+            outImagePropag.resize(datumsPtr->at(0).cvInputData.cols, datumsPtr->at(0).cvInputData.rows);
 
             IplImage colour = datumsPtr->at(0).cvOutputData;
             cvCopy( &colour, (IplImage *) outImage.getIplImage());

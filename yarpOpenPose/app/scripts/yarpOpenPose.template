@@ -9,7 +9,7 @@
     <module>
         <name>yarpview</name>
         <node>icub-cuda</node>
-        <parameters>--name /out --x 0 --y 0 --p 33 </parameters>
+        <parameters>--name /out --x 300 --y 0 --p 33 </parameters>
     </module>
 	<module>
         <name>yarpview</name>
