@@ -526,7 +526,7 @@ int main(int argc, char *argv[])
 {
     yarp::os::Network::init();
     // Initializing google logging (Caffe uses it for logging)
-    google::InitGoogleLogging("yarpOpenPose");
+    //google::InitGoogleLogging("yarpOpenPose");
     // Parsing command line flags
     gflags::ParseCommandLineFlags(&argc, &argv, true);
 

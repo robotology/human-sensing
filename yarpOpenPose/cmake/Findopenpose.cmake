@@ -13,99 +13,14 @@
 # (To distribute this file outside of YCM, substitute the full
 #  License text for the above reference.)
 
-find_library(openpose_core_LIBRARY
-             NAMES core
+find_library(openpose_LIBRARY
+             NAMES openpose	
              PATH_SUFFIXES lib
                            build/lib
-						   build/src/openpose/core
              PATHS /usr/
                    /usr/local/
                    ${openpose_ROOT_DIR}
                    ENV openpose_ROOT)
-
-
-find_library(openpose_pose_LIBRARY
-             NAMES pose
-             PATH_SUFFIXES lib
-                           build/lib
-						   build/src/openpose/pose
-             PATHS /usr/
-                   /usr/local/
-                   ${openpose_ROOT_DIR}
-                   ENV openpose_ROOT)
-
-find_library(openpose_face_LIBRARY
-             NAMES face
-             PATH_SUFFIXES lib
-                           build/lib
-						   build/src/openpose/face
-             PATHS /usr/
-                   /usr/local/
-                   ${openpose_ROOT_DIR}
-                   ENV openpose_ROOT)
-
-find_library(openpose_hand_LIBRARY
-             NAMES hand
-             PATH_SUFFIXES lib
-                           build/lib
-						   build/src/openpose/hand
-             PATHS /usr/
-                   /usr/local/
-                   ${openpose_ROOT_DIR}
-                   ENV openpose_ROOT)
-
-find_library(openpose_hand_LIBRARY
-             NAMES hand
-             PATH_SUFFIXES lib
-                           build/lib
-						   build/src/openpose/hand
-             PATHS /usr/
-                   /usr/local/
-                   ${openpose_ROOT_DIR}
-                   ENV openpose_ROOT)
-
-find_library(openpose_producer_LIBRARY
-             NAMES producer
-             PATH_SUFFIXES lib
-                           build/lib
-						   build/src/openpose/producer
-             PATHS /usr/
-                   /usr/local/
-                   ${openpose_ROOT_DIR}
-                   ENV openpose_ROOT)
-
-find_library(openpose_thread_LIBRARY
-             NAMES thread
-             PATH_SUFFIXES lib
-                           build/lib
-						   build/src/openpose/thread
-             PATHS /usr/
-                   /usr/local/
-                   ${openpose_ROOT_DIR}
-                   ENV openpose_ROOT)
-
-find_library(openpose_utilities_LIBRARY
-             NAMES utilities
-             PATH_SUFFIXES lib
-                           build/lib
-						   build/src/openpose/utilities
-             PATHS /usr/
-                   /usr/local/
-                   ${openpose_ROOT_DIR}
-                   ENV openpose_ROOT)
-
-find_library(openpose_wrapper_LIBRARY
-             NAMES wrapper
-             PATH_SUFFIXES lib
-                           build/lib
-						   build/src/openpose/wrapper
-             PATHS /usr/
-                   /usr/local/
-                   ${openpose_ROOT_DIR}
-                   ENV openpose_ROOT)
-
-
-
 
 find_path(openpose_INCLUDE_DIR
           NAMES openpose/headers.hpp
@@ -115,14 +30,7 @@ find_path(openpose_INCLUDE_DIR
                 ${openpose_ROOT_DIR}
                 ENV openpose_ROOT)
 
-set(openpose_LIBRARIES ${openpose_core_LIBRARY} 
-					   ${openpose_pose_LIBRARY}
-					   ${openpose_face_LIBRARY}
-					   ${openpose_hand_LIBRARY}
-					   ${openpose_producer_LIBRARY}
-					   ${openpose_thread_LIBRARY}
-					   ${openpose_utilities_LIBRARY}
-					   ${openpose_wrapper_LIBRARY})
+set(openpose_LIBRARIES ${openpose_LIBRARY})
 
 set(openpose_INCLUDE_DIRS ${openpose_INCLUDE_DIR})
 
