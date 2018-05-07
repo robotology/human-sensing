@@ -84,6 +84,12 @@ public:
     }
 
     /********************************************************/
+    void interrupt()
+    {
+        inPort.interrupt();
+    }
+
+    /********************************************************/
     std::shared_ptr<std::vector<op::Datum>> workProducer()
     {
         if (mClosed)
@@ -97,15 +103,21 @@ public:
             auto datumsPtr = std::make_shared<std::vector<op::Datum>>();
             datumsPtr->emplace_back();
             auto& datum = datumsPtr->at(0);
-            yarp::sig::ImageOf<yarp::sig::PixelRgb> *inImage = inPort.read();
-            cv::Mat in_cv = cv::cvarrToMat((IplImage *)inImage->getIplImage());
-            // Fill datum
-            datum.cvInputData = in_cv;
-            // If empty frame -> return nullptr
-            if (datum.cvInputData.empty())
+            if (yarp::sig::ImageOf<yarp::sig::PixelRgb> *inImage = inPort.read())
             {
-                mClosed = true;
-                op::log("Empty frame detected. Closing program.", op::Priority::Max);
+                cv::Mat in_cv = cv::cvarrToMat((IplImage *)inImage->getIplImage());
+                // Fill datum
+                datum.cvInputData = in_cv;
+                // If empty frame -> return nullptr
+                if (datum.cvInputData.empty())
+                {
+                    mClosed = true;
+                    op::log("Empty frame detected. Closing program.", op::Priority::Max);
+                    datumsPtr = nullptr;
+                }
+            }
+            else
+            {
                 datumsPtr = nullptr;
             }
             return datumsPtr;
@@ -461,6 +473,13 @@ public:
         if (heatmaps_add_PAFs)
             heatMapTypes.emplace_back(op::HeatMapType::PAFs);
         return heatMapTypes;
+    }
+
+    /**********************************************************/
+    bool interruptModule()
+    {
+        inputClass->interrupt();
+        return true;
     }
 
     /**********************************************************/
