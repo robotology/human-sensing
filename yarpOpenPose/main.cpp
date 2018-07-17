@@ -225,6 +225,8 @@ private:
     std::string moduleName;
     yarp::os::BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelRgb> > outPort;
     yarp::os::BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelRgb> > outPortPropag;
+    yarp::os::BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelFloat> > inFloatPort;
+    yarp::os::BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelFloat> > outFloatPort;
 public:
 
     /********************************************************/
@@ -237,6 +239,8 @@ public:
     void initializationOnThread()
     {
         outPort.open("/" + moduleName + "/image:o");
+        inFloatPort.open("/" + moduleName + "/float:i");
+        outFloatPort.open("/" + moduleName + "/float:o");
         outPortPropag.open("/" + moduleName + "/propag:o");
     }
 
@@ -245,6 +249,8 @@ public:
     {
         outPort.close();
         outPortPropag.close();
+	inFloatPort.close();
+	outFloatPort.close();
     }
 
     /********************************************************/
@@ -252,9 +258,20 @@ public:
     {
         if (datumsPtr != nullptr && !datumsPtr->empty())
         {
+            bool sendFLoat = false;
+            if (inFloatPort.getInputCount() > 0)
+                sendFLoat = true;
+            
             yarp::sig::ImageOf<yarp::sig::PixelRgb> &outImage  = outPort.prepare();
             yarp::sig::ImageOf<yarp::sig::PixelRgb> &outImagePropag  = outPortPropag.prepare();
-
+            
+            if (sendFLoat)
+            {
+                    yarp::sig::ImageOf<yarp::sig::PixelFloat> &outImageFloat  = outFloatPort.prepare();
+                    yarp::sig::ImageOf<yarp::sig::PixelFloat> *inFloat = inFloatPort.read();
+                    outImageFloat = *inFloat;
+            }
+        
             outImage.resize(datumsPtr->at(0).cvOutputData.cols, datumsPtr->at(0).cvOutputData.rows);
             outImagePropag.resize(datumsPtr->at(0).cvInputData.cols, datumsPtr->at(0).cvInputData.rows);
 
@@ -265,6 +282,9 @@ public:
             IplImage colourOrig = datumsPtr->at(0).cvInputData;
             cvCopy( &colourOrig, (IplImage *) outImagePropag.getIplImage());
             outPortPropag.write();
+            
+            if (sendFLoat)
+                outFloatPort.write();
         }
         else
             op::log("Nullptr or empty datumsPtr found.", op::Priority::Max, __LINE__, __FUNCTION__, __FILE__);
@@ -526,7 +546,7 @@ int main(int argc, char *argv[])
 {
     yarp::os::Network::init();
     // Initializing google logging (Caffe uses it for logging)
-    google::InitGoogleLogging("yarpOpenPose");
+    //google::InitGoogleLogging("yarpOpenPose");
     // Parsing command line flags
     gflags::ParseCommandLineFlags(&argc, &argv, true);
 
