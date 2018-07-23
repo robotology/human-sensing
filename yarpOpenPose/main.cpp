@@ -53,6 +53,7 @@
 #include <yarp/os/Semaphore.h>
 #include <yarp/sig/Image.h>
 #include <yarp/os/RpcClient.h>
+#include <yarp/os/LockGuard.h>
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/opencv.hpp>
@@ -61,32 +62,28 @@
 class ImageInput : public op::WorkerProducer<std::shared_ptr<std::vector<op::Datum>>>
 {
 private:
-    std::string moduleName;
-    yarp::os::RpcServer handlerPort;
-    yarp::os::BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelRgb> > inPort;
+
+    yarp::sig::ImageOf<yarp::sig::PixelRgb> *inImage;
     bool mClosed;
 public:
     /********************************************************/
-    ImageInput(const std::string& moduleName) : mClosed{false}
+    ImageInput() : mClosed{false}
     {
-        this->moduleName = moduleName;
     }
 
     /********************************************************/
     ~ImageInput()
     {
-        inPort.close();
     }
 
     /********************************************************/
     void initializationOnThread() {
-        inPort.open("/" + moduleName + "/image:i");
+        
     }
 
     /********************************************************/
-    void interrupt()
-    {
-        inPort.interrupt();
+    void setImage(yarp::sig::ImageOf<yarp::sig::PixelRgb> &inImage) {
+        this->inImage = &inImage;
     }
 
     /********************************************************/
@@ -103,7 +100,8 @@ public:
             auto datumsPtr = std::make_shared<std::vector<op::Datum>>();
             datumsPtr->emplace_back();
             auto& datum = datumsPtr->at(0);
-            if (yarp::sig::ImageOf<yarp::sig::PixelRgb> *inImage = inPort.read())
+
+            if (inImage->width() * inImage->height() > 0)
             {
                 cv::Mat in_cv = cv::cvarrToMat((IplImage *)inImage->getIplImage());
                 // Fill datum
@@ -225,32 +223,48 @@ private:
     std::string moduleName;
     yarp::os::BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelRgb> > outPort;
     yarp::os::BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelRgb> > outPortPropag;
-    yarp::os::BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelFloat> > inFloatPort;
     yarp::os::BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelFloat> > outFloatPort;
+    yarp::sig::ImageOf<yarp::sig::PixelFloat> *inFloat;
+
+    yarp::os::Mutex             mutex;
+
+    bool sendFloat;
+
 public:
 
     /********************************************************/
     ImageOutput(const std::string& moduleName)
     {
         this->moduleName = moduleName;
+       
     }
 
     /********************************************************/
     void initializationOnThread()
     {
         outPort.open("/" + moduleName + "/image:o");
-        inFloatPort.open("/" + moduleName + "/float:i");
         outFloatPort.open("/" + moduleName + "/float:o");
         outPortPropag.open("/" + moduleName + "/propag:o");
+        sendFloat = false;
     }
+
+    void setFlag(const bool flag) {
+        sendFloat = flag;
+        
+    }
+    /********************************************************/
+    void setImage(yarp::sig::ImageOf<yarp::sig::PixelFloat> &inFloat) {
+        yarp::os::LockGuard lg(mutex);
+        this->inFloat = &inFloat;
+    }
+    
 
     /********************************************************/
     ~ImageOutput()
     {
         outPort.close();
         outPortPropag.close();
-	inFloatPort.close();
-	outFloatPort.close();
+	    outFloatPort.close();
     }
 
     /********************************************************/
@@ -258,18 +272,15 @@ public:
     {
         if (datumsPtr != nullptr && !datumsPtr->empty())
         {
-            bool sendFLoat = false;
-            if (inFloatPort.getInputCount() > 0)
-                sendFLoat = true;
-            
             yarp::sig::ImageOf<yarp::sig::PixelRgb> &outImage  = outPort.prepare();
             yarp::sig::ImageOf<yarp::sig::PixelRgb> &outImagePropag  = outPortPropag.prepare();
+
+            yarp::os::LockGuard lg(mutex);
             
-            if (sendFLoat)
+            if (sendFloat)
             {
-                    yarp::sig::ImageOf<yarp::sig::PixelFloat> &outImageFloat  = outFloatPort.prepare();
-                    yarp::sig::ImageOf<yarp::sig::PixelFloat> *inFloat = inFloatPort.read();
-                    outImageFloat = *inFloat;
+                yarp::sig::ImageOf<yarp::sig::PixelFloat> &outImageFloat  = outFloatPort.prepare();
+                outImageFloat = *inFloat;
             }
         
             outImage.resize(datumsPtr->at(0).cvOutputData.cols, datumsPtr->at(0).cvOutputData.rows);
@@ -277,14 +288,17 @@ public:
 
             IplImage colour = datumsPtr->at(0).cvOutputData;
             cvCopy( &colour, (IplImage *) outImage.getIplImage());
-            outPort.write();
-
+            
             IplImage colourOrig = datumsPtr->at(0).cvInputData;
             cvCopy( &colourOrig, (IplImage *) outImagePropag.getIplImage());
+
+            outPort.write();
             outPortPropag.write();
-            
-            if (sendFLoat)
+
+            if (sendFloat)
                 outFloatPort.write();
+
+            sendFloat = false;
         }
         else
             op::log("Nullptr or empty datumsPtr found.", op::Priority::Max, __LINE__, __FUNCTION__, __FILE__);
@@ -297,6 +311,8 @@ class Module : public yarp::os::RFModule
 private:
     yarp::os::ResourceFinder    *rf;
     yarp::os::RpcServer         rpcPort;
+    yarp::os::BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelRgb> > inPort;
+    yarp::os::BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelFloat> > inFloatPort;
 
     std::string                 model_name;
     std::string                 model_folder;
@@ -335,6 +351,8 @@ private:
     op::Wrapper<std::vector<op::Datum>> opWrapper{op::ThreadManagerMode::Asynchronous};
 
     bool                        closing;
+    
+
 public:
     /********************************************************/
     bool configure(yarp::os::ResourceFinder &rf)
@@ -424,13 +442,15 @@ public:
 
         opWrapper.configure(wrapperStructPose, wrapperStructHand, op::WrapperStructInput{}, op::WrapperStructOutput{});
 
-        yDebug() << "Starting thread(s)";
+        
         attach(rpcPort);
+        inPort.open("/" + moduleName + "/image:i");
+        inFloatPort.open("/" + moduleName + "/float:i");
+
         opWrapper.start();
-        yDebug() << "Done starting thread(s)";
 
         // User processing
-        inputClass = new ImageInput(moduleName);
+        inputClass = new ImageInput();
         outputClass = new ImageOutput(moduleName);
         processingClass = new ImageProcessing(moduleName);
 
@@ -498,13 +518,16 @@ public:
     /**********************************************************/
     bool interruptModule()
     {
-        inputClass->interrupt();
+        inPort.interrupt();
+        inFloatPort.interrupt();
         return true;
     }
 
     /**********************************************************/
     bool close()
     {
+        inPort.close();
+        inFloatPort.close();
         delete inputClass;
         delete outputClass;
         delete processingClass;
@@ -524,24 +547,39 @@ public:
     /********************************************************/
     bool updateModule()
     {
-        auto datumToProcess = inputClass->workProducer();
-        if (datumToProcess != nullptr)
+
+        if (yarp::sig::ImageOf<yarp::sig::PixelRgb> *inImage = inPort.read())
         {
-            auto successfullyEmplaced = opWrapper.waitAndEmplace(datumToProcess);
-            // Pop frame
-            std::shared_ptr<std::vector<op::Datum>> datumProcessed;
-            if (successfullyEmplaced && opWrapper.waitAndPop(datumProcessed))
+            inputClass->setImage(*inImage);
+
+            if (inFloatPort.getInputCount() > 0)
+                if (yarp::sig::ImageOf<yarp::sig::PixelFloat> *inFloat = inFloatPort.read())
+                {
+                    outputClass->setFlag(true);       
+                    outputClass->setImage(*inFloat);
+                }
+            
+            auto datumToProcess = inputClass->workProducer();
+            if (datumToProcess != nullptr)
             {
-                outputClass->workConsumer(datumProcessed);
-                processingClass->work(datumProcessed);
+                auto successfullyEmplaced = opWrapper.waitAndEmplace(datumToProcess);
+                // Pop frame
+                std::shared_ptr<std::vector<op::Datum>> datumProcessed;
+                if (successfullyEmplaced && opWrapper.waitAndPop(datumProcessed))
+                {
+                    outputClass->workConsumer(datumProcessed);
+                    processingClass->work(datumProcessed);
+                }
+                else
+                    yError() << "Processed datum could not be emplaced.";
             }
-            else
-                yError() << "Processed datum could not be emplaced.";
         }
+   
         return !closing;
     }
 };
 
+/********************************************************/
 int main(int argc, char *argv[])
 {
     yarp::os::Network::init();
