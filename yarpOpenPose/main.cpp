@@ -29,7 +29,7 @@
 
 // Other 3rdpary depencencies
 #include <gflags/gflags.h> // DEFINE_bool, DEFINE_int32, DEFINE_int64, DEFINE_uint64, DEFINE_double, DEFINE_string
-#include <glog/logging.h> // google::InitGoogleLogging, CHECK, CHECK_EQ, LOG, VLOG, ...
+//#include <glog/logging.h> // google::InitGoogleLogging, CHECK, CHECK_EQ, LOG, VLOG, ...
 
 // OpenPose dependencies
  #include <openpose/core/headers.hpp>
@@ -590,7 +590,7 @@ int main(int argc, char *argv[])
     // Initializing google logging (Caffe uses it for logging)
     //google::InitGoogleLogging("yarpOpenPose");
     // Parsing command line flags
-    gflags::ParseCommandLineFlags(&argc, &argv, true);
+    //gflags::ParseCommandLineFlags(&argc, &argv, true);
 
     yarp::os::Network yarp;
     if (!yarp.checkNetwork())

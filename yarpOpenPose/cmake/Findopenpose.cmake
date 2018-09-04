@@ -13,6 +13,16 @@
 # (To distribute this file outside of YCM, substitute the full
 #  License text for the above reference.)
 
+find_library(openpose_LIBRARY
+             NAMES openpose
+             PATH_SUFFIXES lib
+                           build/lib
+			   build/src/openpose
+             PATHS /usr/
+                   /usr/local/
+                   ${openpose_ROOT_DIR}
+                   ENV openpose_ROOT)
+
 find_library(openpose_core_LIBRARY
              NAMES openpose_core
              PATH_SUFFIXES lib
@@ -115,14 +125,15 @@ find_path(openpose_INCLUDE_DIR
                 ${openpose_ROOT_DIR}
                 ENV openpose_ROOT)
 
-set(openpose_LIBRARIES ${openpose_core_LIBRARY}
-					   ${openpose_pose_LIBRARY}
-					   ${openpose_face_LIBRARY}
-					   ${openpose_hand_LIBRARY}
-					   ${openpose_producer_LIBRARY}
-					   ${openpose_thread_LIBRARY}
-					   ${openpose_utilities_LIBRARY}
-					   ${openpose_wrapper_LIBRARY})
+set(openpose_LIBRARIES ${openpose_LIBRARY} 
+			   ${openpose_core_LIBRARY}
+			   ${openpose_pose_LIBRARY}
+			   ${openpose_face_LIBRARY}
+			   ${openpose_hand_LIBRARY}
+			   ${openpose_producer_LIBRARY}
+			   ${openpose_thread_LIBRARY}
+			   ${openpose_utilities_LIBRARY}
+			   ${openpose_wrapper_LIBRARY})
 
 set(openpose_INCLUDE_DIRS ${openpose_INCLUDE_DIR})
 

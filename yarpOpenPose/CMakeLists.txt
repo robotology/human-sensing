@@ -23,37 +23,20 @@ include(ICUBcontribHelpers)
 icubcontrib_set_default_prefix()
 
 find_package(openpose REQUIRED)
-find_package(Caffe REQUIRED)
 find_package(OpenCV 3 REQUIRED)
-find_package(CUDA)
-
-if( CUDA_FOUND )
-    message(WARNING "Found CUDA, will set GPU version")
-else()
-    message(WARNING "Did not find CUDA, will set CPU version")
-endif()
-
 include_directories(${openpose_INCLUDE_DIRS})
 include_directories(${OpenCV_INCLUDE_DIRS})
-include_directories(${Caffe_INCLUDE_DIRS})
-if (CUDA_FOUND)
-    include_directories(${CUDA_INCLUDE_DIRS})
-endif()
-
-add_definitions(-DUSE_CAFFE)
 
 message("YARP_LIBRARIES = ${YARP_LIBRARIES}")
-message("Caffe_INCLUDE_DIRS = ${Caffe_INCLUDE_DIRS}")
 foreach(target ${YARP_LIBRARIES})
     get_property(x TARGET ${target} PROPERTY INTERFACE_LINK_LIBRARIES)
     message("    ${target} -> ${x}")
 endforeach()
 message("openpose_LIBRARIES = ${openpose_LIBRARIES}")
-message("Caffe_LIBRARIES = ${Caffe_LIBRARIES}")
 
 add_executable(${PROJECT_NAME} main.cpp)
 
-target_link_libraries(${PROJECT_NAME} ${YARP_LIBRARIES} ${openpose_LIBRARIES} ${Caffe_LIBRARIES} ${OpenCV_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} ${YARP_LIBRARIES} ${openpose_LIBRARIES} ${OpenCV_LIBRARIES})
 
 install(TARGETS ${PROJECT_NAME} DESTINATION bin)
 #yarp_install(FILES ${doc} DESTINATION ${ICUBCONTRIB_MODULES_INSTALL_DIR})
