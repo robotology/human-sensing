@@ -2,16 +2,14 @@
 # Author: Vadim Tikhanoff
 # CopyPolicy: Released under the terms of the GNU GPL v2.0.
 #
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.5)
 project(yarpOpenPose)
 
-find_package(YARP REQUIRED)
+find_package(YARP 3.1 REQUIRED COMPONENTS OS sig dev math)
 find_package(ICUB REQUIRED)
 find_package(ICUBcontrib REQUIRED)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
-list(APPEND CMAKE_MODULE_PATH ${YARP_MODULE_PATH})
-list(APPEND CMAKE_MODULE_PATH ${ICUB_MODULE_PATH})
 list(APPEND CMAKE_MODULE_PATH ${ICUBCONTRIB_MODULE_PATH})
 message("CMAKE_MODULE_PATH = ${CMAKE_MODULE_PATH}")
 
@@ -19,22 +17,28 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED YES)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-include(YarpInstallationHelpers)
-include(ICUBcontribHelpers)
 include(ICUBcontribOptions)
+include(ICUBcontribHelpers)
+
 icubcontrib_set_default_prefix()
 
 find_package(openpose REQUIRED)
 find_package(Caffe REQUIRED)
 find_package(OpenCV 3 REQUIRED)
-find_package(CUDA REQUIRED)
+find_package(CUDA)
+
+if( CUDA_FOUND )
+    message(WARNING "Found CUDA, will set GPU version")
+else()
+    message(WARNING "Did not find CUDA, will set CPU version")
+endif()
 
 include_directories(${openpose_INCLUDE_DIRS})
-include_directories(${YARP_INCLUDE_DIRS})
 include_directories(${OpenCV_INCLUDE_DIRS})
-include_directories(${CUDA_INCLUDE_DIRS})
-include_directories(${CUDA_INCLUDE_DIRS})
 include_directories(${Caffe_INCLUDE_DIRS})
+if (CUDA_FOUND)
+    include_directories(${CUDA_INCLUDE_DIRS})
+endif()
 
 add_definitions(-DUSE_CAFFE)
 

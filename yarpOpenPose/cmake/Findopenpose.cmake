@@ -14,7 +14,7 @@
 #  License text for the above reference.)
 
 find_library(openpose_core_LIBRARY
-             NAMES core
+             NAMES openpose_core
              PATH_SUFFIXES lib
                            build/lib
 						   build/src/openpose/core
@@ -25,7 +25,7 @@ find_library(openpose_core_LIBRARY
 
 
 find_library(openpose_pose_LIBRARY
-             NAMES pose
+             NAMES openpose_pose
              PATH_SUFFIXES lib
                            build/lib
 						   build/src/openpose/pose
@@ -35,7 +35,7 @@ find_library(openpose_pose_LIBRARY
                    ENV openpose_ROOT)
 
 find_library(openpose_face_LIBRARY
-             NAMES face
+             NAMES openpose_face
              PATH_SUFFIXES lib
                            build/lib
 						   build/src/openpose/face
@@ -45,7 +45,7 @@ find_library(openpose_face_LIBRARY
                    ENV openpose_ROOT)
 
 find_library(openpose_hand_LIBRARY
-             NAMES hand
+             NAMES openpose_hand
              PATH_SUFFIXES lib
                            build/lib
 						   build/src/openpose/hand
@@ -55,7 +55,7 @@ find_library(openpose_hand_LIBRARY
                    ENV openpose_ROOT)
 
 find_library(openpose_hand_LIBRARY
-             NAMES hand
+             NAMES openpose_hand
              PATH_SUFFIXES lib
                            build/lib
 						   build/src/openpose/hand
@@ -65,7 +65,7 @@ find_library(openpose_hand_LIBRARY
                    ENV openpose_ROOT)
 
 find_library(openpose_producer_LIBRARY
-             NAMES producer
+             NAMES openpose_producer
              PATH_SUFFIXES lib
                            build/lib
 						   build/src/openpose/producer
@@ -75,7 +75,7 @@ find_library(openpose_producer_LIBRARY
                    ENV openpose_ROOT)
 
 find_library(openpose_thread_LIBRARY
-             NAMES thread
+             NAMES openpose_thread
              PATH_SUFFIXES lib
                            build/lib
 						   build/src/openpose/thread
@@ -85,7 +85,7 @@ find_library(openpose_thread_LIBRARY
                    ENV openpose_ROOT)
 
 find_library(openpose_utilities_LIBRARY
-             NAMES utilities
+             NAMES openpose_utilities
              PATH_SUFFIXES lib
                            build/lib
 						   build/src/openpose/utilities
@@ -95,7 +95,7 @@ find_library(openpose_utilities_LIBRARY
                    ENV openpose_ROOT)
 
 find_library(openpose_wrapper_LIBRARY
-             NAMES wrapper
+             NAMES openpose_wrapper
              PATH_SUFFIXES lib
                            build/lib
 						   build/src/openpose/wrapper
@@ -115,7 +115,7 @@ find_path(openpose_INCLUDE_DIR
                 ${openpose_ROOT_DIR}
                 ENV openpose_ROOT)
 
-set(openpose_LIBRARIES ${openpose_core_LIBRARY} 
+set(openpose_LIBRARIES ${openpose_core_LIBRARY}
 					   ${openpose_pose_LIBRARY}
 					   ${openpose_face_LIBRARY}
 					   ${openpose_hand_LIBRARY}

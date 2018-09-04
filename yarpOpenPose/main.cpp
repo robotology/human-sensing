@@ -33,7 +33,7 @@
 
 // OpenPose dependencies
  #include <openpose/core/headers.hpp>
- #include <openpose/experimental/headers.hpp>
+ //#include <openpose/experimental/headers.hpp>
  #include <openpose/filestream/headers.hpp>
  #include <openpose/gui/headers.hpp>
  #include <openpose/pose/headers.hpp>
@@ -78,7 +78,7 @@ public:
 
     /********************************************************/
     void initializationOnThread() {
-        
+
     }
 
     /********************************************************/
@@ -236,7 +236,7 @@ public:
     ImageOutput(const std::string& moduleName)
     {
         this->moduleName = moduleName;
-       
+
     }
 
     /********************************************************/
@@ -250,14 +250,14 @@ public:
 
     void setFlag(const bool flag) {
         sendFloat = flag;
-        
+
     }
     /********************************************************/
     void setImage(yarp::sig::ImageOf<yarp::sig::PixelFloat> &inFloat) {
         yarp::os::LockGuard lg(mutex);
         this->inFloat = &inFloat;
     }
-    
+
 
     /********************************************************/
     ~ImageOutput()
@@ -276,19 +276,19 @@ public:
             yarp::sig::ImageOf<yarp::sig::PixelRgb> &outImagePropag  = outPortPropag.prepare();
 
             yarp::os::LockGuard lg(mutex);
-            
+
             if (sendFloat)
             {
                 yarp::sig::ImageOf<yarp::sig::PixelFloat> &outImageFloat  = outFloatPort.prepare();
                 outImageFloat = *inFloat;
             }
-        
+
             outImage.resize(datumsPtr->at(0).cvOutputData.cols, datumsPtr->at(0).cvOutputData.rows);
             outImagePropag.resize(datumsPtr->at(0).cvInputData.cols, datumsPtr->at(0).cvInputData.rows);
 
             IplImage colour = datumsPtr->at(0).cvOutputData;
             cvCopy( &colour, (IplImage *) outImage.getIplImage());
-            
+
             IplImage colourOrig = datumsPtr->at(0).cvInputData;
             cvCopy( &colourOrig, (IplImage *) outImagePropag.getIplImage());
 
@@ -333,6 +333,8 @@ private:
     double                      alpha_pose;
     double                      alpha_heatmap;
     double                      render_threshold;
+    bool                        part_candidates;
+    int                         number_people_max;
     bool                        body_enable;
     bool                        hand_enable;
     std::string                 hand_net_resolution;
@@ -351,7 +353,7 @@ private:
     op::Wrapper<std::vector<op::Datum>> opWrapper{op::ThreadManagerMode::Asynchronous};
 
     bool                        closing;
-    
+
 
 public:
     /********************************************************/
@@ -390,6 +392,8 @@ public:
         alpha_pose = rf.check("alpha_pose", yarp::os::Value("0.6"), "Blending factor (range 0-1) for the body part rendering. 1 will show it completely, 0 will hide it.(double)").asDouble();
         alpha_heatmap = rf.check("alpha_heatmap", yarp::os::Value("0.7"), "Blending factor (range 0-1) between heatmap and original frame. 1 will only show the heatmap, 0 will only show the frame.(double)").asDouble();
         render_threshold = rf.check("render_threshold", yarp::os::Value("0.05"), "Only estimated keypoints whose score confidences are higher than this threshold will be rendered. Generally, a high threshold (> 0.5) will only render very clear body parts.(double)").asDouble();
+        number_people_max = rf.check("number_people_max", yarp::os::Value("-1"), "This parameter will limit the maximum number of people detected, by keeping the people with top scores. -1 will keep them all.(int)").asInt();
+        part_candidates = rf.check("part_candidates", yarp::os::Value("false"), "If true it will fill the op::Datum::poseCandidates array with the body part candidates.(bool)").asBool();
         body_enable = rf.check("body_enable", yarp::os::Value("true"), "Disable body keypoint detection. Option only possible for faster (but less accurate) face. (bool)").asBool();
         hand_enable = rf.check("hand_enable", yarp::os::Value("false"), "Enables hand keypoint detection. It will share some parameters from the body pose, e.g."
                                                                 " `model_folder`. Analogously to `--face`, it will also slow down the performance, increase"
@@ -433,16 +437,16 @@ public:
         // Pose configuration
         const op::WrapperStructPose wrapperStructPose{body_enable, netInputSize, outputSize, keypointScale, num_gpu, num_gpu_start, num_scales, scale_gap,
                                                       op::flagsToRenderMode(render_pose), poseModel, !disable_blending, (float)alpha_pose, (float)alpha_heatmap,
-                                                      part_to_show, model_folder, heatMapTypes, heatMapsScaleMode, (float)render_threshold};
+                                                      part_to_show, model_folder, heatMapTypes, heatMapsScaleMode, part_candidates, (float)render_threshold}, number_people_max;
 
         // Hand configuration
         const op::WrapperStructHand wrapperStructHand{hand_enable, handNetInputSize, hand_scale_number, (float)hand_scale_range,
-                                                                                                    hand_tracking, op::flagsToRenderMode(hand_render, render_pose),
-                                                                                                    (float)hand_alpha_pose, (float)hand_alpha_heatmap, (float)hand_render_threshold};
+                                                      hand_tracking, op::flagsToRenderMode(hand_render, render_pose),
+                                                      (float)hand_alpha_pose, (float)hand_alpha_heatmap, (float)hand_render_threshold};
 
         opWrapper.configure(wrapperStructPose, wrapperStructHand, op::WrapperStructInput{}, op::WrapperStructOutput{});
 
-        
+
         attach(rpcPort);
         inPort.open("/" + moduleName + "/image:i");
         inFloatPort.open("/" + moduleName + "/float:i");
@@ -555,10 +559,10 @@ public:
             if (inFloatPort.getInputCount() > 0)
                 if (yarp::sig::ImageOf<yarp::sig::PixelFloat> *inFloat = inFloatPort.read())
                 {
-                    outputClass->setFlag(true);       
+                    outputClass->setFlag(true);
                     outputClass->setImage(*inFloat);
                 }
-            
+
             auto datumToProcess = inputClass->workProducer();
             if (datumToProcess != nullptr)
             {
@@ -574,7 +578,7 @@ public:
                     yError() << "Processed datum could not be emplaced.";
             }
         }
-   
+
         return !closing;
     }
 };
