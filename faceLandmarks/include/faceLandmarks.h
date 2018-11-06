@@ -86,7 +86,11 @@ private:
 
     cv::Point                           leftEye, rightEye;
 
+    int                                 count;
+
     void    drawLandmarks(cv::Mat &mat, const dlib::full_object_detection &d);
+    void    draw_polyline(cv::Mat &img, const dlib::full_object_detection& d, const int start, const int end, bool isClosed = false);
+    void    render_face (cv::Mat &img, const dlib::full_object_detection& d);
 
 public:
     /**

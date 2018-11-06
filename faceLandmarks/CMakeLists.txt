@@ -2,29 +2,24 @@
 # Author: Vadim Tikhanoff
 # CopyPolicy: Released under the terms of the GNU GPL v2.0.
 #
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8.9)
+cmake_minimum_required(VERSION 3.5)
 project(faceLandmarks)
 
-find_package(YARP)
-find_package(ICUB)
-find_package(ICUBcontrib)
-find_package(dlib)
+find_package(YARP 3.1 REQUIRED COMPONENTS OS sig dev math rosmsg)
+find_package(ICUBcontrib REQUIRED)
+find_package(dlib REQUIRED)
+find_package(OpenCV REQUIRED)
 
-list(APPEND CMAKE_MODULE_PATH ${YARP_MODULE_PATH})
-list(APPEND CMAKE_MODULE_PATH ${ICUB_MODULE_PATH})
 list(APPEND CMAKE_MODULE_PATH ${ICUBCONTRIB_MODULE_PATH})
-
-find_package(OpenCV)
 
 #adding c++11 flags
 set(CMAKE_CXX_FLAGS "-std=c++11")
 
-include(YarpInstallationHelpers)
 include(ICUBcontribHelpers)
 include(ICUBcontribOptions)
+
 icubcontrib_set_default_prefix()
 
-include(YarpIDL)
 yarp_add_idl(IDL_GEN_FILES ${PROJECT_NAME}.thrift)
 
 file(GLOB source src/*.cpp)
@@ -39,15 +34,11 @@ source_group("IDL Files" FILES ${idl})
 source_group("DOC Files" FILES ${doc})
 
 include_directories(${PROJECT_SOURCE_DIR}/include
-                    ${OpenCV_INCLUDE_DIRS}
-                    ${YARP_INCLUDE_DIRS}
-                    ${ICUB_INCLUDE_DIRS}
-                    ${dlib_INCLUDE_DIRS}
-                    )
+                    ${OpenCV_INCLUDE_DIRS})
 
 add_executable(${PROJECT_NAME} ${source} ${header} ${doc} ${idl} ${IDL_GEN_FILES})
 
-target_link_libraries(${PROJECT_NAME} ${dlib_LIBRARIES} ${YARP_LIBRARIES} ${OpenCV_LIBRARIES}  )
+target_link_libraries(${PROJECT_NAME} dlib::dlib ${YARP_LIBRARIES} ${OpenCV_LIBRARIES}  )
 
 install(TARGETS ${PROJECT_NAME} DESTINATION bin)
 yarp_install(FILES ${doc} DESTINATION ${ICUBCONTRIB_MODULES_INSTALL_DIR})

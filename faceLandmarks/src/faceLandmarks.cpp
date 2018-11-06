@@ -18,6 +18,9 @@
 #include <yarp/sig/all.h>
 #include "faceLandmarks.h"
 
+#define FACE_DOWNSAMPLE_RATIO 4
+#define SKIP_FRAMES 2
+
 /**********************************************************/
 bool FACEModule::configure(yarp::os::ResourceFinder &rf)
 {
@@ -221,6 +224,8 @@ bool FACEManager::open()
     displayLabels = false;
     displayDarkMode = false;
 
+    count = 0;
+
     return true;
 }
 
@@ -260,50 +265,48 @@ void FACEManager::onRead(yarp::sig::ImageOf<yarp::sig::PixelRgb> &img)
     // Get the image from the yarp port
     imgMat = cv::cvarrToMat((IplImage*)img.getIplImage());
 
+    cv::Mat im_small, im_display;
+
+    cv::resize(imgMat, im_small, cv::Size(), 1.0/FACE_DOWNSAMPLE_RATIO, 1.0/FACE_DOWNSAMPLE_RATIO);
+
     // Change to dlib's image format. No memory is copied.
-    //dlib::cv_image<dlib::bgr_pixel> dlibimg(imgMat);
+    dlib::cv_image<dlib::bgr_pixel> cimg_small(im_small);
+    dlib::cv_image<dlib::bgr_pixel> cimg(imgMat);
 
-    // Convert the opencv image to dlib format
-    dlib::array2d<dlib::rgb_pixel> dlibimg;
-    assign_image(dlibimg, dlib::cv_image<dlib::bgr_pixel>(imgMat));
-    //dlib::cv_image<dlib::bgr_pixel> dlibimg(imgMat);
+    std::vector<dlib::rectangle> faces;
 
-    // Make the image larger so we can detect small faces. 2x
-    pyramid_up(dlibimg);
-
-    // Now tell the face detector to give us a list of bounding boxes
-    // around all the faces in the image.
-    int count = 0;
-    std::vector<dlib::rectangle> dets = faceDetector(dlibimg);
-
-    std::vector<dlib::full_object_detection> shapes;
-
-    for (unsigned long j = 0; j < dets.size(); ++j)
+    // Detect faces on resize image
+    if ( count % SKIP_FRAMES == 0 )
     {
-        dlib::full_object_detection shape = sp(dlibimg, dets[j]);
-        shapes.push_back(shape);
+        faces = faceDetector(cimg_small);
     }
 
+    // Find the pose of each face.
+    std::vector<dlib::full_object_detection> shapes;
     std::vector<std::pair<int, double >> idTargets;
 
-    for (unsigned long i = 0; i < dets.size(); ++i)
+    for (unsigned long i = 0; i < faces.size(); ++i)
     {
-        DLIB_CASSERT(shapes[i].num_parts() == 68,
-                     "\t std::vector<image_window::overlay_line> render_face_detections()"
-                     << "\n\t Invalid inputs were given to this function. "
-                     << "\n\t dets["<<i<<"].num_parts():  " << shapes[i].num_parts()
-                     );
+        // Resize obtained rectangle for full resolution image.
+         dlib::rectangle r(
+                       (long)(faces[i].left() * FACE_DOWNSAMPLE_RATIO),
+                       (long)(faces[i].top() * FACE_DOWNSAMPLE_RATIO),
+                       (long)(faces[i].right() * FACE_DOWNSAMPLE_RATIO),
+                       (long)(faces[i].bottom() * FACE_DOWNSAMPLE_RATIO)
+                    );
+
+        // Landmark detection on full sized image
+        dlib::full_object_detection shape = sp(cimg, r);
+        shapes.push_back(shape);
 
         const dlib::full_object_detection& d = shapes[i];
 
         if (displayDarkMode)
             imgMat.setTo(cv::Scalar(0, 0, 0));
-
+        // Custom Face Render
         if (displayLandmarks)
-            drawLandmarks(imgMat, d);
+            render_face(imgMat, shape);
 
-        //if (landmarksOutPort.getOutputCount()>0)
-        //{
         landmarks.clear();
         yarp::os::Bottle &landM = landmarks.addList();
         for (int f=1; f<shapes[i].num_parts(); f++)
@@ -312,12 +315,10 @@ void FACEManager::onRead(yarp::sig::ImageOf<yarp::sig::PixelRgb> &img)
             if (f != 17 || f != 22 || f != 27 || f != 42 || f != 48)
             {
                 yarp::os::Bottle &temp = landM.addList();
-                temp.addInt(d.part(f).x()/2);
-                temp.addInt(d.part(f).y()/2);
+                temp.addInt(d.part(f).x());
+                temp.addInt(d.part(f).y());
             }
         }
-    //}
-
         if (displayPoints || displayLabels)
         {
             int pointSize = landmarks.get(0).asList()->size();
@@ -346,81 +347,80 @@ void FACEManager::onRead(yarp::sig::ImageOf<yarp::sig::PixelRgb> &img)
         }
 
         cv::Point pt1, pt2;
-        pt1.x = dets[i].tl_corner().x()/2;
-        pt1.y = dets[i].tl_corner().y()/2;
-        pt2.x = dets[i].br_corner().x()/2;
-        pt2.y = dets[i].br_corner().y()/2;
+        pt1.x = faces[i].tl_corner().x()* FACE_DOWNSAMPLE_RATIO;
+        pt1.y = faces[i].tl_corner().y()* FACE_DOWNSAMPLE_RATIO;
+        pt2.x = faces[i].br_corner().x()* FACE_DOWNSAMPLE_RATIO;
+        pt2.y = faces[i].br_corner().y()* FACE_DOWNSAMPLE_RATIO;
 
-        rightEye.x = d.part(42).x()/2 + ((d.part(45).x()/2) - (d.part(42).x()/2))/2;
-        rightEye.y = d.part(43).y()/2 + ((d.part(46).y()/2) - (d.part(43).y()/2))/2;
-        leftEye.x  = d.part(36).x()/2 + ((d.part(39).x()/2) - (d.part(36).x()/2))/2;
-        leftEye.y  = d.part(38).y()/2 + ((d.part(41).y()/2) - (d.part(38).y()/2))/2;
+        rightEye.x = d.part(42).x() + ((d.part(45).x()) - (d.part(42).x()))/2;
+        rightEye.y = d.part(43).y() + ((d.part(46).y()) - (d.part(43).y()))/2;
+        leftEye.x  = d.part(36).x() + ((d.part(39).x()) - (d.part(36).x()))/2;
+        leftEye.y  = d.part(38).y() + ((d.part(41).y()) - (d.part(38).y()))/2;
 
         //yDebug("rightEye %d %d leftEye %d %d ", rightEye.x, rightEye.y, leftEye.x, leftEye.y);
-
         //draw center of each eye
-        circle(imgMat, leftEye , 2, cv::Scalar( 0, 0, 255 ), -1);
-        circle(imgMat, rightEye , 2, cv::Scalar( 0, 0, 255 ), -1);
+        circle(imgMat, leftEye , 8, cv::Scalar( 0, 0, 255 ), -1);
+        circle(imgMat, rightEye , 8, cv::Scalar( 0, 0, 255 ), -1);
 
         double areaCalculation =0.0;
         areaCalculation = (std::fabs(pt2.x-pt1.x)*std::fabs(pt2.y-pt1.y));
 
         idTargets.push_back(std::make_pair(i, areaCalculation));
-    }
 
-    if (idTargets.size()>0)
-    {
-        std::sort(idTargets.begin(), idTargets.end(), [](const std::pair<int, double> &left, const std::pair<int, double> &right) {
-            return left.second > right.second;
-        });
-    }
-
-    if (dets.size() > 0 )
-    {
-        for (int i=0; i< idTargets.size(); i++)
+        if (idTargets.size()>0)
         {
-            cv::Point pt1, pt2;
-            pt1.x = dets[idTargets[i].first].tl_corner().x()/2;
-            pt1.y = dets[idTargets[i].first].tl_corner().y()/2;
-            pt2.x = dets[idTargets[i].first].br_corner().x()/2;
-            pt2.y = dets[idTargets[i].first].br_corner().y()/2;
+            std::sort(idTargets.begin(), idTargets.end(), [](const std::pair<int, double> &left, const std::pair<int, double> &right) {
+                return left.second > right.second;
+            });
+        }
 
-            if (pt1.x < 2)
-                pt1.x = 1;
-            if (pt1.x > 318)
-                pt1.x = 319;
-            if (pt1.y < 2)
-                pt1.y = 1;
-            if (pt1.y > 238)
-                pt1.y = 239;
+        if (faces.size() > 0 )
+        {
+            for (int i=0; i< idTargets.size(); i++)
+            {
+                cv::Point pt1, pt2;
+                pt1.x = faces[idTargets[i].first].tl_corner().x()* FACE_DOWNSAMPLE_RATIO;
+                pt1.y = faces[idTargets[i].first].tl_corner().y()* FACE_DOWNSAMPLE_RATIO;
+                pt2.x = faces[idTargets[i].first].br_corner().x()* FACE_DOWNSAMPLE_RATIO;
+                pt2.y = faces[idTargets[i].first].br_corner().y()* FACE_DOWNSAMPLE_RATIO;
 
-            if (pt2.x < 2)
-                pt2.x = 1;
-            if (pt2.x > 318)
-                pt2.x = 319;
-            if (pt2.y < 2)
-                pt2.y = 1;
-            if (pt2.y > 238)
-                pt2.y = 239;
+                if (pt1.x < 2)
+                    pt1.x = 1;
+                if (pt1.x > imgMat.cols-2)
+                    pt1.x = imgMat.cols-1;
+                if (pt1.y < 2)
+                    pt1.y = 1;
+                if (pt1.y > imgMat.rows)
+                    pt1.y = imgMat.rows-1;
+
+                if (pt2.x < 2)
+                    pt2.x = 1;
+                if (pt2.x > imgMat.cols-2)
+                    pt2.x = imgMat.cols-1;
+                if (pt2.y < 2)
+                    pt2.y = 1;
+                if (pt2.y > imgMat.rows-2)
+                    pt2.y = imgMat.rows-2;
 
 
-            yarp::os::Bottle &pos = target.addList();
-            pos.addDouble(pt1.x);
-            pos.addDouble(pt1.y);
-            pos.addDouble(pt2.x);
-            pos.addDouble(pt2.y);
+                yarp::os::Bottle &pos = target.addList();
+                pos.addDouble(pt1.x);
+                pos.addDouble(pt1.y);
+                pos.addDouble(pt2.x);
+                pos.addDouble(pt2.y);
 
-            cv::Point biggestpt1, biggestpt2;
-            biggestpt1.x = dets[idTargets[0].first].tl_corner().x()/2;
-            biggestpt1.y = dets[idTargets[0].first].tl_corner().y()/2;
-            biggestpt2.x = dets[idTargets[0].first].br_corner().x()/2;
-            biggestpt2.y = dets[idTargets[0].first].br_corner().y()/2;
+                cv::Point biggestpt1, biggestpt2;
+                biggestpt1.x = faces[idTargets[0].first].tl_corner().x()* FACE_DOWNSAMPLE_RATIO;
+                biggestpt1.y = faces[idTargets[0].first].tl_corner().y()* FACE_DOWNSAMPLE_RATIO;
+                biggestpt2.x = faces[idTargets[0].first].br_corner().x()* FACE_DOWNSAMPLE_RATIO;
+                biggestpt2.y = faces[idTargets[0].first].br_corner().y()* FACE_DOWNSAMPLE_RATIO;
 
-            rectangle(imgMat, biggestpt1, biggestpt2, cv::Scalar( 0, 255, 0 ), 1, 8, 0);
+                rectangle(imgMat, biggestpt1, biggestpt2, cv::Scalar( 0, 255, 0 ), 2, 8, 0);
 
-            targetOutPort.write();
-            if (landmarksOutPort.getOutputCount()>0)
-                landmarksOutPort.write();
+                targetOutPort.write();
+                if (landmarksOutPort.getOutputCount()>0)
+                    landmarksOutPort.write();
+            }
         }
     }
 
@@ -431,6 +431,38 @@ void FACEManager::onRead(yarp::sig::ImageOf<yarp::sig::PixelRgb> &img)
     imageOutPort.write();
 
     mutex.post();
+}
+
+void FACEManager::draw_polyline(cv::Mat &img, const dlib::full_object_detection& d, const int start, const int end, bool isClosed)
+{
+    std::vector <cv::Point> points;
+    for (int i = start; i <= end; ++i)
+    {
+        points.push_back(cv::Point(d.part(i).x(), d.part(i).y()));
+    }
+    cv::polylines(img, points, isClosed, cv::Scalar(0,255,0), 2, 16);
+
+}
+
+void FACEManager::render_face (cv::Mat &img, const dlib::full_object_detection& d)
+{
+    DLIB_CASSERT
+    (
+     d.num_parts() == 68,
+     "\n\t Invalid inputs were given to this function. "
+     << "\n\t d.num_parts():  " << d.num_parts()
+     );
+
+    draw_polyline(img, d, 0, 16);           // Jaw line
+    draw_polyline(img, d, 17, 21);          // Left eyebrow
+    draw_polyline(img, d, 22, 26);          // Right eyebrow
+    draw_polyline(img, d, 27, 30);          // Nose bridge
+    draw_polyline(img, d, 30, 35, true);    // Lower nose
+    draw_polyline(img, d, 36, 41, true);    // Left eye
+    draw_polyline(img, d, 42, 47, true);    // Right Eye
+    draw_polyline(img, d, 48, 59, true);    // Outer lip
+    draw_polyline(img, d, 60, 67, true);    // Inner lip
+
 }
 
 void FACEManager::drawLandmarks(cv::Mat &mat, const dlib::full_object_detection &d)
