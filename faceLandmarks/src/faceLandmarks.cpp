@@ -18,9 +18,6 @@
 #include <yarp/sig/all.h>
 #include "faceLandmarks.h"
 
-#define FACE_DOWNSAMPLE_RATIO 1
-#define SKIP_FRAMES 2
-
 /**********************************************************/
 bool FACEModule::configure(yarp::os::ResourceFinder &rf)
 {
