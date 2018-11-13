@@ -18,7 +18,7 @@
 #include <yarp/sig/all.h>
 #include "faceLandmarks.h"
 
-#define FACE_DOWNSAMPLE_RATIO 4
+#define FACE_DOWNSAMPLE_RATIO 1
 #define SKIP_FRAMES 2
 
 /**********************************************************/
@@ -226,6 +226,8 @@ bool FACEManager::open()
 
     count = 0;
 
+    draw_res = 1;
+
     return true;
 }
 
@@ -265,6 +267,8 @@ void FACEManager::onRead(yarp::sig::ImageOf<yarp::sig::PixelRgb> &img)
     // Get the image from the yarp port
     imgMat = cv::cvarrToMat((IplImage*)img.getIplImage());
 
+    draw_res = imgMat.cols / 320;
+
     cv::Mat im_small, im_display;
 
     cv::resize(imgMat, im_small, cv::Size(), 1.0/FACE_DOWNSAMPLE_RATIO, 1.0/FACE_DOWNSAMPLE_RATIO);
@@ -303,6 +307,7 @@ void FACEManager::onRead(yarp::sig::ImageOf<yarp::sig::PixelRgb> &img)
 
         if (displayDarkMode)
             imgMat.setTo(cv::Scalar(0, 0, 0));
+
         // Custom Face Render
         if (displayLandmarks)
             render_face(imgMat, shape);
@@ -359,8 +364,8 @@ void FACEManager::onRead(yarp::sig::ImageOf<yarp::sig::PixelRgb> &img)
 
         //yDebug("rightEye %d %d leftEye %d %d ", rightEye.x, rightEye.y, leftEye.x, leftEye.y);
         //draw center of each eye
-        circle(imgMat, leftEye , 8, cv::Scalar( 0, 0, 255 ), -1);
-        circle(imgMat, rightEye , 8, cv::Scalar( 0, 0, 255 ), -1);
+        circle(imgMat, leftEye , draw_res*2, cv::Scalar( 0, 0, 255 ), -1);
+        circle(imgMat, rightEye , draw_res*2, cv::Scalar( 0, 0, 255 ), -1);
 
         double areaCalculation =0.0;
         areaCalculation = (std::fabs(pt2.x-pt1.x)*std::fabs(pt2.y-pt1.y));
@@ -386,7 +391,7 @@ void FACEManager::onRead(yarp::sig::ImageOf<yarp::sig::PixelRgb> &img)
 
                 if (pt1.x < 2)
                     pt1.x = 1;
-                if (pt1.x > imgMat.cols-2)
+                if (pt1.x > -2)
                     pt1.x = imgMat.cols-1;
                 if (pt1.y < 2)
                     pt1.y = 1;
@@ -415,7 +420,7 @@ void FACEManager::onRead(yarp::sig::ImageOf<yarp::sig::PixelRgb> &img)
                 biggestpt2.x = faces[idTargets[0].first].br_corner().x()* FACE_DOWNSAMPLE_RATIO;
                 biggestpt2.y = faces[idTargets[0].first].br_corner().y()* FACE_DOWNSAMPLE_RATIO;
 
-                rectangle(imgMat, biggestpt1, biggestpt2, cv::Scalar( 0, 255, 0 ), 2, 8, 0);
+                rectangle(imgMat, biggestpt1, biggestpt2, cv::Scalar( 0, 255, 0 ), draw_res, 8, 0);
 
                 targetOutPort.write();
                 if (landmarksOutPort.getOutputCount()>0)
@@ -440,7 +445,7 @@ void FACEManager::draw_polyline(cv::Mat &img, const dlib::full_object_detection&
     {
         points.push_back(cv::Point(d.part(i).x(), d.part(i).y()));
     }
-    cv::polylines(img, points, isClosed, cv::Scalar(0,255,0), 2, 16);
+    cv::polylines(img, points, isClosed, cv::Scalar(0,255,0), draw_res, 16);
 
 }
 
