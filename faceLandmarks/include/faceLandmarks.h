@@ -89,6 +89,8 @@ private:
     int                                 count;
 
     int                                 draw_res;
+    int                                 skipFrames;
+    int                                 downsampleRatio;
 
     void    drawLandmarks(cv::Mat &mat, const dlib::full_object_detection &d);
     void    draw_polyline(cv::Mat &img, const dlib::full_object_detection& d, const int start, const int end, bool isClosed = false);
@@ -100,7 +102,7 @@ public:
      * @param moduleName is passed to the thread in order to initialise all the ports correctly (default yuvProc)
      * @param imgType is passed to the thread in order to work on YUV or on HSV images (default yuv)
      */
-    FACEManager( const std::string &moduleName, const std::string &predictorFile, const std::string &cntxHomePath );
+    FACEManager( const std::string &moduleName, const std::string &predictorFile, const std::string &cntxHomePathm, const int &skipFrames, const int &downsampleRatio );
     ~FACEManager();
 
     yarp::os::Semaphore         mutex;
@@ -128,6 +130,8 @@ class FACEModule:public yarp::os::RFModule, public faceLandmarks_IDLServer
     FACEManager            *faceManager;
     bool                    closing;
     std::string             cntxHomePath;
+    int                     skipFrames;
+    int                     downsampleRatio;
 
 public:
 

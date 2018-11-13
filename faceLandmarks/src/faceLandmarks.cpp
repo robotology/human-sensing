@@ -26,6 +26,9 @@ bool FACEModule::configure(yarp::os::ResourceFinder &rf)
 {
     rf.setVerbose();
     moduleName = rf.check("name", yarp::os::Value("faceLandmarks"), "module name (string)").asString();
+    skipFrames = rf.check("skipFrames", yarp::os::Value(2), "skip frames (int)").asInt();
+    downsampleRatio = rf.check("downsample", yarp::os::Value(1), "face downsample ratio (int)").asInt();
+
     predictorFile = rf.check("faceLandmarksFile", yarp::os::Value("shape_predictor_68_face_landmarks.dat"), "path name (string)").asString();
 
     std::string firstStr = rf.findFile(predictorFile.c_str());
@@ -48,7 +51,7 @@ bool FACEModule::configure(yarp::os::ResourceFinder &rf)
     closing = false;
 
     /* create the thread and pass pointers to the module parameters */
-    faceManager = new FACEManager( moduleName, firstStr, cntxHomePath );
+    faceManager = new FACEManager( moduleName, firstStr, cntxHomePath, skipFrames, downsampleRatio );
 
     /* now start the thread to do the work */
     faceManager->open();
@@ -185,13 +188,17 @@ FACEManager::~FACEManager()
 }
 
 /**********************************************************/
-FACEManager::FACEManager( const std::string &moduleName,  const std::string &predictorFile, const std::string &cntxHomePath)
+FACEManager::FACEManager( const std::string &moduleName,  const std::string &predictorFile, const std::string &cntxHomePath, const int &skipFrames, const int &downsampleRatio)
 {
     yDebug() << "initialising Variables";
     this->moduleName = moduleName;
     this->predictorFile = predictorFile;
     this->cntxHomePath = cntxHomePath;
+    this->skipFrames = skipFrames;
+    this->downsampleRatio = downsampleRatio;
     yInfo() << "contextPATH = " << cntxHomePath.c_str();
+    yInfo() << "skipFrames = " << skipFrames;
+    yInfo() << "downsampleRatio = " << downsampleRatio;
 }
 
 /**********************************************************/
@@ -271,7 +278,7 @@ void FACEManager::onRead(yarp::sig::ImageOf<yarp::sig::PixelRgb> &img)
 
     cv::Mat im_small, im_display;
 
-    cv::resize(imgMat, im_small, cv::Size(), 1.0/FACE_DOWNSAMPLE_RATIO, 1.0/FACE_DOWNSAMPLE_RATIO);
+    cv::resize(imgMat, im_small, cv::Size(), 1.0/downsampleRatio, 1.0/downsampleRatio);
 
     // Change to dlib's image format. No memory is copied.
     dlib::cv_image<dlib::bgr_pixel> cimg_small(im_small);
@@ -280,7 +287,7 @@ void FACEManager::onRead(yarp::sig::ImageOf<yarp::sig::PixelRgb> &img)
     std::vector<dlib::rectangle> faces;
 
     // Detect faces on resize image
-    if ( count % SKIP_FRAMES == 0 )
+    if ( count % skipFrames == 0 )
     {
         faces = faceDetector(cimg_small);
     }
@@ -293,10 +300,10 @@ void FACEManager::onRead(yarp::sig::ImageOf<yarp::sig::PixelRgb> &img)
     {
         // Resize obtained rectangle for full resolution image.
          dlib::rectangle r(
-                       (long)(faces[i].left() * FACE_DOWNSAMPLE_RATIO),
-                       (long)(faces[i].top() * FACE_DOWNSAMPLE_RATIO),
-                       (long)(faces[i].right() * FACE_DOWNSAMPLE_RATIO),
-                       (long)(faces[i].bottom() * FACE_DOWNSAMPLE_RATIO)
+                       (long)(faces[i].left() * downsampleRatio),
+                       (long)(faces[i].top() * downsampleRatio),
+                       (long)(faces[i].right() * downsampleRatio),
+                       (long)(faces[i].bottom() * downsampleRatio)
                     );
 
         // Landmark detection on full sized image
@@ -352,10 +359,10 @@ void FACEManager::onRead(yarp::sig::ImageOf<yarp::sig::PixelRgb> &img)
         }
 
         cv::Point pt1, pt2;
-        pt1.x = faces[i].tl_corner().x()* FACE_DOWNSAMPLE_RATIO;
-        pt1.y = faces[i].tl_corner().y()* FACE_DOWNSAMPLE_RATIO;
-        pt2.x = faces[i].br_corner().x()* FACE_DOWNSAMPLE_RATIO;
-        pt2.y = faces[i].br_corner().y()* FACE_DOWNSAMPLE_RATIO;
+        pt1.x = faces[i].tl_corner().x()* downsampleRatio;
+        pt1.y = faces[i].tl_corner().y()* downsampleRatio;
+        pt2.x = faces[i].br_corner().x()* downsampleRatio;
+        pt2.y = faces[i].br_corner().y()* downsampleRatio;
 
         rightEye.x = d.part(42).x() + ((d.part(45).x()) - (d.part(42).x()))/2;
         rightEye.y = d.part(43).y() + ((d.part(46).y()) - (d.part(43).y()))/2;
@@ -384,10 +391,10 @@ void FACEManager::onRead(yarp::sig::ImageOf<yarp::sig::PixelRgb> &img)
             for (int i=0; i< idTargets.size(); i++)
             {
                 cv::Point pt1, pt2;
-                pt1.x = faces[idTargets[i].first].tl_corner().x()* FACE_DOWNSAMPLE_RATIO;
-                pt1.y = faces[idTargets[i].first].tl_corner().y()* FACE_DOWNSAMPLE_RATIO;
-                pt2.x = faces[idTargets[i].first].br_corner().x()* FACE_DOWNSAMPLE_RATIO;
-                pt2.y = faces[idTargets[i].first].br_corner().y()* FACE_DOWNSAMPLE_RATIO;
+                pt1.x = faces[idTargets[i].first].tl_corner().x()* downsampleRatio;
+                pt1.y = faces[idTargets[i].first].tl_corner().y()* downsampleRatio;
+                pt2.x = faces[idTargets[i].first].br_corner().x()* downsampleRatio;
+                pt2.y = faces[idTargets[i].first].br_corner().y()* downsampleRatio;
 
                 if (pt1.x < 2)
                     pt1.x = 1;
@@ -415,10 +422,10 @@ void FACEManager::onRead(yarp::sig::ImageOf<yarp::sig::PixelRgb> &img)
                 pos.addDouble(pt2.y);
 
                 cv::Point biggestpt1, biggestpt2;
-                biggestpt1.x = faces[idTargets[0].first].tl_corner().x()* FACE_DOWNSAMPLE_RATIO;
-                biggestpt1.y = faces[idTargets[0].first].tl_corner().y()* FACE_DOWNSAMPLE_RATIO;
-                biggestpt2.x = faces[idTargets[0].first].br_corner().x()* FACE_DOWNSAMPLE_RATIO;
-                biggestpt2.y = faces[idTargets[0].first].br_corner().y()* FACE_DOWNSAMPLE_RATIO;
+                biggestpt1.x = faces[idTargets[0].first].tl_corner().x()* downsampleRatio;
+                biggestpt1.y = faces[idTargets[0].first].tl_corner().y()* downsampleRatio;
+                biggestpt2.x = faces[idTargets[0].first].br_corner().x()* downsampleRatio;
+                biggestpt2.y = faces[idTargets[0].first].br_corner().y()* downsampleRatio;
 
                 rectangle(imgMat, biggestpt1, biggestpt2, cv::Scalar( 0, 255, 0 ), draw_res, 8, 0);
 
