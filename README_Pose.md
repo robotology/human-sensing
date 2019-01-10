@@ -11,9 +11,11 @@ Table of Contents
 
 #### Requirements
 
-* **Ubuntu** (tested on 14 and 16) or **Windows** (tested on 10). We do not support any other OS but the community has been able to install it on: CentOS, Windows 7, and Windows 8.
+* **Ubuntu** (tested on 14, 16 and 18) or **Windows** (tested on 10). We do not support any other OS but the community has been able to install it on: CentOS, Windows 7, and Windows 8.
 * **NVIDIA graphics card** with at least 1.6 GB available (the nvidia-smi command checks the available GPU memory in Ubuntu).
-* **CUDA** and **cuDNN** installed. Note: We found OpenPose working with cuDNN 5.1 ~10% faster than with cuDNN 6.
+* **CUDA** and **cuDNN** installed.
+Note 1: We found OpenPose working with cuDNN 5.1 ~10% faster than with cuDNN 6.
+Note 2: If the [cuDNN test](https://docs.nvidia.com/deeplearning/sdk/cudnn-install/index.html) does not compile, in the file `/usr/include/cudnn.h`, change the line `#include "driver_types.h"` to `#include <driver_types.h>` (as suggested [here](https://devtalk.nvidia.com/default/topic/1025801/cudnn/cudnn-test-did-not-pass/)).
 * At least **2 GB** of free **RAM** memory.
 * Highly recommended: A **CPU** with at least **8 cores**.
 
@@ -34,9 +36,11 @@ Note: These requirements assume the default configuration (i.e. --net_resolution
 
     $ git clone https://github.com/CMU-Perceptual-Computing-Lab/openpose.git
 
-Follow the installation procedure at the following link [manual compilation](https://github.com/CMU-Perceptual-Computing-Lab/openpose/blob/master/doc/installation_cmake.md).
+Follow the installation procedure at the following link [manual compilation](https://github.com/CMU-Perceptual-Computing-Lab/openpose/blob/master/doc/installation.md#installation).
 
-####Side note
+Note: if there is more than one CUDA with different architectures on the same system, the cmake variable `CUDA_ARCH` should be set to `Manual` and the desired architecture should be selected by modifying `CUDA_ARCH_BIN` and `CUDA_ARCH_PTX`.  
+
+#### Side note
 Instead of installing the library with `make install`I suggest to add to your `bash` of export the `openpose_ROOT` variable:
 
     export openpose_ROOT=/path/to/the/root/of/openpose
