@@ -350,7 +350,7 @@ private:
     ImageProcessing             *processingClass;
     ImageOutput                 *outputClass;
 
-    op::Wrapper<std::vector<op::Datum>> opWrapper{op::ThreadManagerMode::Asynchronous};
+    op::WrapperT<std::vector<op::Datum>> opWrapper{op::ThreadManagerMode::Asynchronous};
 
     bool                        closing;
 
@@ -437,14 +437,20 @@ public:
         // Pose configuration
         const op::WrapperStructPose wrapperStructPose{body_enable, netInputSize, outputSize, keypointScale, num_gpu, num_gpu_start, num_scales, scale_gap,
                                                       op::flagsToRenderMode(render_pose), poseModel, !disable_blending, (float)alpha_pose, (float)alpha_heatmap,
-                                                      part_to_show, model_folder, heatMapTypes, heatMapsScaleMode, part_candidates, (float)render_threshold}, number_people_max;
+                                                      part_to_show, model_folder, heatMapTypes, heatMapsScaleMode, part_candidates, (float)render_threshold, number_people_max} ;
 
         // Hand configuration
         const op::WrapperStructHand wrapperStructHand{hand_enable, handNetInputSize, hand_scale_number, (float)hand_scale_range,
                                                       hand_tracking, op::flagsToRenderMode(hand_render, render_pose),
                                                       (float)hand_alpha_pose, (float)hand_alpha_heatmap, (float)hand_render_threshold};
 
-        opWrapper.configure(wrapperStructPose, wrapperStructHand, op::WrapperStructInput{}, op::WrapperStructOutput{});
+
+        //opWrapper.disableMultiThreading();
+ 
+        opWrapper.configure(wrapperStructPose);
+        opWrapper.configure(wrapperStructHand);
+        opWrapper.configure(op::WrapperStructInput{});
+        opWrapper.configure(op::WrapperStructOutput{});
 
 
         attach(rpcPort);
