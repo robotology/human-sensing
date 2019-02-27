@@ -177,7 +177,7 @@ public:
     }
 
     /********************************************************/
-    void setStamp(yarp::os::Stamp &stamp)
+    void setStamp(const yarp::os::Stamp &stamp)
     {
         this->stamp = stamp;
     }
@@ -267,13 +267,13 @@ public:
 
     }
     /********************************************************/
-    void setStamp(yarp::os::Stamp &stamp)
+    void setStamp(const yarp::os::Stamp &stamp)
     {
         this->stamp = stamp;
     }
     
     /********************************************************/
-    void setImage(yarp::sig::ImageOf<yarp::sig::PixelFloat> &inFloat, yarp::os::Stamp &stamp) {
+    void setImage(yarp::sig::ImageOf<yarp::sig::PixelFloat> &inFloat, const yarp::os::Stamp &stamp) {
         yarp::os::LockGuard lg(mutex);
         this->inFloat = &inFloat;
         this->stampFloat = stamp;
