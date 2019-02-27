@@ -54,9 +54,8 @@
 #include <yarp/sig/Image.h>
 #include <yarp/os/RpcClient.h>
 #include <yarp/os/LockGuard.h>
-
-#include <opencv2/core/core.hpp>
-#include <opencv2/opencv.hpp>
+#include <yarp/os/Stamp.h>
+#include <yarp/cv/Cv.h>
 
 /********************************************************/
 class ImageInput : public op::WorkerProducer<std::shared_ptr<std::vector<op::Datum>>>
@@ -103,7 +102,7 @@ public:
 
             if (inImage->width() * inImage->height() > 0)
             {
-                cv::Mat in_cv = cv::cvarrToMat((IplImage *)inImage->getIplImage());
+                cv::Mat in_cv = yarp::cv::toCvMat(*inImage);
                 // Fill datum
                 datum.cvInputData = in_cv;
                 // If empty frame -> return nullptr
@@ -135,6 +134,7 @@ class ImageProcessing : public op::Worker<std::shared_ptr<std::vector<op::Datum>
 private:
     std::string moduleName;
     yarp::os::BufferedPort<yarp::os::Bottle>  targetPort;
+    yarp::os::Stamp stamp;
 public:
     std::map<unsigned int, std::string> mapParts {
         {0,  "Nose"},
@@ -157,20 +157,29 @@ public:
         {17, "LEar"},
         {18, "Background"}
     };
+
     /********************************************************/
     ImageProcessing(const std::string& moduleName)
     {
         this->moduleName = moduleName;
     }
 
+    /********************************************************/
     ~ImageProcessing()
     {
         targetPort.close();
     }
+
     /********************************************************/
     void initializationOnThread()
     {
         targetPort.open("/"+ moduleName + "/target:o");
+    }
+
+    /********************************************************/
+    void setStamp(yarp::os::Stamp &stamp)
+    {
+        this->stamp = stamp;
     }
 
     /********************************************************/
@@ -211,7 +220,10 @@ public:
                 }
             }
             if (peopleBottle.size())
+            {
+                targetPort.setEnvelope(stamp);
                 targetPort.write();
+            }
         }
     }
 };
@@ -229,6 +241,8 @@ private:
     yarp::os::Mutex             mutex;
 
     bool sendFloat;
+    yarp::os::Stamp stamp;
+    yarp::os::Stamp stampFloat;
 
 public:
 
@@ -253,9 +267,16 @@ public:
 
     }
     /********************************************************/
-    void setImage(yarp::sig::ImageOf<yarp::sig::PixelFloat> &inFloat) {
+    void setStamp(yarp::os::Stamp &stamp)
+    {
+        this->stamp = stamp;
+    }
+    
+    /********************************************************/
+    void setImage(yarp::sig::ImageOf<yarp::sig::PixelFloat> &inFloat, yarp::os::Stamp &stamp) {
         yarp::os::LockGuard lg(mutex);
         this->inFloat = &inFloat;
+        this->stampFloat = stamp;
     }
 
 
@@ -286,17 +307,22 @@ public:
             outImage.resize(datumsPtr->at(0).cvOutputData.cols, datumsPtr->at(0).cvOutputData.rows);
             outImagePropag.resize(datumsPtr->at(0).cvInputData.cols, datumsPtr->at(0).cvInputData.rows);
 
-            IplImage colour = datumsPtr->at(0).cvOutputData;
-            cvCopy( &colour, (IplImage *) outImage.getIplImage());
+            cv::Mat colour = datumsPtr->at(0).cvOutputData;
+            outImage = yarp::cv::fromCvMat<yarp::sig::PixelRgb>(colour);
 
-            IplImage colourOrig = datumsPtr->at(0).cvInputData;
-            cvCopy( &colourOrig, (IplImage *) outImagePropag.getIplImage());
+            cv::Mat colourOrig = datumsPtr->at(0).cvInputData;
+            outImagePropag = yarp::cv::fromCvMat<yarp::sig::PixelRgb>(colourOrig);
 
+            outPort.setEnvelope(stamp);
             outPort.write();
+            outPortPropag.setEnvelope(stamp);
             outPortPropag.write();
 
             if (sendFloat)
+            {
+                outFloatPort.setEnvelope(stampFloat);
                 outFloatPort.write();
+            }
 
             sendFloat = false;
         }
@@ -560,13 +586,20 @@ public:
 
         if (yarp::sig::ImageOf<yarp::sig::PixelRgb> *inImage = inPort.read())
         {
+            yarp::os::Stamp stamp;
+            inPort.getEnvelope(stamp);
             inputClass->setImage(*inImage);
+            outputClass->setStamp(stamp);
+            processingClass->setStamp(stamp);
 
             if (inFloatPort.getInputCount() > 0)
                 if (yarp::sig::ImageOf<yarp::sig::PixelFloat> *inFloat = inFloatPort.read())
                 {
+                    yarp::os::Stamp stampFloat;
+                    inFloatPort.getEnvelope(stampFloat);
                     outputClass->setFlag(true);
-                    outputClass->setImage(*inFloat);
+                    
+                    outputClass->setImage(*inFloat, stampFloat);
                 }
 
             auto datumToProcess = inputClass->workProducer();
