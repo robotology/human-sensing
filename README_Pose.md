@@ -40,6 +40,10 @@ Follow the installation procedure at the following link [manual compilation](htt
 
 Note: if there is more than one CUDA with different architectures on the same system, the cmake variable `CUDA_ARCH` should be set to `Manual` and the desired architecture should be selected by modifying `CUDA_ARCH_BIN` and `CUDA_ARCH_PTX`.  
 
+#### Important note
+
+The current version of `yarpOpenPose` (2a1b7e94fb493ae4d4dcc32c1edafebaf61ebc20) requires `openPose` at https://github.com/CMU-Perceptual-Computing-Lab/openpose/commit/fbee9b65241ddbb7b80ab980bdd90838521a4dbb.
+
 #### Side note
 Instead of installing the library with `make install`I suggest to add to your `bash` of export the `openpose_ROOT` variable:
 
