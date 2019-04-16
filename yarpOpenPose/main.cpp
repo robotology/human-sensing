@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 iCub Facility - Istituto Italiano di Tecnologia
+ * Copyright (C) 2019 iCub Facility - Istituto Italiano di Tecnologia
  * Author: Vadim Tikhanoff
  * email:  vadim.tikhanoff@iit.it
  * Permission is granted to copy, distribute, and/or modify this program
@@ -28,12 +28,11 @@
 #include <opencv2/opencv.hpp>
 
 // Other 3rdpary depencencies
-#include <gflags/gflags.h> // DEFINE_bool, DEFINE_int32, DEFINE_int64, DEFINE_uint64, DEFINE_double, DEFINE_string
+//#include <gflags/gflags.h> // DEFINE_bool, DEFINE_int32, DEFINE_int64, DEFINE_uint64, DEFINE_double, DEFINE_string
 //#include <glog/logging.h> // google::InitGoogleLogging, CHECK, CHECK_EQ, LOG, VLOG, ...
 
 // OpenPose dependencies
  #include <openpose/core/headers.hpp>
- //#include <openpose/experimental/headers.hpp>
  #include <openpose/filestream/headers.hpp>
  #include <openpose/gui/headers.hpp>
  #include <openpose/pose/headers.hpp>
@@ -41,6 +40,7 @@
  #include <openpose/thread/headers.hpp>
  #include <openpose/utilities/headers.hpp>
  #include <openpose/wrapper/headers.hpp>
+//#include <openpose/flags.hpp>
 
 // yarp dependencies
 #include <yarp/os/BufferedPort.h>
@@ -58,7 +58,7 @@
 #include <yarp/cv/Cv.h>
 
 /********************************************************/
-class ImageInput : public op::WorkerProducer<std::shared_ptr<std::vector<op::Datum>>>
+class ImageInput : public op::WorkerProducer<std::shared_ptr<std::vector<std::shared_ptr<op::Datum>>>>
 {
 private:
 
@@ -86,7 +86,7 @@ public:
     }
 
     /********************************************************/
-    std::shared_ptr<std::vector<op::Datum>> workProducer()
+    std::shared_ptr<std::vector<std::shared_ptr<op::Datum>>> workProducer()
     {
         if (mClosed)
         {
@@ -96,17 +96,18 @@ public:
         else
         {
             // Create new datum
-            auto datumsPtr = std::make_shared<std::vector<op::Datum>>();
+            auto datumsPtr = std::make_shared<std::vector<std::shared_ptr<op::Datum>>>();
             datumsPtr->emplace_back();
             auto& datum = datumsPtr->at(0);
+            datum = std::make_shared<op::Datum>();
 
             if (inImage->width() * inImage->height() > 0)
             {
                 cv::Mat in_cv = yarp::cv::toCvMat(*inImage);
                 // Fill datum
-                datum.cvInputData = in_cv;
+                datum->cvInputData = in_cv;
                 // If empty frame -> return nullptr
-                if (datum.cvInputData.empty())
+                if (datum->cvInputData.empty())
                 {
                     mClosed = true;
                     op::log("Empty frame detected. Closing program.", op::Priority::Max);
@@ -129,7 +130,7 @@ public:
 };
 
 /********************************************************/
-class ImageProcessing : public op::Worker<std::shared_ptr<std::vector<op::Datum>>>
+class ImageProcessing : public op::Worker<std::shared_ptr<std::vector<std::shared_ptr<op::Datum>>>>
 {
 private:
     std::string moduleName;
@@ -183,7 +184,7 @@ public:
     }
 
     /********************************************************/
-    void work(std::shared_ptr<std::vector<op::Datum>>& datumsPtr)
+    void work(std::shared_ptr<std::vector<std::shared_ptr<op::Datum>>>& datumsPtr)
     {
         if (datumsPtr != nullptr && !datumsPtr->empty())
         {
@@ -195,7 +196,7 @@ public:
             op::Array<float> pose(tDatumsNoPtr.size());
             for (auto i = 0; i < tDatumsNoPtr.size(); i++)
             {
-                pose = tDatumsNoPtr[i].poseKeypoints;
+                pose = tDatumsNoPtr[i]->poseKeypoints;
 
                 if (!pose.empty() && pose.getNumberDimensions() != 3)
                     op::error("pose.getNumberDimensions() != 3.", __LINE__, __FUNCTION__, __FILE__);
@@ -229,7 +230,7 @@ public:
 };
 
 /**********************************************************/
-class ImageOutput : public op::WorkerConsumer<std::shared_ptr<std::vector<op::Datum>>>
+class ImageOutput : public op::WorkerConsumer<std::shared_ptr<std::vector<std::shared_ptr<op::Datum>>>>
 {
 private:
     std::string moduleName;
@@ -271,7 +272,7 @@ public:
     {
         this->stamp = stamp;
     }
-    
+
     /********************************************************/
     void setImage(yarp::sig::ImageOf<yarp::sig::PixelFloat> &inFloat, const yarp::os::Stamp &stamp) {
         yarp::os::LockGuard lg(mutex);
@@ -289,7 +290,7 @@ public:
     }
 
     /********************************************************/
-    void workConsumer(const std::shared_ptr<std::vector<op::Datum>>& datumsPtr)
+    void workConsumer(const std::shared_ptr<std::vector<std::shared_ptr<op::Datum>>>& datumsPtr)
     {
         if (datumsPtr != nullptr && !datumsPtr->empty())
         {
@@ -304,13 +305,13 @@ public:
                 outImageFloat = *inFloat;
             }
 
-            outImage.resize(datumsPtr->at(0).cvOutputData.cols, datumsPtr->at(0).cvOutputData.rows);
-            outImagePropag.resize(datumsPtr->at(0).cvInputData.cols, datumsPtr->at(0).cvInputData.rows);
+            outImage.resize(datumsPtr->at(0)->cvOutputData.cols, datumsPtr->at(0)->cvOutputData.rows);
+            outImagePropag.resize(datumsPtr->at(0)->cvInputData.cols, datumsPtr->at(0)->cvInputData.rows);
 
-            cv::Mat colour = datumsPtr->at(0).cvOutputData;
+            cv::Mat colour = datumsPtr->at(0)->cvOutputData;
             outImage = yarp::cv::fromCvMat<yarp::sig::PixelRgb>(colour);
 
-            cv::Mat colourOrig = datumsPtr->at(0).cvInputData;
+            cv::Mat colourOrig = datumsPtr->at(0)->cvInputData;
             outImagePropag = yarp::cv::fromCvMat<yarp::sig::PixelRgb>(colourOrig);
 
             outPort.setEnvelope(stamp);
@@ -376,7 +377,7 @@ private:
     ImageProcessing             *processingClass;
     ImageOutput                 *outputClass;
 
-    op::WrapperT<std::vector<op::Datum>> opWrapper{op::ThreadManagerMode::Asynchronous};
+    op::WrapperT<op::Datum> opWrapper{op::ThreadManagerMode::Asynchronous};
 
     bool                        closing;
 
@@ -388,55 +389,55 @@ public:
         this->rf=&rf;
         std::string moduleName = rf.check("name", yarp::os::Value("yarpOpenPose"), "module name (string)").asString();
 
-        model_name = rf.check("model_name", yarp::os::Value("COCO"), "Model to be used e.g. COCO, MPI, MPI_4_layers. (string)").asString();
+        model_name = rf.check("model_name", yarp::os::Value("BODY_25"), "Model to be used e.g. COCO, MPI, MPI_4_layers. (string)").asString();
         model_folder = rf.check("model_folder", yarp::os::Value("/models"), "Folder where the pose models (COCO and MPI) are located. (string)").asString();
         net_resolution = rf.check("net_resolution", yarp::os::Value("656x368"), "The resolution of the net, multiples of 16. (string)").asString();
         img_resolution = rf.check("img_resolution", yarp::os::Value("320x240"), "The resolution of the image (display and output). (string)").asString();
-        num_gpu = rf.check("num_gpu", yarp::os::Value("1"), "The number of GPU devices to use.(int)").asInt();
-        num_gpu_start = rf.check("num_gpu_start", yarp::os::Value("0"), "The GPU device start number.(int)").asInt();
-        num_scales = rf.check("num_scales", yarp::os::Value("1"), "Number of scales to average.(int)").asInt();
-        scale_gap = rf.check("scale_gap", yarp::os::Value("0.3"), "Scale gap between scales. No effect unless num_scales>1. Initial scale is always 1. If you want to change the initial scale,"
+        num_gpu = rf.check("num_gpu", yarp::os::Value(1), "The number of GPU devices to use.(int)").asInt();
+        num_gpu_start = rf.check("num_gpu_start", yarp::os::Value(0), "The GPU device start number.(int)").asInt();
+        num_scales = rf.check("num_scales", yarp::os::Value(1), "Number of scales to average.(int)").asInt();
+        scale_gap = rf.check("scale_gap", yarp::os::Value(0.3), "Scale gap between scales. No effect unless num_scales>1. Initial scale is always 1. If you want to change the initial scale,"
                                                                 " you actually want to multiply the `net_resolution` by your desired initial scale.(float)").asDouble();
 
-        keypoint_scale = rf.check("keypoint_scale", yarp::os::Value("0"), "Scaling of the (x,y) coordinates of the final pose data array (op::Datum::pose), i.e. the scale of the (x,y) coordinates that"
+        keypoint_scale = rf.check("keypoint_scale", yarp::os::Value(0), "Scaling of the (x,y) coordinates of the final pose data array (op::Datum::pose), i.e. the scale of the (x,y) coordinates that"
                                                                 " will be saved with the `write_pose` & `write_pose_json` flags. Select `0` to scale it to the original source resolution, `1`"
                                                                 " to scale it to the net output size (set with `net_resolution`), `2` to scale it to the final output size (set with "
                                                                 " `resolution`), `3` to scale it in the range [0,1], and 4 for range [-1,1]. Non related with `num_scales` and `scale_gap`.(int)").asInt();
 
-        heatmaps_add_parts = rf.check("heatmaps_add_parts", yarp::os::Value("false"), "If true, it will add the body part heatmaps to the final op::Datum::poseHeatMaps array (program speed will decrease). Not"
+        heatmaps_add_parts = rf.check("heatmaps_add_parts", yarp::os::Value(false), "If true, it will add the body part heatmaps to the final op::Datum::poseHeatMaps array (program speed will decrease). Not"
                                                                 " required for our library, enable it only if you intend to process this information later. If more than one `add_heatmaps_X`"
                                                                 " flag is enabled, it will place then in sequential memory order: body parts + bkg + PAFs. It will follow the order on"
                                                                 " POSE_BODY_PART_MAPPING in `include/openpose/pose/poseParameters.hpp`.(bool)").asBool();
-        heatmaps_add_bkg = rf.check("heatmaps_add_bkg", yarp::os::Value("false"), "Same functionality as `add_heatmaps_parts`, but adding the heatmap corresponding to background. (bool)").asBool();
+        heatmaps_add_bkg = rf.check("heatmaps_add_bkg", yarp::os::Value(false), "Same functionality as `add_heatmaps_parts`, but adding the heatmap corresponding to background. (bool)").asBool();
 
-        heatmaps_add_PAFs = rf.check("heatmaps_add_PAFs", yarp::os::Value("false"),"Same functionality as `add_heatmaps_parts`, but adding the PAFs.(bool)").asBool();
-        heatmaps_scale_mode = rf.check("heatmaps_scale_mode", yarp::os::Value("2"), "Set 0 to scale op::Datum::poseHeatMaps in the range [0,1], 1 for [-1,1]; and 2 for integer rounded [0,255].(int)").asInt();
+        heatmaps_add_PAFs = rf.check("heatmaps_add_PAFs", yarp::os::Value(false),"Same functionality as `add_heatmaps_parts`, but adding the PAFs.(bool)").asBool();
+        heatmaps_scale_mode = rf.check("heatmaps_scale_mode", yarp::os::Value(2), "Set 0 to scale op::Datum::poseHeatMaps in the range [0,1], 1 for [-1,1]; and 2 for integer rounded [0,255].(int)").asInt();
         //no_render_output = rf.check("no_render_output", yarp::os::Value("false"), "If false, it will fill image with the original image + desired part to be shown. If true, it will leave them empty.(bool)").asBool();
-        render_pose = rf.check("render_pose", yarp::os::Value("2"), "Set to 0 for no rendering, 1 for CPU rendering (slightly faster), and 2 for GPU rendering(int)").asInt();
-        part_to_show = rf.check("part_to_show", yarp::os::Value("0"),"Part to show from the start.(int)").asInt();
-        disable_blending = rf.check("disable_blending", yarp::os::Value("false"), "If false, it will blend the results with the original frame. If true, it will only display the results.").asBool();
-        alpha_pose = rf.check("alpha_pose", yarp::os::Value("0.6"), "Blending factor (range 0-1) for the body part rendering. 1 will show it completely, 0 will hide it.(double)").asDouble();
-        alpha_heatmap = rf.check("alpha_heatmap", yarp::os::Value("0.7"), "Blending factor (range 0-1) between heatmap and original frame. 1 will only show the heatmap, 0 will only show the frame.(double)").asDouble();
-        render_threshold = rf.check("render_threshold", yarp::os::Value("0.05"), "Only estimated keypoints whose score confidences are higher than this threshold will be rendered. Generally, a high threshold (> 0.5) will only render very clear body parts.(double)").asDouble();
-        number_people_max = rf.check("number_people_max", yarp::os::Value("-1"), "This parameter will limit the maximum number of people detected, by keeping the people with top scores. -1 will keep them all.(int)").asInt();
-        part_candidates = rf.check("part_candidates", yarp::os::Value("false"), "If true it will fill the op::Datum::poseCandidates array with the body part candidates.(bool)").asBool();
-        body_enable = rf.check("body_enable", yarp::os::Value("true"), "Disable body keypoint detection. Option only possible for faster (but less accurate) face. (bool)").asBool();
-        hand_enable = rf.check("hand_enable", yarp::os::Value("false"), "Enables hand keypoint detection. It will share some parameters from the body pose, e.g."
+        render_pose = rf.check("render_pose", yarp::os::Value(2), "Set to 0 for no rendering, 1 for CPU rendering (slightly faster), and 2 for GPU rendering(int)").asInt();
+        part_to_show = rf.check("part_to_show", yarp::os::Value(0),"Part to show from the start.(int)").asInt();
+        disable_blending = rf.check("disable_blending", yarp::os::Value(false), "If false, it will blend the results with the original frame. If true, it will only display the results.").asBool();
+        alpha_pose = rf.check("alpha_pose", yarp::os::Value(0.6), "Blending factor (range 0-1) for the body part rendering. 1 will show it completely, 0 will hide it.(double)").asDouble();
+        alpha_heatmap = rf.check("alpha_heatmap", yarp::os::Value(0.7), "Blending factor (range 0-1) between heatmap and original frame. 1 will only show the heatmap, 0 will only show the frame.(double)").asDouble();
+        render_threshold = rf.check("render_threshold", yarp::os::Value(0.05), "Only estimated keypoints whose score confidences are higher than this threshold will be rendered. Generally, a high threshold (> 0.5) will only render very clear body parts.(double)").asDouble();
+        number_people_max = rf.check("number_people_max", yarp::os::Value(-1), "This parameter will limit the maximum number of people detected, by keeping the people with top scores. -1 will keep them all.(int)").asInt();
+        part_candidates = rf.check("part_candidates", yarp::os::Value(false), "If true it will fill the op::Datum::poseCandidates array with the body part candidates.(bool)").asBool();
+        body_enable = rf.check("body_enable", yarp::os::Value(true), "Disable body keypoint detection. Option only possible for faster (but less accurate) face. (bool)").asBool();
+        hand_enable = rf.check("hand_enable", yarp::os::Value(false), "Enables hand keypoint detection. It will share some parameters from the body pose, e.g."
                                                                 " `model_folder`. Analogously to `--face`, it will also slow down the performance, increase"
                                                                 " the required GPU memory and its speed depends on the number of people.(int)").asBool();
         hand_net_resolution = rf.check("hand_net_resolution", yarp::os::Value("368x368"), "Multiples of 16 and squared. Analogous to `net_resolution` but applied to the hand keypoint (string)").asString();
-        hand_scale_number = rf.check("hand_scale_number", yarp::os::Value("1"), "Analogous to `scale_number` but applied to the hand keypoint detector.(int)").asInt();
-        hand_scale_range = rf.check("hand_scale_range", yarp::os::Value("0.4"), "Analogous purpose than `scale_gap` but applied to the hand keypoint detector. Total range"
+        hand_scale_number = rf.check("hand_scale_number", yarp::os::Value(1), "Analogous to `scale_number` but applied to the hand keypoint detector.(int)").asInt();
+        hand_scale_range = rf.check("hand_scale_range", yarp::os::Value(0.4), "Analogous purpose than `scale_gap` but applied to the hand keypoint detector. Total range"
                                                                 " between smallest and biggest scale. The scales will be centered in ratio 1. E.g. if"
                                                                 " scaleRange = 0.4 and scalesNumber = 2, then there will be 2 scales, 0.8 and 1.2.(double)").asDouble();
-        hand_tracking = rf.check("hand_tracking", yarp::os::Value("false"), "Adding hand tracking might improve hand keypoints detection for webcam (if the frame rate"
+        hand_tracking = rf.check("hand_tracking", yarp::os::Value(false), "Adding hand tracking might improve hand keypoints detection for webcam (if the frame rate"
                                                                 " is high enough, i.e. >7 FPS per GPU) and video. This is not person ID tracking, it"
                                                                 " simply looks for hands in positions at which hands were located in previous frames, but"
                                                                 " it does not guarantee the same person ID among frames (bool)").asBool();
-        hand_alpha_pose = rf.check("hand_alpha_pose", yarp::os::Value("0.6"), "Analogous to `alpha_pose` but applied to hand.(double)").asDouble();
-        hand_alpha_heatmap = rf.check("hand_alpha_heatmap", yarp::os::Value("0.7"), "Analogous to `alpha_heatmap` but applied to hand.(double)").asDouble();
-        hand_render_threshold = rf.check("hand_render_threshold", yarp::os::Value("0.2"), "Analogous to `render_threshold`, but applied to the hand keypoints.(double)").asDouble();
-        hand_render = rf.check("hand_render", yarp::os::Value("-1"), "Analogous to `render_pose` but applied to the hand. Extra option: -1 to use the same(int)").asInt();
+        hand_alpha_pose = rf.check("hand_alpha_pose", yarp::os::Value(0.6), "Analogous to `alpha_pose` but applied to hand.(double)").asDouble();
+        hand_alpha_heatmap = rf.check("hand_alpha_heatmap", yarp::os::Value(0.7), "Analogous to `alpha_heatmap` but applied to hand.(double)").asDouble();
+        hand_render_threshold = rf.check("hand_render_threshold", yarp::os::Value(0.2), "Analogous to `render_threshold`, but applied to the hand keypoints.(double)").asDouble();
+        hand_render = rf.check("hand_render", yarp::os::Value(-1), "Analogous to `render_pose` but applied to the hand. Extra option: -1 to use the same(int)").asInt();
 
         setName(moduleName.c_str());
         rpcPort.open(("/"+getName("/rpc")).c_str());
@@ -449,30 +450,37 @@ public:
         // netInputSize
         auto netInputSize = op::flagsToPoint(net_resolution, net_resolution);
         //pose model
-        op::PoseModel poseModel = gflagToPoseModel(model_name);
+        op::PoseModel poseModel = op::flagsToPoseModel(model_name);
         // scaleMode
         op::ScaleMode keypointScale = op::flagsToScaleMode(keypoint_scale);
         // handNetInputSize
         auto handNetInputSize = op::flagsToPoint(hand_net_resolution, hand_net_resolution);
 
         // heatmaps to add
-        std::vector<op::HeatMapType> heatMapTypes = gflagToHeatMaps(heatmaps_add_parts, heatmaps_add_bkg, heatmaps_add_PAFs);
+        std::vector<op::HeatMapType> heatMapTypes = op::flagsToHeatMaps(heatmaps_add_parts, heatmaps_add_bkg, heatmaps_add_PAFs);
         op::check(heatmaps_scale_mode >= 0 && heatmaps_scale_mode <= 2, "Non valid `heatmaps_scale_mode`.", __LINE__, __FUNCTION__, __FILE__);
         op::ScaleMode heatMapsScaleMode = (heatmaps_scale_mode == 0 ? op::ScaleMode::PlusMinusOne : (heatmaps_scale_mode == 1 ? op::ScaleMode::ZeroToOne : op::ScaleMode::UnsignedChar ));
 
         // Pose configuration
-        const op::WrapperStructPose wrapperStructPose{body_enable, netInputSize, outputSize, keypointScale, num_gpu, num_gpu_start, num_scales, scale_gap,
+        op::PoseMode pose_mode_body = op::PoseMode::Enabled;
+        if (!body_enable)
+            pose_mode_body = op::PoseMode::Disabled;
+
+
+        const op::WrapperStructPose wrapperStructPose{pose_mode_body, netInputSize, outputSize, keypointScale, num_gpu, num_gpu_start, num_scales, scale_gap,
                                                       op::flagsToRenderMode(render_pose), poseModel, !disable_blending, (float)alpha_pose, (float)alpha_heatmap,
                                                       part_to_show, model_folder, heatMapTypes, heatMapsScaleMode, part_candidates, (float)render_threshold, number_people_max} ;
 
         // Hand configuration
-        const op::WrapperStructHand wrapperStructHand{hand_enable, handNetInputSize, hand_scale_number, (float)hand_scale_range,
-                                                      hand_tracking, op::flagsToRenderMode(hand_render, render_pose),
-                                                      (float)hand_alpha_pose, (float)hand_alpha_heatmap, (float)hand_render_threshold};
+        //op::PoseMode pose_mode_hand = op::PoseMode::Enabled;
+        //if (!hand_enable)
+        //    pose_mode_hand = op::PoseMode::Disabled;
+
+        const op::WrapperStructHand wrapperStructHand{hand_enable, op::Detector::Provided, handNetInputSize, hand_scale_number, (float)hand_scale_range, op::flagsToRenderMode(hand_render, render_pose)};
 
 
         //opWrapper.disableMultiThreading();
- 
+
         opWrapper.configure(wrapperStructPose);
         opWrapper.configure(wrapperStructHand);
         opWrapper.configure(op::WrapperStructInput{});
@@ -583,7 +591,6 @@ public:
     /********************************************************/
     bool updateModule()
     {
-
         if (yarp::sig::ImageOf<yarp::sig::PixelRgb> *inImage = inPort.read())
         {
             yarp::os::Stamp stamp;
@@ -598,17 +605,20 @@ public:
                     yarp::os::Stamp stampFloat;
                     inFloatPort.getEnvelope(stampFloat);
                     outputClass->setFlag(true);
-                    
+
                     outputClass->setImage(*inFloat, stampFloat);
                 }
 
             auto datumToProcess = inputClass->workProducer();
             if (datumToProcess != nullptr)
             {
-                auto successfullyEmplaced = opWrapper.waitAndEmplace(datumToProcess);
+                auto successfullyEmplaced = opWrapper.waitAndEmplace(datumToProcess->at(0)->cvInputData);
                 // Pop frame
-                std::shared_ptr<std::vector<op::Datum>> datumProcessed;
-                if (successfullyEmplaced && opWrapper.waitAndPop(datumProcessed))
+                std::shared_ptr<std::vector<std::shared_ptr<op::Datum>>> datumProcessed;
+                
+                const auto status = opWrapper.waitAndPop(datumProcessed);
+                
+                if (successfullyEmplaced && status)
                 {
                     outputClass->workConsumer(datumProcessed);
                     processingClass->work(datumProcessed);
