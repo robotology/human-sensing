@@ -146,17 +146,24 @@ public:
         {5,  "LShoulder"},
         {6,  "LElbow"},
         {7,  "LWrist"},
-        {8,  "RHip"},
-        {9,  "RKnee"},
-        {10, "RAnkle"},
-        {11, "LHip"},
-        {12, "LKnee"},
-        {13, "LAnkle"},
-        {14, "REye"},
-        {15, "LEye"},
-        {16, "REar"},
-        {17, "LEar"},
-        {18, "Background"}
+        {8,  "MidHip"},
+        {9,  "RHip"},
+        {10, "RKnee"},
+        {11, "RAnkle"},
+        {12, "LHip"},
+        {13, "LKnee"},
+        {14, "LAnkle"},
+        {15, "REye"},
+        {16, "LEye"},
+        {17, "REar"},
+        {18, "LEar"},
+        {19, "LBigToe"},
+        {20, "LSmallToe"},
+        {21, "LHeel"},
+        {22, "RBigToe"},
+        {23, "RSmallToe"},
+        {24, "RHeel"},
+        {25, "Background"}
     };
 
     /********************************************************/
@@ -205,6 +212,7 @@ public:
                 const auto numberBodyParts = pose.getSize(1);
 
                 //std::cout << "Number of people is " << numberPeople << std::endl;
+                //std::cout << "Number of body parts is " << numberBodyParts << std::endl;
 
                 for (auto person = 0 ; person < numberPeople ; person++)
                 {
@@ -466,16 +474,12 @@ public:
         if (!body_enable)
             pose_mode_body = op::PoseMode::Disabled;
 
-
         const op::WrapperStructPose wrapperStructPose{pose_mode_body, netInputSize, outputSize, keypointScale, num_gpu, num_gpu_start, num_scales, scale_gap,
                                                       op::flagsToRenderMode(render_pose), poseModel, !disable_blending, (float)alpha_pose, (float)alpha_heatmap,
                                                       part_to_show, model_folder, heatMapTypes, heatMapsScaleMode, part_candidates, (float)render_threshold, number_people_max} ;
 
         // Hand configuration
-        //op::PoseMode pose_mode_hand = op::PoseMode::Enabled;
-        //if (!hand_enable)
-        //    pose_mode_hand = op::PoseMode::Disabled;
-
+        
         const op::WrapperStructHand wrapperStructHand{hand_enable, op::Detector::Provided, handNetInputSize, hand_scale_number, (float)hand_scale_range, op::flagsToRenderMode(hand_render, render_pose)};
 
 
@@ -505,58 +509,6 @@ public:
         yDebug() << "Running processses";
 
         return true;
-    }
-
-    /**********************************************************/
-    op::PoseModel gflagToPoseModel(const std::string& poseModeString)
-    {
-        //op::log("", op::Priority::Low, __LINE__, __FUNCTION__, __FILE__);
-        if (poseModeString == "COCO")
-            return op::PoseModel::COCO_18;
-        else if (poseModeString == "MPI")
-            return op::PoseModel::MPI_15;
-        else if (poseModeString == "MPI_4_layers")
-            return op::PoseModel::MPI_15_4;
-        else
-        {
-            yError() << "String does not correspond to any model (COCO, MPI, MPI_4_layers)";
-            return op::PoseModel::COCO_18;
-        }
-    }
-
-    /**********************************************************/
-    op::ScaleMode gflagToScaleMode(const int scaleMode)
-    {
-        if (scaleMode == 0)
-            return op::ScaleMode::InputResolution;
-        else if (scaleMode == 1)
-            return op::ScaleMode::NetOutputResolution;
-        else if (scaleMode == 2)
-            return op::ScaleMode::OutputResolution;
-        else if (scaleMode == 3)
-            return op::ScaleMode::ZeroToOne;
-        else if (scaleMode == 4)
-            return op::ScaleMode::PlusMinusOne;
-        else
-        {
-            const std::string message = "String does not correspond to any scale mode: (0, 1, 2, 3, 4) for (InputResolution, NetOutputResolution, OutputResolution, ZeroToOne, PlusMinusOne).";
-            yError() << message;
-            return op::ScaleMode::InputResolution;
-        }
-    }
-
-    /**********************************************************/
-    std::vector<op::HeatMapType> gflagToHeatMaps(const bool heatmaps_add_parts, const bool heatmaps_add_bkg, const bool heatmaps_add_PAFs)
-    {
-
-        std::vector<op::HeatMapType> heatMapTypes;
-        if (heatmaps_add_parts)
-            heatMapTypes.emplace_back(op::HeatMapType::Parts);
-        if (heatmaps_add_bkg)
-            heatMapTypes.emplace_back(op::HeatMapType::Background);
-        if (heatmaps_add_PAFs)
-            heatMapTypes.emplace_back(op::HeatMapType::PAFs);
-        return heatMapTypes;
     }
 
     /**********************************************************/
@@ -636,10 +588,6 @@ public:
 int main(int argc, char *argv[])
 {
     yarp::os::Network::init();
-    // Initializing google logging (Caffe uses it for logging)
-    //google::InitGoogleLogging("yarpOpenPose");
-    // Parsing command line flags
-    //gflags::ParseCommandLineFlags(&argc, &argv, true);
 
     yarp::os::Network yarp;
     if (!yarp.checkNetwork())
