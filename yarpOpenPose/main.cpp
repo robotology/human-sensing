@@ -165,6 +165,28 @@ public:
         {24, "RHeel"},
         {25, "Background"}
     };
+    
+    std::map<unsigned int, std::string> mapPartsCoco {
+        {0,  "Nose"},
+        {1,  "Neck"},
+        {2,  "RShoulder"},
+        {3,  "RElbow"},
+        {4,  "RWrist"},
+        {5,  "LShoulder"},
+        {6,  "LElbow"},
+        {7,  "LWrist"},
+        {8,  "RHip"},
+        {9,  "RKnee"},
+        {10, "RAnkle"},
+        {11, "LHip"},
+        {12, "LKnee"},
+        {13, "LAnkle"},
+        {14, "REye"},
+        {15, "LEye"},
+        {16, "REar"},
+        {17, "LEar"},
+        {18, "Background"}
+    };
 
     /********************************************************/
     ImageProcessing(const std::string& moduleName)
@@ -221,7 +243,12 @@ public:
                     {
                         yarp::os::Bottle &partList = peopleList.addList();
                         const auto finalIndex = 3*(person*numberBodyParts + bodyPart);
-                        partList.addString(mapParts[bodyPart].c_str());
+                        
+                        if (bodyPart < 19 )
+                            partList.addString(mapPartsCoco[bodyPart].c_str());
+                        else
+                            partList.addString(mapParts[bodyPart].c_str());
+                        
                         partList.addDouble(pose[finalIndex]);
                         partList.addDouble(pose[finalIndex+1]);
                         partList.addDouble(pose[finalIndex+2]);
