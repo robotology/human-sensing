@@ -244,7 +244,7 @@ public:
                         yarp::os::Bottle &partList = peopleList.addList();
                         const auto finalIndex = 3*(person*numberBodyParts + bodyPart);
                         
-                        if (bodyPart < 19 )
+                        if (numberBodyParts < 19 )
                             partList.addString(mapPartsCoco[bodyPart].c_str());
                         else
                             partList.addString(mapParts[bodyPart].c_str());
