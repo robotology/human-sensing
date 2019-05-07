@@ -506,8 +506,9 @@ public:
                                                       part_to_show, model_folder, heatMapTypes, heatMapsScaleMode, part_candidates, (float)render_threshold, number_people_max} ;
 
         // Hand configuration
+        const auto handDetector = op::flagsToDetector(0);
         
-        const op::WrapperStructHand wrapperStructHand{hand_enable, op::Detector::Provided, handNetInputSize, hand_scale_number, (float)hand_scale_range, op::flagsToRenderMode(hand_render, render_pose)};
+        const op::WrapperStructHand wrapperStructHand{hand_enable, handDetector/*op::Detector::Provided*/, handNetInputSize, hand_scale_number, (float)hand_scale_range, op::flagsToRenderMode(hand_render, render_pose)};
 
 
         //opWrapper.disableMultiThreading();
