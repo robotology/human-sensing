@@ -1,15 +1,19 @@
-# Copyright: 2017 iCub Facility, Istituto Italiano di Tecnologia
+# Copyright: 2019 iCub Facility, Istituto Italiano di Tecnologia
 # Author: Vadim Tikhanoff
 # CopyPolicy: Released under the terms of the GNU GPL v2.0.
 #
 cmake_minimum_required(VERSION 3.5)
-project(yarpOpenPose)
+project(yarpOpenPose LANGUAGES CXX C VERSION 1.0.0)
 
 find_package(ICUBcontrib REQUIRED)
-find_package(YARP 3.1.100 REQUIRED COMPONENTS OS sig dev math cv)
-find_package(ICUB REQUIRED)
+find_package(YARP 3.2.1 REQUIRED COMPONENTS os sig dev math cv)
 
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
+include(GNUInstallDirs)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}")
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR}")
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR}")
+
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 list(APPEND CMAKE_MODULE_PATH ${ICUBCONTRIB_MODULE_PATH})
 message("CMAKE_MODULE_PATH = ${CMAKE_MODULE_PATH}")
 
@@ -19,6 +23,13 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 include(ICUBcontribOptions)
 include(ICUBcontribHelpers)
+
+if(NOT CMAKE_CONFIGURATION_TYPES)
+  if(NOT CMAKE_BUILD_TYPE)
+    message(STATUS "Setting build type to 'Release' as none was specified.")
+    set_property(CACHE CMAKE_BUILD_TYPE PROPERTY VALUE "Release")
+  endif()
+endif()
 
 icubcontrib_set_default_prefix()
 

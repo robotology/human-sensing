@@ -14,6 +14,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
  * Public License for more details
  */
+
 // C++ std library dependencies
 #include <atomic>
 #include <chrono>
@@ -103,7 +104,7 @@ public:
 
             if (inImage->width() * inImage->height() > 0)
             {
-                cv::Mat in_cv = yarp::cv::toCvMat(*inImage);
+                const cv::Mat in_cv = yarp::cv::toCvMat(*inImage);
                 // Fill datum
                 datum->cvInputData = in_cv;
                 // If empty frame -> return nullptr
@@ -501,9 +502,7 @@ public:
         if (!body_enable)
             pose_mode_body = op::PoseMode::Disabled;
 
-        const op::WrapperStructPose wrapperStructPose{pose_mode_body, netInputSize, outputSize, keypointScale, num_gpu, num_gpu_start, num_scales, scale_gap,
-                                                      op::flagsToRenderMode(render_pose), poseModel, !disable_blending, (float)alpha_pose, (float)alpha_heatmap,
-                                                      part_to_show, model_folder, heatMapTypes, heatMapsScaleMode, part_candidates, (float)render_threshold, number_people_max} ;
+        const op::WrapperStructPose wrapperStructPose{pose_mode_body, netInputSize, outputSize, keypointScale, num_gpu, num_gpu_start, num_scales, scale_gap, op::flagsToRenderMode(render_pose), poseModel, !disable_blending, (float)alpha_pose, (float)alpha_heatmap, part_to_show, model_folder, heatMapTypes, heatMapsScaleMode, part_candidates, (float)render_threshold, number_people_max} ;
 
         // Hand configuration
         const auto handDetector = op::flagsToDetector(0);
