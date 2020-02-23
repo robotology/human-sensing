@@ -278,8 +278,11 @@ void FACEManager::onRead(yarp::sig::ImageOf<yarp::sig::PixelRgb> &img)
     cv::resize(imgMat, im_small, cv::Size(), 1.0/downsampleRatio, 1.0/downsampleRatio);
 
     // Change to dlib's image format. No memory is copied.
-    dlib::cv_image<dlib::bgr_pixel> cimg_small(im_small);
-    dlib::cv_image<dlib::bgr_pixel> cimg(imgMat);
+    IplImage ipl_cimg_small = cvIplImage(im_small);
+    dlib::cv_image<dlib::bgr_pixel> cimg_small(&ipl_cimg_small);
+
+    IplImage ipl_cimg = cvIplImage(imgMat);
+    dlib::cv_image<dlib::bgr_pixel> cimg(&ipl_cimg);
 
     std::vector<dlib::rectangle> faces;
 
@@ -350,7 +353,7 @@ void FACEManager::onRead(yarp::sig::ImageOf<yarp::sig::PixelRgb> &img)
                     int pointy = landmarks.get(0).asList()->get(i).asList()->get(1).asInt();
                     cv::Point center(pointx, pointy);
                     std::string s = std::to_string(i);
-                    putText(imgMat, s, cvPoint(pointx, pointy), cv::FONT_HERSHEY_COMPLEX_SMALL, 0.6, cvScalar(200,200,250), 1, CV_AA);
+                    putText(imgMat, s, cvPoint(pointx, pointy), cv::FONT_HERSHEY_COMPLEX_SMALL, 0.6, cvScalar(200,200,250), 1, cv::LINE_AA);
                 }
             }
         }
@@ -433,7 +436,7 @@ void FACEManager::onRead(yarp::sig::ImageOf<yarp::sig::PixelRgb> &img)
         }
     }
 
-    IplImage yarpImg = imgMat;
+    IplImage yarpImg = cvIplImage(imgMat);
     outImg.resize(yarpImg.width, yarpImg.height);
     cvCopy( &yarpImg, (IplImage *) outImg.getIplImage());
 
