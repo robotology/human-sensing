@@ -269,7 +269,7 @@ void FACEManager::onRead(yarp::sig::ImageOf<yarp::sig::PixelRgb> &img)
     target.clear();
 
     // Get the image from the yarp port
-    imgMat = cv::cvarrToMat((IplImage*)img.getIplImage());
+    imgMat = yarp::cv::toCvMat(img);
 
     draw_res = imgMat.cols / 320;
 
@@ -433,9 +433,8 @@ void FACEManager::onRead(yarp::sig::ImageOf<yarp::sig::PixelRgb> &img)
         }
     }
 
-    IplImage yarpImg = imgMat;
-    outImg.resize(yarpImg.width, yarpImg.height);
-    cvCopy( &yarpImg, (IplImage *) outImg.getIplImage());
+    outImg.resize(imgMat.size().width, imgMat.size().height);
+    outImg = yarp::cv::fromCvMat<yarp::sig::PixelRgb>(imgMat);
 
     imageOutPort.write();
 

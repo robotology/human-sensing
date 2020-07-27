@@ -30,6 +30,7 @@
 #include <yarp/os/Log.h>
 #include <yarp/os/LogStream.h>
 #include <yarp/os/RpcClient.h>
+#include <yarp/cv/Cv.h>
 
 #include <yarp/sig/Vector.h>
 #include <yarp/sig/Image.h>

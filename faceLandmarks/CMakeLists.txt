@@ -5,8 +5,8 @@
 cmake_minimum_required(VERSION 3.5)
 project(faceLandmarks)
 
-find_package(YARP 3.1 REQUIRED COMPONENTS OS sig dev math rosmsg)
 find_package(ICUBcontrib REQUIRED)
+find_package(YARP 3.1 REQUIRED COMPONENTS OS sig dev math rosmsg cv)
 find_package(dlib REQUIRED)
 find_package(OpenCV REQUIRED)
 
