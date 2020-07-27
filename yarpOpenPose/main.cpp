@@ -54,7 +54,6 @@
 #include <yarp/os/Semaphore.h>
 #include <yarp/sig/Image.h>
 #include <yarp/os/RpcClient.h>
-#include <yarp/os/LockGuard.h>
 #include <yarp/os/Stamp.h>
 #include <yarp/cv/Cv.h>
 
@@ -275,7 +274,7 @@ private:
     yarp::os::BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelFloat> > outFloatPort;
     yarp::sig::ImageOf<yarp::sig::PixelFloat> *inFloat;
 
-    yarp::os::Mutex             mutex;
+    std::mutex             mutex;
 
     bool sendFloat;
     yarp::os::Stamp stamp;
@@ -311,7 +310,7 @@ public:
 
     /********************************************************/
     void setImage(yarp::sig::ImageOf<yarp::sig::PixelFloat> &inFloat, const yarp::os::Stamp &stamp) {
-        yarp::os::LockGuard lg(mutex);
+        const std::lock_guard<std::mutex> lock(mutex);
         this->inFloat = &inFloat;
         this->stampFloat = stamp;
     }
@@ -333,7 +332,7 @@ public:
             yarp::sig::ImageOf<yarp::sig::PixelRgb> &outImage  = outPort.prepare();
             yarp::sig::ImageOf<yarp::sig::PixelRgb> &outImagePropag  = outPortPropag.prepare();
 
-            yarp::os::LockGuard lg(mutex);
+            const std::lock_guard<std::mutex> lock(mutex);
 
             if (sendFloat)
             {
