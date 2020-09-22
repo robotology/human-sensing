@@ -223,18 +223,21 @@ public:
             auto& tDatumsNoPtr = *datumsPtr;
             //Record people pose data
             op::Array<float> pose(tDatumsNoPtr.size());
+            op::Array<float> face(tDatumsNoPtr.size());
             for (auto i = 0; i < tDatumsNoPtr.size(); i++)
             {
                 pose = tDatumsNoPtr[i]->poseKeypoints;
+                face = tDatumsNoPtr[i]->faceKeypoints;
 
                 if (!pose.empty() && pose.getNumberDimensions() != 3)
                     op::error("pose.getNumberDimensions() != 3.", __LINE__, __FUNCTION__, __FILE__);
 
                 const auto numberPeople = pose.getSize(0);
                 const auto numberBodyParts = pose.getSize(1);
+                const auto numberKeypoints = pose.getSize(2);
 
-                std::cout << "Number of people is " << numberPeople << std::endl;
-                std::cout << "Number of body parts is " << numberBodyParts << std::endl;
+                const auto numberFaceParts = face.getSize(1);
+                const auto numberFaceKeypoints = face.getSize(2);
 
                 for (auto person = 0 ; person < numberPeople ; person++)
                 {
@@ -242,7 +245,7 @@ public:
                     for (auto bodyPart = 0 ; bodyPart < numberBodyParts ; bodyPart++)
                     {
                         yarp::os::Bottle &partList = peopleList.addList();
-                        const auto finalIndex = 3*(person*numberBodyParts + bodyPart);
+                        const auto finalIndex = pose.getSize(2)*(person*numberBodyParts + bodyPart);
                         
                         if (numberBodyParts < 19 )
                             partList.addString(mapPartsCoco[bodyPart].c_str());
@@ -252,6 +255,22 @@ public:
                         partList.addDouble(pose[finalIndex]);
                         partList.addDouble(pose[finalIndex+1]);
                         partList.addDouble(pose[finalIndex+2]);
+
+                    }
+                    
+                    if (!face.empty())
+                    {
+                        yarp::os::Bottle &partList = peopleList.addList();
+                        partList.addString("Face");
+                        for (auto facePart = 0 ; facePart < numberFaceParts ; facePart++)
+                        {   
+
+                            const auto faceIndex = face.getSize(2)*(person*numberFaceKeypoints + facePart);
+                            yarp::os::Bottle &faceList = partList.addList();
+                            faceList.addDouble(face[faceIndex]);
+                            faceList.addDouble(face[faceIndex + 1]);
+                            faceList.addDouble(face[faceIndex + 2]);                                           
+                        }
                     }
                 }
             }
@@ -481,7 +500,7 @@ public:
         hand_alpha_heatmap = rf.check("hand_alpha_heatmap", yarp::os::Value(0.7), "Analogous to `alpha_heatmap` but applied to hand.(double)").asDouble();
         hand_render_threshold = rf.check("hand_render_threshold", yarp::os::Value(0.2), "Analogous to `render_threshold`, but applied to the hand keypoints.(double)").asDouble();
         hand_render = rf.check("hand_render", yarp::os::Value(-1), "Analogous to `render_pose` but applied to the hand. Extra option: -1 to use the same(int)").asInt();
-        face_enable = rf.check("face_enable", yarp::os::Value(false), "nables face keypoint detection. It will share some parameters from the body pose, e.g."
+        face_enable = rf.check("face_enable", yarp::os::Value(false), "enables face keypoint detection. It will share some parameters from the body pose, e.g."
                                                         " `model_folder`. Note that this will considerable slow down the performance and increse"
                                                         " the required GPU memory. In addition, the greater number of people on the image, the"
                                                         " slower OpenPose will be.").asBool();
