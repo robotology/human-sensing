@@ -105,12 +105,12 @@ public:
             {
                 const cv::Mat in_cv = yarp::cv::toCvMat(*inImage);
                 // Fill datum
-                datum->cvInputData = in_cv;
+                datum->cvInputData = OP_CV2OPCONSTMAT(in_cv);
                 // If empty frame -> return nullptr
                 if (datum->cvInputData.empty())
                 {
                     mClosed = true;
-                    op::log("Empty frame detected. Closing program.", op::Priority::Max);
+                    op::opLog("Empty frame detected. Closing program.", op::Priority::Max);
                     datumsPtr = nullptr;
                 }
             }
@@ -223,18 +223,21 @@ public:
             auto& tDatumsNoPtr = *datumsPtr;
             //Record people pose data
             op::Array<float> pose(tDatumsNoPtr.size());
+            op::Array<float> face(tDatumsNoPtr.size());
             for (auto i = 0; i < tDatumsNoPtr.size(); i++)
             {
                 pose = tDatumsNoPtr[i]->poseKeypoints;
+                face = tDatumsNoPtr[i]->faceKeypoints;
 
                 if (!pose.empty() && pose.getNumberDimensions() != 3)
                     op::error("pose.getNumberDimensions() != 3.", __LINE__, __FUNCTION__, __FILE__);
 
                 const auto numberPeople = pose.getSize(0);
                 const auto numberBodyParts = pose.getSize(1);
+                const auto numberKeypoints = pose.getSize(2);
 
-                //std::cout << "Number of people is " << numberPeople << std::endl;
-                //std::cout << "Number of body parts is " << numberBodyParts << std::endl;
+                const auto numberFaceParts = face.getSize(1);
+                const auto numberFaceKeypoints = face.getSize(2);
 
                 for (auto person = 0 ; person < numberPeople ; person++)
                 {
@@ -242,7 +245,7 @@ public:
                     for (auto bodyPart = 0 ; bodyPart < numberBodyParts ; bodyPart++)
                     {
                         yarp::os::Bottle &partList = peopleList.addList();
-                        const auto finalIndex = 3*(person*numberBodyParts + bodyPart);
+                        const auto finalIndex = pose.getSize(2)*(person*numberBodyParts + bodyPart);
                         
                         if (numberBodyParts < 19 )
                             partList.addString(mapPartsCoco[bodyPart].c_str());
@@ -252,6 +255,22 @@ public:
                         partList.addDouble(pose[finalIndex]);
                         partList.addDouble(pose[finalIndex+1]);
                         partList.addDouble(pose[finalIndex+2]);
+
+                    }
+                    
+                    if (!face.empty())
+                    {
+                        yarp::os::Bottle &partList = peopleList.addList();
+                        partList.addString("Face");
+                        for (auto facePart = 0 ; facePart < numberFaceParts ; facePart++)
+                        {   
+
+                            const auto faceIndex = face.getSize(2)*(person*numberFaceKeypoints + facePart);
+                            yarp::os::Bottle &faceList = partList.addList();
+                            faceList.addDouble(face[faceIndex]);
+                            faceList.addDouble(face[faceIndex + 1]);
+                            faceList.addDouble(face[faceIndex + 2]);                                           
+                        }
                     }
                 }
             }
@@ -340,13 +359,13 @@ public:
                 outImageFloat = *inFloat;
             }
 
-            outImage.resize(datumsPtr->at(0)->cvOutputData.cols, datumsPtr->at(0)->cvOutputData.rows);
-            outImagePropag.resize(datumsPtr->at(0)->cvInputData.cols, datumsPtr->at(0)->cvInputData.rows);
+            outImage.resize(OP_OP2CVCONSTMAT(datumsPtr->at(0)->cvOutputData).cols, OP_OP2CVCONSTMAT(datumsPtr->at(0)->cvOutputData).rows);
+            outImagePropag.resize(OP_OP2CVCONSTMAT(datumsPtr->at(0)->cvInputData).cols, OP_OP2CVCONSTMAT(datumsPtr->at(0)->cvInputData).rows);
 
-            cv::Mat colour = datumsPtr->at(0)->cvOutputData;
+            cv::Mat colour = OP_OP2CVCONSTMAT(datumsPtr->at(0)->cvOutputData);
             outImage = yarp::cv::fromCvMat<yarp::sig::PixelRgb>(colour);
 
-            cv::Mat colourOrig = datumsPtr->at(0)->cvInputData;
+            cv::Mat colourOrig = OP_OP2CVCONSTMAT(datumsPtr->at(0)->cvInputData);
             outImagePropag = yarp::cv::fromCvMat<yarp::sig::PixelRgb>(colourOrig);
 
             outPort.setEnvelope(stamp);
@@ -363,7 +382,7 @@ public:
             sendFloat = false;
         }
         else
-            op::log("Nullptr or empty datumsPtr found.", op::Priority::Max, __LINE__, __FUNCTION__, __FILE__);
+            op::opLog("Nullptr or empty datumsPtr found.", op::Priority::Max, __LINE__, __FUNCTION__, __FILE__);
     }
 };
 
@@ -407,7 +426,16 @@ private:
     double                      hand_alpha_heatmap;
     double                      hand_render_threshold;
     int                         hand_render;
-
+    bool                        face_enable;
+    std::string                 face_net_resolution;
+    int                         face_detector;
+    double                      face_render_threshold;
+    int                         face_render;
+    double                      face_alpha_pose;
+    double                      face_alpha_heatmap;
+    bool                        flags_3d;
+    int                         views_3d;
+        
     ImageInput                  *inputClass;
     ImageProcessing             *processingClass;
     ImageOutput                 *outputClass;
@@ -415,7 +443,6 @@ private:
     op::WrapperT<op::Datum> opWrapper{op::ThreadManagerMode::Asynchronous};
 
     bool                        closing;
-
 
 public:
     /********************************************************/
@@ -473,6 +500,33 @@ public:
         hand_alpha_heatmap = rf.check("hand_alpha_heatmap", yarp::os::Value(0.7), "Analogous to `alpha_heatmap` but applied to hand.(double)").asDouble();
         hand_render_threshold = rf.check("hand_render_threshold", yarp::os::Value(0.2), "Analogous to `render_threshold`, but applied to the hand keypoints.(double)").asDouble();
         hand_render = rf.check("hand_render", yarp::os::Value(-1), "Analogous to `render_pose` but applied to the hand. Extra option: -1 to use the same(int)").asInt();
+        face_enable = rf.check("face_enable", yarp::os::Value(false), "enables face keypoint detection. It will share some parameters from the body pose, e.g."
+                                                        " `model_folder`. Note that this will considerable slow down the performance and increse"
+                                                        " the required GPU memory. In addition, the greater number of people on the image, the"
+                                                        " slower OpenPose will be.").asBool();
+
+        face_net_resolution = rf.check("face_net_resolution", yarp::os::Value("368x368"), "Multiples of 16 and squared. Analogous to `net_resolution` but applied to the face keypoint"
+                                                        " detector. 320x320 usually works fine while giving a substantial speed up when multiple"
+                                                        " faces on the image.(string)").asString();
+        face_detector = rf.check("face_detector", yarp::os::Value(0), "Kind of face rectangle detector. Select 0 (default) to select OpenPose body detector (most"
+                                                        " accurate one and fastest one if body is enabled), 1 to select OpenCV face detector (not"
+                                                        " implemented for hands), 2 to indicate that it will be provided by the user, or 3 to"
+                                                        " also apply hand tracking (only for hand). Hand tracking might improve hand keypoint"
+                                                        " detection for webcam (if the frame rate is high enough, i.e., >7 FPS per GPU) and video."
+                                                        " This is not person ID tracking, it simply looks for hands in positions at which hands were"
+                                                        " located in previous frames, but it does not guarantee the same person ID among frames.(int)").asInt();
+        face_render_threshold = rf.check("face_render_threshold", yarp::os::Value(0.4), "Analogous to `render_threshold`, but applied to the face keypoints.(double)").asDouble();
+        face_render = rf.check("face_render", yarp::os::Value(-1), "Analogous to `render_pose` but applied to the face. Extra option: -1 to use the same.(int)").asInt();
+        face_alpha_pose = rf.check("face_alpha_pose", yarp::os::Value(0.6), "Analogous to `alpha_pose` but applied to face..(double)").asDouble();
+        face_alpha_heatmap = rf.check("face_alpha_heatmap", yarp::os::Value(0.7), "Analogous to `alpha_heatmap` but applied to face.(double)").asDouble();
+        flags_3d = rf.check("flags_3d", yarp::os::Value(false), "Running OpenPose 3-D reconstruction demo: 1) Reading from a stereo camera system."
+                                                        " 2) Performing 3-D reconstruction from the multiple views. 3) Displaying 3-D reconstruction"
+                                                        " results. Note that it will only display 1 person. If multiple people is present, it will"
+                                                        " fail.(bool)").asBool();
+        views_3d = rf.check("views_3d", yarp::os::Value(-1), "Complementary option for `--image_dir` or `--video`. OpenPose will read as many images per"
+                                                        " iteration, allowing tasks such as stereo camera processing (`--3d`). Note that"
+                                                        " `--camera_parameter_path` must be set. OpenPose must find as many `xml` files in the"
+                                                        " parameter folder as this number indicates.(int)").asInt();
 
         setName(moduleName.c_str());
         rpcPort.open(("/"+getName("/rpc")).c_str());
@@ -481,19 +535,19 @@ public:
         yDebug() << "Starting yarpOpenPose";
 
         // Applying user defined configuration
-        auto outputSize = op::flagsToPoint(img_resolution, img_resolution);
+        auto outputSize = op::flagsToPoint(op::String(img_resolution), op::String(img_resolution));
         // netInputSize
-        auto netInputSize = op::flagsToPoint(net_resolution, net_resolution);
+        auto netInputSize = op::flagsToPoint(op::String(net_resolution), op::String(net_resolution));
         //pose model
-        op::PoseModel poseModel = op::flagsToPoseModel(model_name);
+        op::PoseModel poseModel = op::flagsToPoseModel(op::String(model_name));
         // scaleMode
         op::ScaleMode keypointScale = op::flagsToScaleMode(keypoint_scale);
         // handNetInputSize
-        auto handNetInputSize = op::flagsToPoint(hand_net_resolution, hand_net_resolution);
+        auto handNetInputSize = op::flagsToPoint(op::String(hand_net_resolution), op::String(hand_net_resolution));
 
         // heatmaps to add
         std::vector<op::HeatMapType> heatMapTypes = op::flagsToHeatMaps(heatmaps_add_parts, heatmaps_add_bkg, heatmaps_add_PAFs);
-        op::check(heatmaps_scale_mode >= 0 && heatmaps_scale_mode <= 2, "Non valid `heatmaps_scale_mode`.", __LINE__, __FUNCTION__, __FILE__);
+        op::checkBool(heatmaps_scale_mode >= 0 && heatmaps_scale_mode <= 2, "Non valid `heatmaps_scale_mode`.", __LINE__, __FUNCTION__, __FILE__);
         op::ScaleMode heatMapsScaleMode = (heatmaps_scale_mode == 0 ? op::ScaleMode::PlusMinusOne : (heatmaps_scale_mode == 1 ? op::ScaleMode::ZeroToOne : op::ScaleMode::UnsignedChar ));
 
         // Pose configuration
@@ -501,18 +555,28 @@ public:
         if (!body_enable)
             pose_mode_body = op::PoseMode::Disabled;
 
-        const op::WrapperStructPose wrapperStructPose{pose_mode_body, netInputSize, outputSize, keypointScale, num_gpu, num_gpu_start, num_scales, scale_gap, op::flagsToRenderMode(render_pose), poseModel, !disable_blending, (float)alpha_pose, (float)alpha_heatmap, part_to_show, model_folder, heatMapTypes, heatMapsScaleMode, part_candidates, (float)render_threshold, number_people_max} ;
+        const auto multipleView = (flags_3d || views_3d > 1);
+
+        const op::WrapperStructPose wrapperStructPose{pose_mode_body, netInputSize, outputSize, keypointScale, num_gpu, num_gpu_start, num_scales, scale_gap, op::flagsToRenderMode(render_pose, multipleView), poseModel, !disable_blending, (float)alpha_pose, (float)alpha_heatmap, part_to_show, op::String(model_folder), heatMapTypes, heatMapsScaleMode, part_candidates, (float)render_threshold, number_people_max, false, -1., op::String(""), op::String(""), 0., false } ;
 
         // Hand configuration
         const auto handDetector = op::flagsToDetector(0);
         
         const op::WrapperStructHand wrapperStructHand{hand_enable, handDetector/*op::Detector::Provided*/, handNetInputSize, hand_scale_number, (float)hand_scale_range, op::flagsToRenderMode(hand_render, render_pose)};
 
-
+        // Face configuration
+        const auto faceNetInputSize = op::flagsToPoint(op::String(face_net_resolution), "368x368 (multiples of 16)");
+        const auto faceDetector = op::flagsToDetector(face_detector);
+        
+        const op::WrapperStructFace wrapperStructFace{face_enable, faceDetector, faceNetInputSize,
+            op::flagsToRenderMode(face_render, multipleView, render_pose),
+            (float)face_alpha_pose, (float)face_alpha_heatmap, (float)face_render_threshold};
+        
         //opWrapper.disableMultiThreading();
 
         opWrapper.configure(wrapperStructPose);
         opWrapper.configure(wrapperStructHand);
+        opWrapper.configure(wrapperStructFace);
         opWrapper.configure(op::WrapperStructInput{});
         opWrapper.configure(op::WrapperStructOutput{});
 
@@ -533,6 +597,10 @@ public:
         processingClass->initializationOnThread();
 
         yDebug() << "Running processses";
+
+        yarp::os::Network::connect("/icub/camcalib/left/out", "/yarpOpenPose/image:i");
+        yarp::os::Network::connect("/yarpOpenPose/image:o", "/faces");
+
 
         return true;
     }
