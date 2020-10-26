@@ -302,7 +302,7 @@ public:
         
         //requests.mutable_requests( 0 )->mutable_image()->mutable_source()->set_image_uri(encoded);
 
-        //requests.mutable_requests( 0 )->mutable_image()->mutable_source()->set_image_uri( "https://i.ibb.co/Ws3SCs8/test.jpg" ); // TODO [GCS_URL] // 
+        //requests.mutable_requests( 0 )->mutable_image()->mutable_source()->set_image_uri( "https://media.istockphoto.com/photos/group-portrait-of-a-creative-business-team-standing-outdoors-three-picture-id1146473249?k=6&m=1146473249&s=612x612&w=0&h=W1xeAt6XW3evkprjdS4mKWWtmCVjYJnmp-LHvQstitU=" ); // TODO [GCS_URL] // 
         //requests.mutable_requests( 0 )->mutable_image()->mutable_source()->set_gcs_image_uri( "gs://personal_projects/photo_korea.jpg" ); // TODO [GCS_URL] // 
         //requests.mutable_requests( 0 )->mutable_image_context(); // optional??
         
@@ -368,7 +368,15 @@ public:
         // Read Response //
         //---------------//
         std::cout << "\n\n------ Responses ------" << std::endl;
+        yarp::os::Bottle b;
+        
         if ( status.ok() ) {
+
+
+          
+            b = get_result(responses);
+
+           
             std::cout << "Status returned OK\nResponses size: " << responses.responses_size() << std::endl;
             for ( int h = 0; h < responses.responses_size(); h++ ) {
                 response = responses.responses( h );
@@ -946,14 +954,15 @@ public:
         response.release_product_search_results();
         response.release_safe_search_annotation();
         response.release_image_properties_annotation();
+        response.clear_face_annotations();
+        response.clear_landmark_annotations();
+        response.clear_logo_annotations();
         
+
         std::cout << "\nAll Finished!" << std::endl;
        
 
-        yarp::os::Bottle bottle_result;
-        bottle_result.clear();
-       
-        bottle_result.addString("Got it");
+     
         
         /*if ( dialog_status.ok() ) {
 
@@ -968,8 +977,121 @@ public:
       }
       request.release_query_input();
       query_input.release_text();*/
-      
-      return bottle_result;
+ 
+      return b;
+   }
+
+   /*********************************************************/
+
+   yarp::os::Bottle get_result(BatchAnnotateImagesResponse responses)
+   {    
+        
+        AnnotateImageResponse response;
+        yarp::os::Bottle bottle_result;
+        bottle_result.clear();
+        yarp::os::Bottle &result = bottle_result.addList(); 
+
+        for ( int h = 0; h < responses.responses_size() ; h++ ) {
+
+            response = responses.responses( 0 );
+
+            yarp::os::Bottle &each_result = result.addList();
+            each_result.addString("Response");
+            each_result.addInt(h+1);
+          
+            yarp::os::Bottle &face_annotation = each_result.addList();
+            
+            
+            // FACE ANNOTATION
+            face_annotation.addString("face_annotation");
+            yarp::os::Bottle &faces_found = face_annotation.addList();
+            faces_found.addString("faces_found");
+            faces_found.addInt(response.face_annotations_size());
+            
+                        
+                for ( int i = 0; i <  response.face_annotations_size(); i++ ) {
+
+                    yarp::os::Bottle &face = faces_found.addList();
+                    face.addString("face");
+                    face.addInt(i+1);
+                    
+                    
+                    // TODO [FA_LANDMARK] //
+                    for ( int j = 0; j < response.face_annotations( i ).landmarks_size(); j++ ) {
+
+                            
+                            yarp::os::Bottle &annotation = face.addList();
+                            annotation.addString("annotation");
+                            annotation.addInt(j+1);
+                            
+                            yarp::os::Bottle &annotation_type = annotation.addList();
+                            annotation_type.addString("type");
+                            annotation_type.addString(FaceAnnotation_Landmark_Type_Name(response.face_annotations( i ).landmarks( j ).type()));
+                        
+                            if ( response.face_annotations( i ).landmarks( j ).has_position() ) {
+
+                                yarp::os::Bottle &annotation_x = annotation.addList();
+                                annotation_x.addString("x");
+                                annotation_x.addDouble(response.face_annotations( i ).landmarks( j ).position().x());
+
+                                yarp::os::Bottle &annotation_y = annotation.addList();
+                                annotation_y.addString("y");
+                                annotation_y.addDouble(response.face_annotations( i ).landmarks( j ).position().y());
+
+                                yarp::os::Bottle &annotation_z = annotation.addList();
+                                annotation_z.addString("z");
+                                annotation_z.addDouble(response.face_annotations( i ).landmarks( j ).position().z());
+                        
+                            
+                            } else {
+
+                                yarp::os::Bottle &annotation_x = annotation.addList();
+                                annotation_x.addString("x");
+                                annotation_x.addString("");
+
+                                yarp::os::Bottle &annotation_y = annotation.addList();
+                                annotation_y.addString("y");
+                                annotation_y.addString("");
+
+                                yarp::os::Bottle &annotation_z = annotation.addList();
+                                annotation_z.addString("z");
+                                annotation_z.addString("");
+                            }
+                   
+                    }
+
+                }
+                 
+                // LABEL ANNOTATIONS 
+            
+                yarp::os::Bottle &label_annotation = each_result.addList();
+                label_annotation.addString("label_annotation");
+                yarp::os::Bottle &labels_found = label_annotation.addList();
+                labels_found.addString("labels_found");
+                labels_found.addInt(response.label_annotations_size());
+                
+                for ( int i = 0; i < response.label_annotations_size(); i++ ) {
+
+                        yarp::os::Bottle &label = labels_found.addList();
+                        label.addString("label");
+                        label.addInt(i+1);
+
+                        yarp::os::Bottle &label_description = label.addList();
+                        label_description.addString("description");
+                        label_description.addString(response.label_annotations( i ).description());
+
+                        yarp::os::Bottle &label_score = label.addList();
+                        label_score.addString("score");
+                        label_score.addFloat64(response.label_annotations( i ).score() );
+                    
+                    
+                }
+
+         }
+       
+        //bottle_result.addString("Got it");
+
+        return bottle_result;
    }
 
     /********************************************************/
@@ -1093,3 +1215,4 @@ int main(int argc, char *argv[])
 
     return module.runModule(rf);
 }
+
