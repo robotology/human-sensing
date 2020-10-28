@@ -80,6 +80,8 @@ class Processing : public yarp::os::BufferedPort<yarp::sig::ImageOf<yarp::sig::P
 
     std::mutex mtx;
 
+    yarp::os::Bottle result_btl;
+
 public:
     /********************************************************/
 
@@ -303,7 +305,7 @@ public:
         //requests.mutable_requests( 0 )->mutable_image()->mutable_source()->set_image_uri(encoded);
 
         //requests.mutable_requests( 0 )->mutable_image()->mutable_source()->set_image_uri( "https://media.istockphoto.com/photos/group-portrait-of-a-creative-business-team-standing-outdoors-three-picture-id1146473249?k=6&m=1146473249&s=612x612&w=0&h=W1xeAt6XW3evkprjdS4mKWWtmCVjYJnmp-LHvQstitU=" ); // TODO [GCS_URL] // 
-        requests.mutable_requests( 0 )->mutable_image()->mutable_source()->set_image_uri( "https://us.123rf.com/450wm/vchalup/vchalup1605/vchalup160500051/59629069-thief-is-stealing-kidnapped-baby-children-kidnapping-concept-isolated-on-white-background-.jpg?ver=6" ); // TODO [GCS_URL] // 
+        requests.mutable_requests( 0 )->mutable_image()->mutable_source()->set_image_uri( "https://images.ctfassets.net/cnu0m8re1exe/1GxSYi0mQSp9xJ5svaWkVO/d151a93af61918c234c3049e0d6393e1/93347270_cat-1151519_1280.jpg?w=650&h=433&fit=fill" ); // TODO [GCS_URL] // 
 
         //requests.mutable_requests( 0 )->mutable_image()->mutable_source()->set_gcs_image_uri( "gs://personal_projects/photo_korea.jpg" ); // TODO [GCS_URL] // 
         //requests.mutable_requests( 0 )->mutable_image_context(); // optional??
@@ -989,7 +991,6 @@ public:
    {    
         
         AnnotateImageResponse response;
-        yarp::os::Bottle result_btl;
         result_btl.clear();
         yarp::os::Bottle &ext_btl = result_btl.addList(); 
 
@@ -1277,6 +1278,148 @@ public:
    }
 
     /********************************************************/
+    yarp::os::Bottle get_face_annotation() {
+
+        yarp::os::Bottle face_annotation_result;
+        //face_annotation_result.clear();
+        //yarp::os::Bottle &face_annotation_analysis = face_annotation_result.addList();
+        //size_t element = result_btl.get(0).asList()->size();
+         //yInfo() << "element " << element;
+        yarp::os::Value val;
+        val = result_btl.get(0);//single value within a bottle; contains the first element of result_btl which is face_annotation ((face_annotation(...)) (label_annotation (...)))
+        std::cout << "$$$$$$$$$$$$$$$$\n" << val.toString().c_str();
+
+        //yarp::os::Bottle &ext_btl = result_btl.addList(); 
+
+        /*for ( int h = 0; h < responses.responses_size() ; h++ ) {
+
+            response = responses.responses( 0 );
+          
+            // FACE ANNOTATION
+            if (response.face_annotations_size() > 0) {
+                yarp::os::Bottle &face_annotation_btl = ext_btl.addList();
+                face_annotation_btl.addString("face_annotation");
+                
+                for ( int i = 0; i <  response.face_annotations_size(); i++ ) {
+
+                    yarp::os::Bottle &face_btl = face_annotation_btl.addList();
+                    face_btl.addString("face");
+                    face_btl.addInt(i+1);
+
+                    if ( response.face_annotations( i ).has_bounding_poly() ) {
+                        yarp::os::Bottle &bounding_poly_btl = face_btl.addList();
+                        bounding_poly_btl.addString("bounding_poly");
+
+                        for ( int j = 0; j < response.face_annotations( i ).bounding_poly().vertices_size(); j++ ) {
+                            yarp::os::Bottle &bounding_poly_xy = bounding_poly_btl.addList();
+                            bounding_poly_xy.addDouble(response.face_annotations( i ).bounding_poly().vertices( j ).x());
+                            bounding_poly_xy.addDouble(response.face_annotations( i ).bounding_poly().vertices( j ).y());
+                        }
+                    }
+
+                    if ( response.face_annotations( i ).has_fd_bounding_poly() ) {
+                        yarp::os::Bottle &fd_bounding_poly_btl = face_btl.addList();
+                        fd_bounding_poly_btl.addString("db_bounding_poly");
+                            
+                        for ( int j = 0; j < response.face_annotations( i ).fd_bounding_poly().vertices_size(); j++ ) {
+                            yarp::os::Bottle &fd_bounding_poly_xy = fd_bounding_poly_btl.addList();
+                            fd_bounding_poly_xy.addDouble(response.face_annotations( i ).fd_bounding_poly().vertices( j ).x());
+                            fd_bounding_poly_xy.addDouble(response.face_annotations( i ).fd_bounding_poly().vertices( j ).y());
+                        }
+                    }
+                    
+                    for ( int j = 0; j < response.face_annotations( i ).landmarks_size(); j++ ) {                        
+                    
+                        yarp::os::Bottle &annotation_type_btl = face_btl.addList();
+                        annotation_type_btl.addString(FaceAnnotation_Landmark_Type_Name(response.face_annotations( i ).landmarks( j ).type()));
+                    
+                        if ( response.face_annotations( i ).landmarks( j ).has_position() ) {
+
+                            yarp::os::Bottle &annotation_x = annotation_type_btl.addList();
+                            annotation_x.addString("x");
+                            annotation_x.addDouble(response.face_annotations( i ).landmarks( j ).position().x());
+
+                            yarp::os::Bottle &annotation_y = annotation_type_btl.addList();
+                            annotation_y.addString("y");
+                            annotation_y.addDouble(response.face_annotations( i ).landmarks( j ).position().y());
+
+                            yarp::os::Bottle &annotation_z = annotation_type_btl.addList();
+                            annotation_z.addString("z");
+                            annotation_z.addDouble(response.face_annotations( i ).landmarks( j ).position().z());
+                        } else {
+
+                            yarp::os::Bottle &annotation_x = annotation_type_btl.addList();
+                            annotation_x.addString("x");
+                            annotation_x.addString("");
+
+                            yarp::os::Bottle &annotation_y = annotation_type_btl.addList();
+                            annotation_y.addString("y");
+                            annotation_y.addString("");
+
+                            yarp::os::Bottle &annotation_z = annotation_type_btl.addList();
+                            annotation_z.addString("z");
+                            annotation_z.addString("");
+                        }
+                    }
+
+                    yarp::os::Bottle &roll_angle_btl = face_btl.addList();
+                    roll_angle_btl.addString("roll_angle");
+                    roll_angle_btl.addFloat64(response.face_annotations( i ).roll_angle());
+
+                    yarp::os::Bottle &pan_angle_btl = face_btl.addList();
+                    pan_angle_btl.addString("pan_angle");
+                    pan_angle_btl.addFloat64(response.face_annotations( i ).pan_angle());
+
+                    yarp::os::Bottle &tilt_angle_btl = face_btl.addList();
+                    tilt_angle_btl.addString("tilt_angle");
+                    tilt_angle_btl.addFloat64(response.face_annotations( i ).tilt_angle());
+
+                    yarp::os::Bottle &detection_confidence_btl = face_btl.addList();
+                    detection_confidence_btl.addString("detection_confidence");
+                    detection_confidence_btl.addFloat64(response.face_annotations( i ).detection_confidence());
+
+                    yarp::os::Bottle &landmarking_confidence_btl = face_btl.addList();
+                    landmarking_confidence_btl.addString("landmarking_confidence");
+                    landmarking_confidence_btl.addFloat64(response.face_annotations( i ).landmarking_confidence());
+
+                    yarp::os::Bottle &alt_info_btl = face_btl.addList();
+                    alt_info_btl.addString("alt_info");
+
+                    yarp::os::Bottle &alt_info_joy = alt_info_btl.addList();
+                    alt_info_joy.addString("Joy");
+                    alt_info_joy.addString(Likelihood_Name( response.face_annotations( i ).joy_likelihood() ));
+
+                    yarp::os::Bottle &alt_info_sorrow = alt_info_btl.addList();
+                    alt_info_sorrow.addString("Sorrow");
+                    alt_info_sorrow.addString(Likelihood_Name( response.face_annotations( i ).sorrow_likelihood() ));
+
+                    yarp::os::Bottle &alt_info_anger = alt_info_btl.addList();
+                    alt_info_anger.addString("Anger");
+                    alt_info_anger.addString(Likelihood_Name( response.face_annotations( i ).anger_likelihood() ));
+
+                    yarp::os::Bottle &alt_info_surprise = alt_info_btl.addList();
+                    alt_info_surprise.addString("Surprise");
+                    alt_info_surprise.addString(Likelihood_Name( response.face_annotations( i ).surprise_likelihood() ));
+
+                    yarp::os::Bottle &alt_info_under_exposed = alt_info_btl.addList();
+                    alt_info_under_exposed.addString("Under_exposed");
+                    alt_info_under_exposed.addString(Likelihood_Name( response.face_annotations( i ).under_exposed_likelihood() ));
+
+                    yarp::os::Bottle &alt_info_blurred = alt_info_btl.addList();
+                    alt_info_blurred.addString("Blurred");
+                    alt_info_blurred.addString(Likelihood_Name( response.face_annotations( i ).blurred_likelihood() ));
+
+                    yarp::os::Bottle &alt_info_headwear = alt_info_btl.addList();
+                    alt_info_headwear.addString("Headwear");
+                    alt_info_headwear.addString(Likelihood_Name( response.face_annotations( i ).headwear_likelihood() ));
+                }            
+            }
+        */
+       return face_annotation_result;
+    }
+
+
+    /********************************************************/
     bool annotate()
     {
         yarp::os::Bottle &outTargets = targetPort.prepare();
@@ -1363,6 +1506,15 @@ public:
     {
         processing->annotate();
         return true;
+    }
+
+    /********************************************************/
+    yarp::os::Bottle get_face_annotation()
+    {   
+        yarp::os::Bottle answer;
+        answer = processing->get_face_annotation();
+
+	return answer;
     }
 
     /********************************************************/

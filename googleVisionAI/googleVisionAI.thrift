@@ -29,5 +29,11 @@ service googleVisionAI_IDL
      * @return true/false on success/failure
      */
     bool annotate();
+
+     /**
+     * Get face_annotation.
+     * @return a bottle 
+     */
+    Bottle get_face_annotation();
     
 }
