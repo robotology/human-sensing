@@ -35,5 +35,23 @@ service googleVisionAI_IDL
      * @return a bottle 
      */
     Bottle get_face_annotation();
+
+    /**
+     * Get logo_annotation.
+     * @return a bottle 
+     */
+    Bottle get_logo_annotation();
+
+         /**
+     * Get text_annotation.
+     * @return a bottle 
+     */
+    Bottle get_text_annotation();
+
+         /**
+     * Get safe_search_annotation.
+     * @return a bottle 
+     */
+    Bottle get_safe_search_annotation();
     
 }
