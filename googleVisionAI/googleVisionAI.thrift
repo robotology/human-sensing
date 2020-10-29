@@ -56,16 +56,22 @@ service googleVisionAI_IDL
     Bottle get_face_features(1:i32 index);
     
     /**
-    * Get face annotation
+    * Get face_annotation
     * @return a bottle 
     */
     Bottle get_face_annotation();
 
     /**
-    * Get label annotation
+    * Get label_annotation
     * @return a bottle 
     */
     Bottle get_label_annotation();
+
+    /**
+    * Get landmark_annotation
+    * @return a bottle 
+    */
+    Bottle get_landmark_annotation();
 
     
 }

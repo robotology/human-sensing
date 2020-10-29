@@ -306,12 +306,16 @@ public:
 
         requests.mutable_requests( 0 )->mutable_image()->mutable_source()->set_image_uri( "https://i.ibb.co/Fh8VG8M/logo-combined.jpg" ); // TODO [GCS_URL] // 
 
-        //requests.mutable_requests( 0 )->mutable_image()->mutable_source()->set_image_uri( "https://images.ctfassets.net/cnu0m8re1exe/1GxSYi0mQSp9xJ5svaWkVO/d151a93af61918c234c3049e0d6393e1/93347270_cat-1151519_1280.jpg?w=650&h=433&fit=fill" ); // TODO [GCS_URL] // 
 
         //requests.mutable_requests( 0 )->mutable_image()->mutable_source()->set_image_uri( "https://media.istockphoto.com/photos/group-portrait-of-a-creative-business-team-standing-outdoors-three-picture-id1146473249?k=6&m=1146473249&s=612x612&w=0&h=W1xeAt6XW3evkprjdS4mKWWtmCVjYJnmp-LHvQstitU=" ); // TODO [GCS_URL] // 
+        //requests.mutable_requests( 0 )->mutable_image()->mutable_source()->set_image_uri( "https://images.ctfassets.net/cnu0m8re1exe/1GxSYi0mQSp9xJ5svaWkVO/d151a93af61918c234c3049e0d6393e1/93347270_cat-1151519_1280.jpg?w=650&h=433&fit=fill" ); // TODO [GCS_URL] // 
         //requests.mutable_requests( 0 )->mutable_image()->mutable_source()->set_image_uri( "https://images.unsplash.com/photo-1578489758854-f134a358f08b?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&w=1000&q=80" ); // TODO [GCS_URL] // 
         //requests.mutable_requests( 0 )->mutable_image()->mutable_source()->set_image_uri( "https://static.independent.co.uk/s3fs-public/thumbnails/image/2015/03/30/08/beautiful-faces-efit.jpg?w968h681" ); 
         //  requests.mutable_requests( 0 )->mutable_image()->mutable_source()->set_image_uri("https://images.theconversation.com/files/334558/original/file-20200513-82353-g2zyb8.jpg?ixlib=rb-1.1.0&q=45&auto=format&w=1200&h=1200.0&fit=crop");
+        requests.mutable_requests( 0 )->mutable_image()->mutable_source()->set_image_uri("https://qph.fs.quoracdn.net/main-qimg-28d1c38f82d68d497af0bfb3ad96d575.webp");
+        
+    //requests.mutable_requests( 0 )->mutable_image()->mutable_source()->set_image_uri("https://i.ibb.co/Fh8VG8M/logo-combined.jpg");
+
 
         //requests.mutable_requests( 0 )->mutable_image()->mutable_source()->set_gcs_image_uri( "gs://personal_projects/photo_korea.jpg" ); // TODO [GCS_URL] // 
         //requests.mutable_requests( 0 )->mutable_image_context(); // optional??
@@ -1362,16 +1366,16 @@ public:
 
         yarp::os::Bottle face_features_result;
         face_features_result.clear();
-        //std::cout << "\nresult_btl\n" <<result_btl.toString().c_str(); //((face_annotation (face 1 (...)...(...))(face 2 (...)...(...))) (label_annotation (label 1(...)...(...))(label 2(...)...(...)))(safe ....))
+        //std::cout << "result_btl " <<result_btl.toString().c_str() << std::endl; //((face_annotation (face 1 (...)...(...))(face 2 (...)...(...))) (label_annotation (label 1(...)...(...))(label 2(...)...(...)))(safe ....))
         yarp::os::Value val = result_btl.get(0);
-        //std::cout << "\nval\n" << val.toString().c_str();//(face_annotation (face 1 (...)...(...)) (face 2 (...)...(...))) (label_annotation (label 1(...)...(...))(label 2(...)...(...))) (safe ....) 
+        //std::cout << "val " << val.toString().c_str() << std::endl;//(face_annotation (face 1 (...)...(...)) (face 2 (...)...(...))) (label_annotation (label 1(...)...(...))(label 2(...)...(...))) (safe ....) 
         //size_t element = val.asList()->size();//3
-        //std::cout << "\nelement1\n" <<  val.asList()->get(0).asList()->toString().c_str();//face_annotation (face 1 (...)...(...)) (face 2 (...)...(...))
-        //std::cout << "\nelement2\n" <<  val.asList()->get(1).asList()->toString().c_str();//label_annotation (label 1(...)...(...))(label 2(...)...(...))
-        //std::cout << "\nelement3\n" <<  val.asList()->get(2).asList()->toString().c_str();//(safe ....)
+        //std::cout << "element1 " <<  val.asList()->get(0).asList()->toString().c_str() << std::endl;//face_annotation (face 1 (...)...(...)) (face 2 (...)...(...))
+        //std::cout << "element2 " <<  val.asList()->get(1).asList()->toString().c_str() << std::endl;//label_annotation (label 1(...)...(...))(label 2(...)...(...))
+        //std::cout << "element3 " <<  val.asList()->get(2).asList()->toString().c_str() << std::endl;//(safe ....)
 
         yarp::os::Bottle face_annotation_found_btl = val.asList()->findGroup("face_annotation");
-        //std::cout << "\nface_annotation_found_btl\n" << face_annotation_found_btl.toString().c_str();//face_annotation (face 1 (...)...(...)) (face 2 (...)...(...))
+        //std::cout << "face_annotation_found_btl " << face_annotation_found_btl.toString().c_str() << std::endl;//face_annotation (face 1 (...)...(...)) (face 2 (...)...(...))
        if (!face_annotation_found_btl.isNull()){
 	    size_t n_features = face_annotation_found_btl.get(face_index).asList()->size();//44
 	    for( size_t i=2; i<n_features; i++) { //i starts from 2 to not take 'face 1'
@@ -1389,7 +1393,7 @@ public:
         face_annotation_result.clear();
         yarp::os::Value val = result_btl.get(0);
         yarp::os::Bottle face_annotation_found_btl = val.asList()->findGroup("face_annotation");
-        //std::cout << "\nface_annotation_found_btl\n" << face_annotation_found_btl.toString().c_str();//face_annotation (face 1 (...)...(...)) (face 2 (...)...(...))
+        //std::cout << "face_annotation_found_btl " << face_annotation_found_btl.toString().c_str() << std::endl;//face_annotation (face 1 (...)...(...)) (face 2 (...)...(...))
        if (!face_annotation_found_btl.isNull()){
             size_t n_faces = face_annotation_found_btl.size();
 	    for( size_t i=1; i<n_faces; i++) { //i starts from 1 to not take 'face_annotation'
@@ -1409,8 +1413,8 @@ public:
         label_annotation_result.clear();
         yarp::os::Value val = result_btl.get(0);
         yarp::os::Bottle label_annotation_found_btl = val.asList()->findGroup("label_annotation");
-        //std::cout << "\nlabel_annotation_found_btl\n" << label_annotation_found_btl.toString().c_str();//label_annotation (label 1 (...)...(...)) (label 2 (...)...(...))
-       if (!label_annotation_found_btl.isNull()){
+        //std::cout << "label_annotation_found_btl " << label_annotation_found_btl.toString() << std::endl;//label_annotation (label 1 (...)...(...)) (label 2 (...)...(...))
+        if (!label_annotation_found_btl.isNull()){
             size_t n_labels = label_annotation_found_btl.size();
 	    for( size_t i=1; i<n_labels; i++) { //i starts from 1 to not take 'label_annotation'
 	        yarp::os::Value each_label = label_annotation_found_btl.get(i);
@@ -1419,6 +1423,25 @@ public:
        }
 
        return label_annotation_result;
+    }
+
+    /********************************************************/
+    yarp::os::Bottle get_landmark_annotation() {
+
+        yarp::os::Bottle landmark_annotation_result;
+        landmark_annotation_result.clear();
+        yarp::os::Value val = result_btl.get(0);
+        yarp::os::Bottle landmark_annotation_found_btl = val.asList()->findGroup("landmark_annotation");
+        //std::cout << "landmark_annotation_found_btl " << landmark_annotation_found_btl.toString().c_str()  << std::endl;//landmark_annotation (label 1 (...)...(...)) (label 2 (...)...(...))
+       if (!landmark_annotation_found_btl.isNull()){
+            size_t n_landmarks = landmark_annotation_found_btl.size();
+	    for( size_t i=1; i<n_landmarks; i++) { //i starts from 1 to not take 'landmark_annotation'
+	        yarp::os::Value each_landmark = landmark_annotation_found_btl.get(i);
+	        landmark_annotation_result.add(each_landmark);
+	    }     
+       }
+
+       return landmark_annotation_result;
     }
 
     /********************************************************/
@@ -1450,6 +1473,7 @@ class Module : public yarp::os::RFModule, public googleVisionAI_IDL
     friend class                processing;
 
     bool                        closing;
+    bool                        got_annotation;//true if annotate() has been executed
 
     /********************************************************/
     bool attach(yarp::os::RpcServer &source)
@@ -1471,7 +1495,7 @@ public:
         rpcPort.open(("/"+getName("/rpc")).c_str());
 
         closing = false;
-
+        got_annotation = false;
         processing = new Processing( moduleName );
 
         /* now start the thread to do the work */
@@ -1511,6 +1535,7 @@ public:
     bool annotate()
     {
         processing->annotate();
+        got_annotation = true;
         return true;
     }
 
@@ -1518,7 +1543,7 @@ public:
     yarp::os::Bottle get_face_annotation()
     {   
         yarp::os::Bottle answer;
-        answer = processing->get_face_annotation();
+        if (got_annotation) {answer = processing->get_face_annotation();}      
 
 	return answer;
     }
@@ -1527,7 +1552,16 @@ public:
     yarp::os::Bottle get_label_annotation()
     {   
         yarp::os::Bottle answer;
-        answer = processing->get_label_annotation();
+        if (got_annotation) {answer = processing->get_label_annotation();}
+        
+	return answer;
+    }
+
+    /********************************************************/
+    yarp::os::Bottle get_landmark_annotation()
+    {   
+        yarp::os::Bottle answer;
+        if (got_annotation) {answer = processing->get_landmark_annotation();}
 
 	return answer;
     }
@@ -1536,7 +1570,7 @@ public:
     yarp::os::Bottle get_logo_annotation()
     {   
         yarp::os::Bottle answer;
-        answer = processing->get_logo_annotation();
+        if (got_annotation) {answer = processing->get_logo_annotation();}
 
 	return answer;
     }
@@ -1545,7 +1579,7 @@ public:
     yarp::os::Bottle get_text_annotation()
     {   
         yarp::os::Bottle answer;
-        answer = processing->get_text_annotation();
+        if (got_annotation) {answer = processing->get_text_annotation();}
 
 	return answer;
     }
@@ -1554,7 +1588,7 @@ public:
     yarp::os::Bottle get_safe_search_annotation()
     {   
         yarp::os::Bottle answer;
-        answer = processing->get_safe_search_annotation();
+        if (got_annotation) {answer = processing->get_safe_search_annotation();}
 
 	return answer;
     }
@@ -1563,7 +1597,7 @@ public:
     yarp::os::Bottle get_face_features(const int32_t face_index)
     {   
         yarp::os::Bottle answer;
-        answer = processing->get_face_features(face_index);
+        if (got_annotation) {answer = processing->get_face_features(face_index);}
 
 	return answer;
     }
