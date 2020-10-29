@@ -105,7 +105,7 @@ public:
         outPort.open("/" + moduleName + "/image:o");
         targetPort.open("/"+ moduleName + "/result:o");
         yarp::os::Network::connect(outPort.getName().c_str(), "/view");
-        yarp::os::Network::connect("/icub/camcalib/left/out", BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelRgb> >::getName().c_str());
+        //yarp::os::Network::connect("/icub/camcalib/left/out", BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelRgb> >::getName().c_str());
 
         return true;
     }
@@ -299,12 +299,12 @@ public:
         // Image Source //
         requests.add_requests();
 
-        //requests.mutable_requests( 0 )->mutable_image()->set_content(result, buf.size());
+        requests.mutable_requests( 0 )->mutable_image()->set_content(result, buf.size());
         //requests.mutable_requests( 0 )->mutable_image()->set_content( encoded ); // base64 of local image
         
         //requests.mutable_requests( 0 )->mutable_image()->mutable_source()->set_image_uri(encoded);
 
-        requests.mutable_requests( 0 )->mutable_image()->mutable_source()->set_image_uri( "https://i.ibb.co/Fh8VG8M/logo-combined.jpg" ); // TODO [GCS_URL] // 
+        //requests.mutable_requests( 0 )->mutable_image()->mutable_source()->set_image_uri( "https://i.ibb.co/Fh8VG8M/logo-combined.jpg" ); // TODO [GCS_URL] // 
 
 
         //requests.mutable_requests( 0 )->mutable_image()->mutable_source()->set_image_uri( "https://media.istockphoto.com/photos/group-portrait-of-a-creative-business-team-standing-outdoors-three-picture-id1146473249?k=6&m=1146473249&s=612x612&w=0&h=W1xeAt6XW3evkprjdS4mKWWtmCVjYJnmp-LHvQstitU=" ); // TODO [GCS_URL] // 
@@ -312,7 +312,7 @@ public:
         //requests.mutable_requests( 0 )->mutable_image()->mutable_source()->set_image_uri( "https://images.unsplash.com/photo-1578489758854-f134a358f08b?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&w=1000&q=80" ); // TODO [GCS_URL] // 
         //requests.mutable_requests( 0 )->mutable_image()->mutable_source()->set_image_uri( "https://static.independent.co.uk/s3fs-public/thumbnails/image/2015/03/30/08/beautiful-faces-efit.jpg?w968h681" ); 
         //  requests.mutable_requests( 0 )->mutable_image()->mutable_source()->set_image_uri("https://images.theconversation.com/files/334558/original/file-20200513-82353-g2zyb8.jpg?ixlib=rb-1.1.0&q=45&auto=format&w=1200&h=1200.0&fit=crop");
-        requests.mutable_requests( 0 )->mutable_image()->mutable_source()->set_image_uri("https://qph.fs.quoracdn.net/main-qimg-28d1c38f82d68d497af0bfb3ad96d575.webp");
+        //requests.mutable_requests( 0 )->mutable_image()->mutable_source()->set_image_uri("https://qph.fs.quoracdn.net/main-qimg-28d1c38f82d68d497af0bfb3ad96d575.webp");
         
     //requests.mutable_requests( 0 )->mutable_image()->mutable_source()->set_image_uri("https://i.ibb.co/Fh8VG8M/logo-combined.jpg");
 
