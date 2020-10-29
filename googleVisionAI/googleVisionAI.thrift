@@ -30,28 +30,42 @@ service googleVisionAI_IDL
      */
     bool annotate();
 
-     /**
-     * Get face_annotation.
-     * @return a bottle 
-     */
-    Bottle get_face_annotation();
-
     /**
      * Get logo_annotation.
      * @return a bottle 
      */
     Bottle get_logo_annotation();
 
-         /**
+    /**
      * Get text_annotation.
      * @return a bottle 
      */
     Bottle get_text_annotation();
 
-         /**
+    /**
      * Get safe_search_annotation.
      * @return a bottle 
      */
     Bottle get_safe_search_annotation();
+
+    /**
+    * Set the index of the face and get its features
+    * @param index: index of the face
+    * @return a bottle containing face information
+    */
+    Bottle get_face_features(1:i32 index);
+    
+    /**
+    * Get face annotation
+    * @return a bottle 
+    */
+    Bottle get_face_annotation();
+
+    /**
+    * Get label annotation
+    * @return a bottle 
+    */
+    Bottle get_label_annotation();
+
     
 }
