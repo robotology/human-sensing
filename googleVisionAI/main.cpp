@@ -304,7 +304,7 @@ public:
         
         //requests.mutable_requests( 0 )->mutable_image()->mutable_source()->set_image_uri(encoded);
 
-        requests.mutable_requests( 0 )->mutable_image()->mutable_source()->set_image_uri( "https://media.istockphoto.com/photos/group-portrait-of-a-creative-business-team-standing-outdoors-three-picture-id1146473249?k=6&m=1146473249&s=612x612&w=0&h=W1xeAt6XW3evkprjdS4mKWWtmCVjYJnmp-LHvQstitU=" ); // TODO [GCS_URL] // 
+        requests.mutable_requests( 0 )->mutable_image()->mutable_source()->set_image_uri( "https://i.ibb.co/Fh8VG8M/logo-combined.jpg" ); // TODO [GCS_URL] // 
         //requests.mutable_requests( 0 )->mutable_image()->mutable_source()->set_image_uri( "https://images.ctfassets.net/cnu0m8re1exe/1GxSYi0mQSp9xJ5svaWkVO/d151a93af61918c234c3049e0d6393e1/93347270_cat-1151519_1280.jpg?w=650&h=433&fit=fill" ); // TODO [GCS_URL] // 
 
         //requests.mutable_requests( 0 )->mutable_image()->mutable_source()->set_gcs_image_uri( "gs://personal_projects/photo_korea.jpg" ); // TODO [GCS_URL] // 
@@ -1420,58 +1420,67 @@ public:
 
     /********************************************************/
     yarp::os::Bottle get_logo_annotation() {
+        yarp::os::Bottle result;
+        result.clear();
+        yarp::os::Bottle element_btl = result_btl.get(0).asList()->findGroup("logo_annotation");
 
-        yarp::os::Bottle logo_annotation_result;
-        yarp::os::Value val = result_btl.get(0);//single value within a bottle; contains the first element of result_btl which is face_annotation ((face_annotation(...)) (label_annotation (...)))
-        std::cout << "$$$$$$$$$$$$$$$$\n" << val.toString().c_str();
+        if (element_btl.isNull()) { return result; }
 
-       return logo_annotation_result;
+        // skip the first element which is logo_annotation
+        for (size_t i = 1; i < element_btl.size(); i++) {
+            yarp::os::Bottle& value_btl = result.addList();
+            value_btl.add(element_btl.get(i));
+        }
+        return result;
     }
 
     /********************************************************/
     yarp::os::Bottle get_text_annotation() {
+        yarp::os::Bottle result;
+        result.clear();
+        yarp::os::Bottle element_btl = result_btl.get(0).asList()->findGroup("text_annotation");
 
-        yarp::os::Bottle text_annotation_result;
-        yarp::os::Value val = result_btl.get(0);//single value within a bottle; contains the first element of result_btl which is face_annotation ((face_annotation(...)) (label_annotation (...)))
-        std::cout << "$$$$$$$$$$$$$$$$\n" << val.toString().c_str();
+        if (element_btl.isNull()) { return result; }
 
-       return text_annotation_result;
+        // skip the first element which is text_annotation
+        for (size_t i = 1; i < element_btl.size(); i++) {
+
+            result.add(element_btl.get(i).asList()->get(0));   // label
+            result.add(element_btl.get(i).asList()->get(1));   // #
+
+            // skip the first two elements which are label #
+            for (size_t j = 2; j < element_btl.get(i).asList()->size(); j++) {
+                yarp::os::Bottle& value_btl = result.addList();
+                value_btl.add(element_btl.get(i).asList()->get(j).asList()->get(0)); // language / description / ... 
+                value_btl.add(element_btl.get(i).asList()->get(j).asList()->get(1)); // values
+            }
+        }
+        return result;
     }
 
-        /********************************************************/
+    /********************************************************/
     yarp::os::Bottle get_safe_search_annotation() {
+        yarp::os::Bottle result;
+        result.clear();
+        yarp::os::Bottle element_btl = result_btl.get(0).asList()->findGroup("safe_search_annotation");
 
-        yarp::os::Bottle safe_search_annotation_result;
-        safe_search_annotation_result.clear();
-        yarp::os::Value val = result_btl.get(0);
-
-        //safe_search_annotation_result.addString(val.toString().c_str()); //("(label_annotation (label 1 (description Cat) (score 0.995985567569732666016)) (label 2 (description Mammal) (score 0.989047825336456298828)) (label 3 (description Vertebrate) (score 0.985110402107238769531)) (label 4 (description \"Small to medium-sized cats\") (score 0.978552997112274169922)) (label 5 (description Whiskers) (score 0.972970724105834960938)) (label 6 (description Felidae) (score 0.967110693454742431641)) (label 7 (description \"Domestic short-haired cat\") (score 0.892253935337066650391)) (label 8 (description Carnivore) (score 0.883478105068206787109)) (label 9 (description Snout) (score 0.82518768310546875)) (label 10 (description Eye) (score 0.804899990558624267578))) (safe_search_annotation (adult VERY_UNLIKELY) (medical VERY_UNLIKELY) (spoofed UNLIKELY) (violence VERY_UNLIKELY) (racy VERY_UNLIKELY))")
-        //safe_search_annotation_result.addString(val.toString());
-
-        //std::cout << "val.size(): " << val.asList()->size() << std::endl; //returns: 2
-        //std::cout << "get(0): " << val.asList()->get(0).toString().c_str() << std::endl;
-        //std::cout << "get(1): " << val.asList()->get(1).toString().c_str() << std::endl;
-        //std::cout << "get(2): " << val.asList()->get(2).toString().c_str() << std::endl;
-        //std::cout << "find(0): : " << val.asList()->find("face_annotation").toString().c_str() << std::endl;
-        //std::cout << "find(1): " << val.asList()->find("label_annotation").toString().c_str() << std::endl;
-        std::cout << "findGroup: " << val.asList()->findGroup("safe_search_annotation").toString().c_str() << std::endl;
-
-        std::cout << "findGroup size: " << val.asList()->findGroup("safe_search_annotation").size() << std::endl;
+        if (element_btl.isNull()) { return result; }
 
         // skip the first element which is safe_search_annotation
-        for (size_t i = 1; i < val.asList()->findGroup("safe_search_annotation").size(); i++) {
-          //  yarp::os::Value element;
-            std::cout << "Element: " << val.asList()->findGroup("safe_search_annotation").get(i).toString().c_str() << std::endl;
-            safe_search_annotation_result.addString(val.asList()->findGroup("safe_search_annotation").get(i).toString().c_str());
+        for (size_t i = 1; i < element_btl.size(); i++) {
+            /*
+            std::cout << "Element: " 
+                      << element_btl.get(i).asList()->get(0).toString().c_str() 
+                      << " " 
+                      << element_btl.get(i).asList()->get(1).toString().c_str()
+                      << std::endl;
+            */
+
+            yarp::os::Bottle& value_btl = result.addList();
+            value_btl.addString(element_btl.get(i).asList()->get(0).toString());
+            value_btl.addString(element_btl.get(i).asList()->get(1).toString());
         }
-
-        //std::cout << "find(2): : " << val.asList()->find("safe_search_annotation").asList()->toString().c_str() << std::endl;
-
-        //safe_search_annotation_result.addString(val.asList()->findGroup("safe_search_annotation").toString().c_str());
-        
-        
-
-        return safe_search_annotation_result;
+        return result;
     }
 
     /********************************************************/
