@@ -73,6 +73,7 @@ class Processing : public yarp::os::BufferedPort<yarp::sig::ImageOf<yarp::sig::P
     
     yarp::os::RpcServer handlerPort;
     yarp::os::BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelRgb> > outPort;
+    yarp::os::BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelRgb> > inPort;
 
     yarp::os::BufferedPort<yarp::os::Bottle> targetPort;
 
@@ -104,8 +105,10 @@ public:
         BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelRgb> >::open( "/" + moduleName + "/image:i" );
         outPort.open("/" + moduleName + "/image:o");
         targetPort.open("/"+ moduleName + "/result:o");
-        yarp::os::Network::connect(outPort.getName().c_str(), "/view");
-        //yarp::os::Network::connect("/icub/camcalib/left/out", BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelRgb> >::getName().c_str());
+        yarp::os::Network::connect("/icub/camcalib/left/out", "/startImage" ); 
+        yarp::os::Network::connect("/icub/camcalib/left/out", BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelRgb> >::getName().c_str());
+        yarp::os::Network::connect("/googleVisionAI/image:o", "/outImage");  
+
 
         return true;
     }
@@ -127,16 +130,9 @@ public:
     /********************************************************/
     void onRead( yarp::sig::ImageOf<yarp::sig::PixelRgb> &img )
     {
-        yarp::sig::ImageOf<yarp::sig::PixelRgb> &outImage  = outPort.prepare();
-        outImage.resize(img.width(), img.height());
-        outImage = img;
-
+       
         std::lock_guard<std::mutex> lg(mtx);
         annotate_img = img;
-        
-        //do something on image with results
-
-        outPort.write(); 
 
     }
 
@@ -261,15 +257,15 @@ public:
 
 
 /********************************************************/
-    yarp::os::Bottle queryGoogleVisionAI( yarp::sig::ImageOf<yarp::sig::PixelRgb> &img )
+    yarp::os::Bottle queryGoogleVisionAI( cv::Mat &input_cv)
     {
         BatchAnnotateImagesRequest requests; // Consists of multiple AnnotateImage requests // 
         BatchAnnotateImagesResponse responses;
         AnnotateImageResponse response;
 
-        cv::Mat input_cv = yarp::cv::toCvMat(img);
 
         cv::imwrite("original.jpg", input_cv);
+
 
         // Encode data
         int params[3] = {0};
@@ -278,7 +274,7 @@ public:
         std::vector<uchar> buf;
 	    bool code = cv::imencode(".jpg", input_cv, buf, std::vector<int>(params, params+2));
 	    uchar* result = reinterpret_cast<uchar*> (&buf[0]);
-        
+        /*
         std::string encoded = base64_encode(result, buf.size());
         
         
@@ -290,7 +286,7 @@ public:
         
         cv::imwrite("decoded.jpg", cv_out);
          
-        //std::cout << encoded <<std::endl;
+        //std::cout << encoded <<std::endl; */
 
         //----------------------//
         // Set up Configuration //
@@ -311,7 +307,7 @@ public:
         //requests.mutable_requests( 0 )->mutable_image()->mutable_source()->set_image_uri( "https://images.ctfassets.net/cnu0m8re1exe/1GxSYi0mQSp9xJ5svaWkVO/d151a93af61918c234c3049e0d6393e1/93347270_cat-1151519_1280.jpg?w=650&h=433&fit=fill" ); // TODO [GCS_URL] // 
         //requests.mutable_requests( 0 )->mutable_image()->mutable_source()->set_image_uri( "https://images.unsplash.com/photo-1578489758854-f134a358f08b?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&w=1000&q=80" ); // TODO [GCS_URL] // 
         //requests.mutable_requests( 0 )->mutable_image()->mutable_source()->set_image_uri( "https://static.independent.co.uk/s3fs-public/thumbnails/image/2015/03/30/08/beautiful-faces-efit.jpg?w968h681" ); 
-        //  requests.mutable_requests( 0 )->mutable_image()->mutable_source()->set_image_uri("https://images.theconversation.com/files/334558/original/file-20200513-82353-g2zyb8.jpg?ixlib=rb-1.1.0&q=45&auto=format&w=1200&h=1200.0&fit=crop");
+          //requests.mutable_requests( 0 )->mutable_image()->mutable_source()->set_image_uri("https://images.theconversation.com/files/334558/original/file-20200513-82353-g2zyb8.jpg?ixlib=rb-1.1.0&q=45&auto=format&w=1200&h=1200.0&fit=crop");
         //requests.mutable_requests( 0 )->mutable_image()->mutable_source()->set_image_uri("https://qph.fs.quoracdn.net/main-qimg-28d1c38f82d68d497af0bfb3ad96d575.webp");
         
     //requests.mutable_requests( 0 )->mutable_image()->mutable_source()->set_image_uri("https://i.ibb.co/Fh8VG8M/logo-combined.jpg");
@@ -388,7 +384,7 @@ public:
 
 
           
-            b = get_result(responses);
+            b = get_result(responses, input_cv);
 
            
             std::cout << "Status returned OK\nResponses size: " << responses.responses_size() << std::endl;
@@ -997,7 +993,7 @@ public:
 
    /*********************************************************/
 
-   yarp::os::Bottle get_result(BatchAnnotateImagesResponse responses)
+   yarp::os::Bottle get_result(BatchAnnotateImagesResponse responses, cv::Mat &input_cv)
    {    
         
         AnnotateImageResponse response;
@@ -1022,23 +1018,55 @@ public:
                     if ( response.face_annotations( i ).has_bounding_poly() ) {
                         yarp::os::Bottle &bounding_poly_btl = face_btl.addList();
                         bounding_poly_btl.addString("bounding_poly");
-
+                        cv::Point tl, br;
                         for ( int j = 0; j < response.face_annotations( i ).bounding_poly().vertices_size(); j++ ) {
                             yarp::os::Bottle &bounding_poly_xy = bounding_poly_btl.addList();
                             bounding_poly_xy.addDouble(response.face_annotations( i ).bounding_poly().vertices( j ).x());
                             bounding_poly_xy.addDouble(response.face_annotations( i ).bounding_poly().vertices( j ).y());
+                            if (j==0) //for j=0 we have the top-left point
+                               tl = cv::Point (response.face_annotations( i ).bounding_poly().vertices( j ).x(), response.face_annotations( i ).bounding_poly().vertices( j ).y());
+                            else if (j==2) //for j=2 we have the bottom-right point
+                               br = cv::Point (response.face_annotations( i ).bounding_poly().vertices( j ).x(), response.face_annotations( i ).bounding_poly().vertices( j ).y());
                         }
+                        std::cout << "tl_x: " << tl.x<< std::endl;
+                        std::cout << "tl_y: " << tl.y<< std::endl;
+                        std::cout << "br_x: " << br.x<< std::endl;
+                        std::cout << "br_y: " << br.y<< std::endl;
+                        cv::rectangle(input_cv, tl, br, cvScalar(0,255,0), 1, 8);
+                        std::string text = " Face1" + (i+1);//not working 
+                        cv::putText(input_cv, //target image
+                                    text, //text
+                                    cv::Point(tl.x + 10, tl.y + 10), //top-left position
+                                    cv::FONT_HERSHEY_DUPLEX,
+                                    0.5,
+                                    CV_RGB(0, 255, 0), //font color
+                                    1);
+
+                        
+
+                        cv::imshow("Hello!", input_cv);
+                        cv::waitKey();
                     }
 
                     if ( response.face_annotations( i ).has_fd_bounding_poly() ) {
                         yarp::os::Bottle &fd_bounding_poly_btl = face_btl.addList();
                         fd_bounding_poly_btl.addString("db_bounding_poly");
-                            
+                        cv::Point db_tl, db_br;    
                         for ( int j = 0; j < response.face_annotations( i ).fd_bounding_poly().vertices_size(); j++ ) {
                             yarp::os::Bottle &fd_bounding_poly_xy = fd_bounding_poly_btl.addList();
                             fd_bounding_poly_xy.addDouble(response.face_annotations( i ).fd_bounding_poly().vertices( j ).x());
                             fd_bounding_poly_xy.addDouble(response.face_annotations( i ).fd_bounding_poly().vertices( j ).y());
+                            if (j==0) //for j=0 we have the top-left point
+                               db_tl = cv::Point (response.face_annotations( i ).fd_bounding_poly().vertices( j ).x(), response.face_annotations( i ).fd_bounding_poly().vertices( j ).y());
+                            else if (j==2) //for j=2 we have the bottom-right point
+                               db_br = cv::Point (response.face_annotations( i ).fd_bounding_poly().vertices( j ).x(), response.face_annotations( i ).fd_bounding_poly().vertices( j ).y());
                         }
+                         std::cout << "db_bounding_poly " << std::endl;
+                        std::cout << "tl_x: " << db_tl.x<< std::endl;
+                        std::cout << "tl_y: " << db_tl.y<< std::endl;
+                        std::cout << "br_x: " << db_br.x<< std::endl;
+                        std::cout << "br_y: " << db_br.y<< std::endl;
+                        cv::rectangle(input_cv, db_tl, db_br, cvScalar(0,255,0), 1, 8);
                     }
                     
                     for ( int j = 0; j < response.face_annotations( i ).landmarks_size(); j++ ) {                        
@@ -1181,12 +1209,21 @@ public:
                     if ( response.landmark_annotations( i ).has_bounding_poly() ) {
                         yarp::os::Bottle &bounding_poly_btl_landmark = landmark_btl.addList();
                         bounding_poly_btl_landmark.addString("bounding_poly");
-
+                        cv::Point tl, br;
                         for ( int j = 0; j < response.landmark_annotations( i ).bounding_poly().vertices_size(); j++ ) {
                             yarp::os::Bottle &bounding_poly_xy_landmark = bounding_poly_btl_landmark.addList();
                             bounding_poly_xy_landmark.addDouble(response.landmark_annotations( i ).bounding_poly().vertices( j ).x());
                             bounding_poly_xy_landmark.addDouble(response.landmark_annotations( i ).bounding_poly().vertices( j ).y());
+                            if (j==0) //for j=0 we have the top-left point
+                               tl = cv::Point (response.landmark_annotations( i ).bounding_poly().vertices( j ).x(), response.landmark_annotations( i ).bounding_poly().vertices( j ).y());
+                            else if (j==2) //for j=2 we have the bottom-right point
+                               br = cv::Point (response.landmark_annotations( i ).bounding_poly().vertices( j ).x(), response.landmark_annotations( i ).bounding_poly().vertices( j ).y());
                         }
+                        std::cout << "tl_x: " << tl.x<< std::endl;
+                        std::cout << "tl_y: " << tl.y<< std::endl;
+                        std::cout << "br_x: " << br.x<< std::endl;
+                        std::cout << "br_y: " << br.y<< std::endl;
+                        cv::rectangle(input_cv, tl, br, cvScalar(255,255,255), 2, 8);
                     }
                 }
             }
@@ -1448,11 +1485,18 @@ public:
     bool annotate()
     {
         yarp::os::Bottle &outTargets = targetPort.prepare();
+        yarp::sig::ImageOf<yarp::sig::PixelRgb> &outImage  = outPort.prepare();
+        
         outTargets.clear();
         std::lock_guard<std::mutex> lg(mtx);
-        outTargets = queryGoogleVisionAI(annotate_img);
+        cv::Mat input_cv = yarp::cv::toCvMat(annotate_img);
+        outImage.resize(input_cv.cols, input_cv.rows);
+        outTargets = queryGoogleVisionAI(input_cv);
         targetPort.write();
-        
+  
+        outImage=yarp::cv::fromCvMat<yarp::sig::PixelRgb>(input_cv);
+        outPort.write(); // In outPort we have a screenshot of the image input with the added bounding boxes
+
         return true;
     }
 
