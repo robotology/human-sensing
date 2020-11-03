@@ -984,7 +984,6 @@ public:
         google::protobuf::ShutdownProtobufLibrary();
         
         requests.release_parent();
-        requests.Clear();
         response.release_error();
         response.release_context();
         response.release_web_detection();
@@ -1033,9 +1032,7 @@ public:
         for ( int h = 0; h < responses.responses_size() ; h++ ) {
 
             response = responses.responses( 0 );
-
-            std::cout << response.face_annotations_size() << std::endl;
-
+		
             // FACE ANNOTATION : color = yellow
             if (response.face_annotations_size() > 0) {
                 yarp::os::Bottle &face_annotation_btl = ext_btl.addList();
@@ -1086,8 +1083,6 @@ public:
                                db_br = cv::Point (response.face_annotations( i ).fd_bounding_poly().vertices( j ).x(), response.face_annotations( i ).fd_bounding_poly().vertices( j ).y());
                         }
                         cv::rectangle(input_cv, db_tl, db_br, cvScalar(0,255,255), 1, 8);
-                        cv::imwrite("test1.png", input_cv);
-
                     }
                     
                     for ( int j = 0; j < response.face_annotations( i ).landmarks_size(); j++ ) {   
@@ -1181,7 +1176,6 @@ public:
                     alt_info_headwear.addString(Likelihood_Name( response.face_annotations( i ).headwear_likelihood() ));
                 }            
             }
-            std::cout << "Face annotation completato" << std::endl;
 
             // LABEL ANNOTATIONS : color = green
             if (response.label_annotations_size() > 0) {
