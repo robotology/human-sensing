@@ -255,6 +255,38 @@ public:
         return ret;
     }
 
+    /********************************************************/
+    std::string adjustAccents(std::string initial) {
+
+        std::map< std::string, std::string> dictionary;
+        dictionary.insert ( std::pair<std::string,std::string>("á","a") );
+        dictionary.insert ( std::pair<std::string,std::string>("à","a") );
+        dictionary.insert ( std::pair<std::string,std::string>("é","e") );
+        dictionary.insert ( std::pair<std::string,std::string>("è","e") );
+        dictionary.insert ( std::pair<std::string,std::string>("í","i") );
+        dictionary.insert ( std::pair<std::string,std::string>("ó","o") );
+        dictionary.insert ( std::pair<std::string,std::string>("ú","u") );
+        dictionary.insert ( std::pair<std::string,std::string>("ñ","n") );
+
+        std::string tmp = initial;
+        std::string strAux;
+        for (auto it= dictionary.begin(); it != dictionary.end(); it++)
+        {
+            tmp=(it->first);
+            std::size_t found=initial.find_first_of(tmp);
+
+            while (found!=std::string::npos)
+            {
+                yError() << "in found" << found;
+                strAux=(it->second);
+                initial.erase(found,tmp.length());
+                initial.insert(found,strAux);
+                found=initial.find_first_of(tmp,found+1);
+            }
+        }
+        return initial;
+    }
+
 
 /********************************************************/
     yarp::os::Bottle queryGoogleVisionAI( cv::Mat &input_cv)
@@ -295,23 +327,18 @@ public:
         // Image Source //
         requests.add_requests();
 
-        requests.mutable_requests( 0 )->mutable_image()->set_content(result, buf.size());
+        //requests.mutable_requests( 0 )->mutable_image()->set_content(result, buf.size());
+
+
+
         //requests.mutable_requests( 0 )->mutable_image()->set_content( encoded ); // base64 of local image
         
         //requests.mutable_requests( 0 )->mutable_image()->mutable_source()->set_image_uri(encoded);
-
-        //requests.mutable_requests( 0 )->mutable_image()->mutable_source()->set_image_uri( "https://i.ibb.co/Fh8VG8M/logo-combined.jpg" ); // TODO [GCS_URL] // 
-
-
         //requests.mutable_requests( 0 )->mutable_image()->mutable_source()->set_image_uri( "https://media.istockphoto.com/photos/group-portrait-of-a-creative-business-team-standing-outdoors-three-picture-id1146473249?k=6&m=1146473249&s=612x612&w=0&h=W1xeAt6XW3evkprjdS4mKWWtmCVjYJnmp-LHvQstitU=" ); // TODO [GCS_URL] // 
         //requests.mutable_requests( 0 )->mutable_image()->mutable_source()->set_image_uri( "https://images.ctfassets.net/cnu0m8re1exe/1GxSYi0mQSp9xJ5svaWkVO/d151a93af61918c234c3049e0d6393e1/93347270_cat-1151519_1280.jpg?w=650&h=433&fit=fill" ); // TODO [GCS_URL] // 
         //requests.mutable_requests( 0 )->mutable_image()->mutable_source()->set_image_uri( "https://images.unsplash.com/photo-1578489758854-f134a358f08b?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&w=1000&q=80" ); // TODO [GCS_URL] // 
-        //requests.mutable_requests( 0 )->mutable_image()->mutable_source()->set_image_uri( "https://static.independent.co.uk/s3fs-public/thumbnails/image/2015/03/30/08/beautiful-faces-efit.jpg?w968h681" ); 
-          //requests.mutable_requests( 0 )->mutable_image()->mutable_source()->set_image_uri("https://images.theconversation.com/files/334558/original/file-20200513-82353-g2zyb8.jpg?ixlib=rb-1.1.0&q=45&auto=format&w=1200&h=1200.0&fit=crop");
-        //requests.mutable_requests( 0 )->mutable_image()->mutable_source()->set_image_uri("https://qph.fs.quoracdn.net/main-qimg-28d1c38f82d68d497af0bfb3ad96d575.webp");
-        
-    //requests.mutable_requests( 0 )->mutable_image()->mutable_source()->set_image_uri("https://i.ibb.co/Fh8VG8M/logo-combined.jpg");
-
+        //requests.mutable_requests( 0 )->mutable_image()->mutable_source()->set_image_uri( "https://inchiostrovirtuale.it/wp-content/uploads/2019/05/Torre-Eiffel-copertina.jpg");
+        requests.mutable_requests( 0 )->mutable_image()->mutable_source()->set_image_uri( "https://gdsit.cdn-immedia.net/2018/02/giornale-di-sicilia-gazzetta-del-sud-625x350-1518680770.jpg");
 
         //requests.mutable_requests( 0 )->mutable_image()->mutable_source()->set_gcs_image_uri( "gs://personal_projects/photo_korea.jpg" ); // TODO [GCS_URL] // 
         //requests.mutable_requests( 0 )->mutable_image_context(); // optional??
@@ -1004,7 +1031,7 @@ public:
 
             response = responses.responses( 0 );
           
-            // FACE ANNOTATION
+            // FACE ANNOTATION : color = yellow
             if (response.face_annotations_size() > 0) {
                 yarp::os::Bottle &face_annotation_btl = ext_btl.addList();
                 face_annotation_btl.addString("face_annotation");
@@ -1028,24 +1055,16 @@ public:
                             else if (j==2) //for j=2 we have the bottom-right point
                                br = cv::Point (response.face_annotations( i ).bounding_poly().vertices( j ).x(), response.face_annotations( i ).bounding_poly().vertices( j ).y());
                         }
-                        std::cout << "tl_x: " << tl.x<< std::endl;
-                        std::cout << "tl_y: " << tl.y<< std::endl;
-                        std::cout << "br_x: " << br.x<< std::endl;
-                        std::cout << "br_y: " << br.y<< std::endl;
-                        cv::rectangle(input_cv, tl, br, cvScalar(0,255,0), 1, 8);
-                        std::string text = " Face1" + (i+1);//not working 
+                        cv::rectangle(input_cv, tl, br, cvScalar(0, 255, 255), 1, 8); // cvScalar(B, G, R)
+                        std::string face_label = "Face " + std::to_string(i+1);
+
                         cv::putText(input_cv, //target image
-                                    text, //text
-                                    cv::Point(tl.x + 10, tl.y + 10), //top-left position
-                                    cv::FONT_HERSHEY_DUPLEX,
-                                    0.5,
-                                    CV_RGB(0, 255, 0), //font color
-                                    1);
-
-                        
-
-                        cv::imshow("Hello!", input_cv);
-                        cv::waitKey();
+                                    face_label, //text
+                                    cv::Point(tl.x + 5, tl.y + 8),
+                                    cv::FONT_HERSHEY_SIMPLEX,
+                                    0.3,
+                                    CV_RGB(255, 255, 0), //font color yellow
+                                    0.5);
                     }
 
                     if ( response.face_annotations( i ).has_fd_bounding_poly() ) {
@@ -1061,11 +1080,6 @@ public:
                             else if (j==2) //for j=2 we have the bottom-right point
                                db_br = cv::Point (response.face_annotations( i ).fd_bounding_poly().vertices( j ).x(), response.face_annotations( i ).fd_bounding_poly().vertices( j ).y());
                         }
-                         std::cout << "db_bounding_poly " << std::endl;
-                        std::cout << "tl_x: " << db_tl.x<< std::endl;
-                        std::cout << "tl_y: " << db_tl.y<< std::endl;
-                        std::cout << "br_x: " << db_br.x<< std::endl;
-                        std::cout << "br_y: " << db_br.y<< std::endl;
                         cv::rectangle(input_cv, db_tl, db_br, cvScalar(0,255,0), 1, 8);
                     }
                     
@@ -1087,6 +1101,9 @@ public:
                             yarp::os::Bottle &annotation_z = annotation_type_btl.addList();
                             annotation_z.addString("z");
                             annotation_z.addDouble(response.face_annotations( i ).landmarks( j ).position().z());
+
+                            cv::circle(input_cv, cv::Point(response.face_annotations( i ).landmarks( j ).position().x(),
+                                response.face_annotations( i ).landmarks( j ).position().y()), 1, cv::Scalar(0, 255, 0), -1, 8);
                         } else {
 
                             yarp::os::Bottle &annotation_x = annotation_type_btl.addList();
@@ -1156,7 +1173,7 @@ public:
                 }            
             }
         
-            // LABEL ANNOTATIONS 
+            // LABEL ANNOTATIONS : color = green
             if (response.label_annotations_size() > 0) {
                 yarp::os::Bottle &label_annotation_btl = ext_btl.addList();
                 label_annotation_btl.addString("label_annotation");
@@ -1179,16 +1196,38 @@ public:
                         yarp::os::Bottle &bounding_poly_btl_label = label_annotation_btl.addList();
                         bounding_poly_btl_label.addString("bounding_poly");
 
-                        for ( int j = 0; j < response.face_annotations( i ).bounding_poly().vertices_size(); j++ ) {
+                        cv::Point tl, br;
+                        for ( int j = 0; j < response.label_annotations( i ).bounding_poly().vertices_size(); j++ ) {
                             yarp::os::Bottle &bounding_poly_xy_label = bounding_poly_btl_label.addList();
                             bounding_poly_xy_label.addDouble(response.label_annotations( i ).bounding_poly().vertices( j ).x());
                             bounding_poly_xy_label.addDouble(response.label_annotations( i ).bounding_poly().vertices( j ).y());
+
+                            if (j==0) //for j=0 we have the top-left point
+                                tl = cv::Point (
+                                   response.label_annotations( i ).bounding_poly().vertices( j ).x(), 
+                                   response.label_annotations( i ).bounding_poly().vertices( j ).y()
+                                );
+                            else if (j==2) //for j=2 we have the bottom-right point
+                                br = cv::Point (
+                                   response.label_annotations( i ).bounding_poly().vertices( j ).x(), 
+                                   response.label_annotations( i ).bounding_poly().vertices( j ).y()
+                                );
                         }
+                        cv::rectangle(input_cv, tl, br, cvScalar(0,255,0), 1, 8);
+
+                        std::string text = response.label_annotations( i ).description();
+                        cv::putText(input_cv, //target image
+                                    text, //text
+                                    cv::Point(tl.x + 5, tl.y + 8),
+                                    cv::FONT_HERSHEY_SIMPLEX,
+                                    0.3,
+                                    CV_RGB(0, 255, 0), //font color green
+                                    0.5);
                     }
                 }
             }
             
-            // LANDMARK ANNOTATIONS 
+            // LANDMARK ANNOTATIONS : color = magenta
             if (response.landmark_annotations_size() > 0) {
                 yarp::os::Bottle &landmark_annotation_btl = ext_btl.addList();
                 landmark_annotation_btl.addString("landmark_annotation");
@@ -1215,20 +1254,31 @@ public:
                             bounding_poly_xy_landmark.addDouble(response.landmark_annotations( i ).bounding_poly().vertices( j ).x());
                             bounding_poly_xy_landmark.addDouble(response.landmark_annotations( i ).bounding_poly().vertices( j ).y());
                             if (j==0) //for j=0 we have the top-left point
-                               tl = cv::Point (response.landmark_annotations( i ).bounding_poly().vertices( j ).x(), response.landmark_annotations( i ).bounding_poly().vertices( j ).y());
+                                tl = cv::Point (
+                                   response.landmark_annotations( i ).bounding_poly().vertices( j ).x(), 
+                                   response.landmark_annotations( i ).bounding_poly().vertices( j ).y()
+                                );
                             else if (j==2) //for j=2 we have the bottom-right point
-                               br = cv::Point (response.landmark_annotations( i ).bounding_poly().vertices( j ).x(), response.landmark_annotations( i ).bounding_poly().vertices( j ).y());
+                                br = cv::Point (
+                                    response.landmark_annotations( i ).bounding_poly().vertices( j ).x(), 
+                                    response.landmark_annotations( i ).bounding_poly().vertices( j ).y()
+                                );
                         }
-                        std::cout << "tl_x: " << tl.x<< std::endl;
-                        std::cout << "tl_y: " << tl.y<< std::endl;
-                        std::cout << "br_x: " << br.x<< std::endl;
-                        std::cout << "br_y: " << br.y<< std::endl;
-                        cv::rectangle(input_cv, tl, br, cvScalar(255,255,255), 2, 8);
+                        cv::rectangle(input_cv, tl, br, cvScalar(255,0,255), 1, 8);
+
+                        std::string text = adjustAccents(response.landmark_annotations( i ).description());
+                        cv::putText(input_cv, //target image
+                                    text, //text
+                                    cv::Point(tl.x + 5, tl.y + 8),
+                                    cv::FONT_HERSHEY_SIMPLEX,
+                                    0.3,
+                                    CV_RGB(255,0,255), //font color
+                                    0.5);
                     }
                 }
             }
 
-            // LOGO ANNOTATIONS 
+            // LOGO ANNOTATIONS : color = red
             if (response.logo_annotations_size() > 0) {
                 yarp::os::Bottle &logo_annotation_btl = ext_btl.addList();
                 logo_annotation_btl.addString("logo_annotation");
@@ -1250,16 +1300,37 @@ public:
                         yarp::os::Bottle &bounding_poly_btl_logo = logo_btl.addList();
                         bounding_poly_btl_logo.addString("bounding_poly");
 
+                        cv::Point tl, br;
                         for ( int j = 0; j < response.logo_annotations( i ).bounding_poly().vertices_size(); j++ ) {
                             yarp::os::Bottle &bounding_poly_xy_logo = bounding_poly_btl_logo.addList();
                             bounding_poly_xy_logo.addDouble(response.logo_annotations( i ).bounding_poly().vertices( j ).x());
                             bounding_poly_xy_logo.addDouble(response.logo_annotations( i ).bounding_poly().vertices( j ).y());
+                            if (j==0) //for j=0 we have the top-left point
+                                tl = cv::Point (
+                                   response.logo_annotations( i ).bounding_poly().vertices( j ).x(), 
+                                   response.logo_annotations( i ).bounding_poly().vertices( j ).y()
+                                );
+                            else if (j==2) //for j=2 we have the bottom-right point
+                                br = cv::Point (
+                                    response.logo_annotations( i ).bounding_poly().vertices( j ).x(), 
+                                    response.logo_annotations( i ).bounding_poly().vertices( j ).y()
+                                );
                         }
+                        cv::rectangle(input_cv, tl, br, cvScalar(0, 0, 255), 1, 8);
+
+                        std::string text = response.logo_annotations( i ).description();
+                        cv::putText(input_cv, //target image
+                                    text, //text
+                                    cv::Point(tl.x + 5, tl.y + 8),
+                                    cv::FONT_HERSHEY_SIMPLEX,
+                                    0.3,
+                                    CV_RGB(255, 0, 0), //font color
+                                    0.5);
                     }
                 }
             }
 
-            // TEXT ANNOTATIONS 
+            // TEXT ANNOTATIONS : color = blue
             if ( response.text_annotations_size() > 0 ) { 
                 yarp::os::Bottle &text_annotation_btl = ext_btl.addList();
                 text_annotation_btl.addString("text_annotation");
@@ -1277,17 +1348,40 @@ public:
                     text_description_btl.addString("description");
                     text_description_btl.addString(response.text_annotations( i ).description());
 
-
-
                     if ( response.text_annotations( i ).has_bounding_poly() ) {
                         yarp::os::Bottle &bounding_poly_btl_text = text_btl.addList();
                         bounding_poly_btl_text.addString("bounding_poly");
 
+                        cv::Point tl, br;
                         for ( int j = 0; j < response.text_annotations( i ).bounding_poly().vertices_size(); j++ ) {
                             yarp::os::Bottle &bounding_poly_xy_text = bounding_poly_btl_text.addList();
                             bounding_poly_xy_text.addDouble(response.text_annotations( i ).bounding_poly().vertices( j ).x());
                             bounding_poly_xy_text.addDouble(response.text_annotations( i ).bounding_poly().vertices( j ).y());
+                            if (j==0) //for j=0 we have the top-left point
+                                tl = cv::Point (
+                                   response.text_annotations( i ).bounding_poly().vertices( j ).x(), 
+                                   response.text_annotations( i ).bounding_poly().vertices( j ).y()
+                                );
+                            else if (j==2) //for j=2 we have the bottom-right point
+                                br = cv::Point (
+                                    response.text_annotations( i ).bounding_poly().vertices( j ).x(), 
+                                    response.text_annotations( i ).bounding_poly().vertices( j ).y()
+                                );
                         }
+                        cv::rectangle(input_cv, tl, br, cvScalar(255, 0, 0), 1, 8);
+
+                        if (response.text_annotations( i ).locale() != "") {
+                            std::string text = "Language: " + response.text_annotations( i ).locale();
+
+                            cv::putText(input_cv, //target image
+                                    text, //text
+                                    cv::Point(tl.x + 5, tl.y + 8),
+                                    cv::FONT_HERSHEY_SIMPLEX,
+                                    0.3,
+                                    CV_RGB(0, 0, 255), //font color
+                                    0.5);
+                        }
+
                     }
                 }
             }
@@ -1317,10 +1411,11 @@ public:
                 safe_search_racy_btl.addString("racy");
                 safe_search_racy_btl.addString(Likelihood_Name(response.safe_search_annotation().racy()) );
             }
+
+            cv::imshow("Hello!", input_cv);
+            cv::waitKey();
          }
        
-        //bottle_result.addString("Got it");
-
         return result_btl;
    }
 
@@ -1489,9 +1584,18 @@ public:
         
         outTargets.clear();
         std::lock_guard<std::mutex> lg(mtx);
-        cv::Mat input_cv = yarp::cv::toCvMat(annotate_img);
+
+        //IF: load with stream of images
+        //cv::Mat input_cv = yarp::cv::toCvMat(annotate_img);
+
+        // ELSE IF: image URI
+        cv::Mat input_cv = cv::imread("/projects/human-sensing/build/people.jpg", cv::IMREAD_COLOR);
+        //cv::imshow("Hi", input_cv);
+        //ENDIF
+        
         outImage.resize(input_cv.cols, input_cv.rows);
         outTargets = queryGoogleVisionAI(input_cv);
+
         targetPort.write();
   
         outImage=yarp::cv::fromCvMat<yarp::sig::PixelRgb>(input_cv);
