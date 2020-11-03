@@ -133,6 +133,7 @@ public:
        
         std::lock_guard<std::mutex> lg(mtx);
         annotate_img = img;
+        //std::cout << "Inside the onRead" << std::endl;
 
     }
 
@@ -327,7 +328,7 @@ public:
         // Image Source //
         requests.add_requests();
 
-        //requests.mutable_requests( 0 )->mutable_image()->set_content(result, buf.size());
+        requests.mutable_requests( 0 )->mutable_image()->set_content(result, buf.size());
 
 
 
@@ -338,7 +339,7 @@ public:
         //requests.mutable_requests( 0 )->mutable_image()->mutable_source()->set_image_uri( "https://images.ctfassets.net/cnu0m8re1exe/1GxSYi0mQSp9xJ5svaWkVO/d151a93af61918c234c3049e0d6393e1/93347270_cat-1151519_1280.jpg?w=650&h=433&fit=fill" ); // TODO [GCS_URL] // 
         //requests.mutable_requests( 0 )->mutable_image()->mutable_source()->set_image_uri( "https://images.unsplash.com/photo-1578489758854-f134a358f08b?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&w=1000&q=80" ); // TODO [GCS_URL] // 
         //requests.mutable_requests( 0 )->mutable_image()->mutable_source()->set_image_uri( "https://inchiostrovirtuale.it/wp-content/uploads/2019/05/Torre-Eiffel-copertina.jpg");
-        requests.mutable_requests( 0 )->mutable_image()->mutable_source()->set_image_uri( "https://gdsit.cdn-immedia.net/2018/02/giornale-di-sicilia-gazzetta-del-sud-625x350-1518680770.jpg");
+        //requests.mutable_requests( 0 )->mutable_image()->mutable_source()->set_image_uri( "https://gdsit.cdn-immedia.net/2018/02/giornale-di-sicilia-gazzetta-del-sud-625x350-1518680770.jpg");
 
         //requests.mutable_requests( 0 )->mutable_image()->mutable_source()->set_gcs_image_uri( "gs://personal_projects/photo_korea.jpg" ); // TODO [GCS_URL] // 
         //requests.mutable_requests( 0 )->mutable_image_context(); // optional??
@@ -368,8 +369,8 @@ public:
         std::cout << "\n\n---- Checking Request ----" << std::endl;
         std::cout << "Features size: " << requests.mutable_requests( 0 )->features_size() << std::endl;
         for ( int i = 0; i < requests.mutable_requests( 0 )->features_size(); i++ ) {
-            //requests.mutable_requests( 0 ).features( int ); // Feature
-            //requests.mutable_requests( 0 ).features( i ).type(); // Feature_Type
+            //requests.mutable_requests( 0 ).features( int ); // Features
+            //std::cout << requests.mutable_requests( 0 )->features( i ).type() << std::endl; // Feature_Type
             std::cout << "Feature " << i << " name: " << Feature_Type_Name( requests.mutable_requests( 0 )->features( i ).type() ) << std::endl;
             std::cout << "max results: " << requests.mutable_requests( 0 )->features( i ).max_results() << std::endl;
         }
@@ -406,6 +407,7 @@ public:
         //---------------//
         std::cout << "\n\n------ Responses ------" << std::endl;
         yarp::os::Bottle b;
+        b.clear();
         
         if ( status.ok() ) {
 
@@ -413,7 +415,6 @@ public:
           
             b = get_result(responses, input_cv);
 
-           
             std::cout << "Status returned OK\nResponses size: " << responses.responses_size() << std::endl;
             for ( int h = 0; h < responses.responses_size(); h++ ) {
                 response = responses.responses( h );
@@ -983,6 +984,7 @@ public:
         google::protobuf::ShutdownProtobufLibrary();
         
         requests.release_parent();
+        requests.Clear();
         response.release_error();
         response.release_context();
         response.release_web_detection();
@@ -992,6 +994,7 @@ public:
         response.release_safe_search_annotation();
         response.release_image_properties_annotation();
         response.clear_face_annotations();
+        response.clear_label_annotations();
         response.clear_landmark_annotations();
         response.clear_logo_annotations();
         
@@ -1030,12 +1033,14 @@ public:
         for ( int h = 0; h < responses.responses_size() ; h++ ) {
 
             response = responses.responses( 0 );
-          
+
+            std::cout << response.face_annotations_size() << std::endl;
+
             // FACE ANNOTATION : color = yellow
             if (response.face_annotations_size() > 0) {
                 yarp::os::Bottle &face_annotation_btl = ext_btl.addList();
                 face_annotation_btl.addString("face_annotation");
-                
+
                 for ( int i = 0; i <  response.face_annotations_size(); i++ ) {
 
                     yarp::os::Bottle &face_btl = face_annotation_btl.addList();
@@ -1080,13 +1085,16 @@ public:
                             else if (j==2) //for j=2 we have the bottom-right point
                                db_br = cv::Point (response.face_annotations( i ).fd_bounding_poly().vertices( j ).x(), response.face_annotations( i ).fd_bounding_poly().vertices( j ).y());
                         }
-                        cv::rectangle(input_cv, db_tl, db_br, cvScalar(0,255,0), 1, 8);
+                        cv::rectangle(input_cv, db_tl, db_br, cvScalar(0,255,255), 1, 8);
+                        cv::imwrite("test1.png", input_cv);
+
                     }
                     
-                    for ( int j = 0; j < response.face_annotations( i ).landmarks_size(); j++ ) {                        
-                    
-                        yarp::os::Bottle &annotation_type_btl = face_btl.addList();
+                    for ( int j = 0; j < response.face_annotations( i ).landmarks_size(); j++ ) {   
+
+                        yarp::os::Bottle &annotation_type_btl = face_btl.addList();   
                         annotation_type_btl.addString(FaceAnnotation_Landmark_Type_Name(response.face_annotations( i ).landmarks( j ).type()));
+
                     
                         if ( response.face_annotations( i ).landmarks( j ).has_position() ) {
 
@@ -1101,9 +1109,9 @@ public:
                             yarp::os::Bottle &annotation_z = annotation_type_btl.addList();
                             annotation_z.addString("z");
                             annotation_z.addDouble(response.face_annotations( i ).landmarks( j ).position().z());
-
                             cv::circle(input_cv, cv::Point(response.face_annotations( i ).landmarks( j ).position().x(),
-                                response.face_annotations( i ).landmarks( j ).position().y()), 1, cv::Scalar(0, 255, 0), -1, 8);
+                                response.face_annotations( i ).landmarks( j ).position().y()), 1, cv::Scalar(0, 255, 255), -1, 8);
+
                         } else {
 
                             yarp::os::Bottle &annotation_x = annotation_type_btl.addList();
@@ -1119,6 +1127,7 @@ public:
                             annotation_z.addString("");
                         }
                     }
+
 
                     yarp::os::Bottle &roll_angle_btl = face_btl.addList();
                     roll_angle_btl.addString("roll_angle");
@@ -1172,7 +1181,8 @@ public:
                     alt_info_headwear.addString(Likelihood_Name( response.face_annotations( i ).headwear_likelihood() ));
                 }            
             }
-        
+            std::cout << "Face annotation completato" << std::endl;
+
             // LABEL ANNOTATIONS : color = green
             if (response.label_annotations_size() > 0) {
                 yarp::os::Bottle &label_annotation_btl = ext_btl.addList();
@@ -1412,8 +1422,7 @@ public:
                 safe_search_racy_btl.addString(Likelihood_Name(response.safe_search_annotation().racy()) );
             }
 
-            cv::imshow("Hello!", input_cv);
-            cv::waitKey();
+           
          }
        
         return result_btl;
@@ -1584,22 +1593,21 @@ public:
         
         outTargets.clear();
         std::lock_guard<std::mutex> lg(mtx);
-
+         
         //IF: load with stream of images
-        //cv::Mat input_cv = yarp::cv::toCvMat(annotate_img);
-
+        cv::Mat input_cv = yarp::cv::toCvMat(annotate_img);
+    
         // ELSE IF: image URI
-        cv::Mat input_cv = cv::imread("/projects/human-sensing/build/people.jpg", cv::IMREAD_COLOR);
-        //cv::imshow("Hi", input_cv);
+        //cv::Mat input_cv = cv::imread("/projects/human-sensing/build/people.jpg", cv::IMREAD_COLOR);
         //ENDIF
-        
+        cv::Mat new_cv = input_cv.clone();
         outImage.resize(input_cv.cols, input_cv.rows);
-        outTargets = queryGoogleVisionAI(input_cv);
-
+        outTargets = queryGoogleVisionAI(new_cv);
         targetPort.write();
-  
-        outImage=yarp::cv::fromCvMat<yarp::sig::PixelRgb>(input_cv);
+
+        outImage=yarp::cv::fromCvMat<yarp::sig::PixelRgb>(new_cv);
         outPort.write(); // In outPort we have a screenshot of the image input with the added bounding boxes
+        yarp::os::Time::delay(0.05); // If we do not put a delay, as soon as we write into the port, a new input is coming, which will broke the output
 
         return true;
     }
