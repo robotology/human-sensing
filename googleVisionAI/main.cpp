@@ -105,9 +105,6 @@ public:
         BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelRgb> >::open( "/" + moduleName + "/image:i" );
         outPort.open("/" + moduleName + "/image:o");
         targetPort.open("/"+ moduleName + "/result:o");
-        yarp::os::Network::connect("/icub/camcalib/left/out", "/startImage" ); 
-        yarp::os::Network::connect("/icub/camcalib/left/out", BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelRgb> >::getName().c_str());
-        yarp::os::Network::connect("/googleVisionAI/image:o", "/outImage");  
 
 
         return true;
