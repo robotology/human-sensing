@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<?xml-stylesheet type="text/xsl" href="yarpmanifest.xsl"?>
+
+<module>
+  <name>googleVsionAI</name>
+  <doxygen-group>googleVsionAI</doxygen-group>
+  <description>This module is responsible for dialoging with goog dialog flow</description>
+  <copypolicy> Released under the terms of the BSD 3-Clause License.</copypolicy>
+  <version>0.3.0</version>
+
+  <description-long>
+   This module This module communicates with the dialogflow google service.
+  </description-long>
+
+  <arguments>
+        <param default="googleVsionAI" desc="Module's name; all the open ports will be tagged with the prefix /name.">name</param>
+         
+  </arguments>
+
+  <authors>
+    <author email="ilaria.carlini@@iit.it"> Ilaria Carlini</author>
+    <author email="laura.cavaliere@iit.it"> Laura Cavaliere </author> 
+    <author email="vadim.tikhanoff@iit.it"> Vadim Tikhanoff </author>
+  </authors>
+
+  <data>
+      <input>
+          <type>Bottle</type>
+          <port>/googleVsionAI/image:i</port>
+          <description>
+            Port to receive end-user expression
+          </description>
+      </input>
+      <output>
+          <type>Bottle</type>
+          <port>/googleVsionAI/result:o</port>
+          <description>
+            Sends the response from the agent
+          </description>
+      </output>
+  </data>
+
+  <services>
+    <server>
+      <type>googleVsionAI_IDL</type>
+      <idl>idl.thrift</idl>
+      <port>/googleVsionAI/rpc</port>
+      <description>service port</description>
+    </server>
+  </services>
+
+</module>
+
