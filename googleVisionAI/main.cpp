@@ -23,6 +23,7 @@
 #include <fstream>
 #include <iterator>
 #include <string>
+#include <map>
 #include <yarp/os/BufferedPort.h>
 #include <yarp/os/ResourceFinder.h>
 #include <yarp/os/RFModule.h>
@@ -80,8 +81,18 @@ class Processing : public yarp::os::BufferedPort<yarp::sig::ImageOf<yarp::sig::P
     yarp::sig::ImageOf<yarp::sig::PixelRgb> annotate_img;
 
     std::mutex mtx;
-
+ 
     yarp::os::Bottle result_btl;
+
+    bool configured;
+    int requests_size;
+    BatchAnnotateImagesRequest requests;         // Consists of multiple AnnotateImage requests // 
+
+    std::map<int, std::string> feature_type;
+    std::map<int, std::string> face_annotation_type_name;
+    std::map<int, std::string> likelihood_name;
+	
+
 
 public:
     /********************************************************/
@@ -100,13 +111,75 @@ public:
 
     /********************************************************/
     bool open()
-    {
+    { 
         this->useCallback();
         BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelRgb> >::open( "/" + moduleName + "/image:i" );
         outPort.open("/" + moduleName + "/image:o");
         targetPort.open("/"+ moduleName + "/result:o");
+        yarp::os::Network::connect("/icub/camcalib/left/out", "/startImage" ); 
+        yarp::os::Network::connect("/icub/camcalib/left/out", BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelRgb> >::getName().c_str());
+        yarp::os::Network::connect("/googleVisionAI/image:o", "/outImage");  
+        configured = false;
+        requests_size = 0;
+        requests.add_requests();
+
+        // Initialize the feature_type map
+	feature_type.insert(std::make_pair(0, "TYPE_UNSPECIFIED"));
+	feature_type.insert(std::make_pair(1, "FACE_DETECTION"));
+	feature_type.insert(std::make_pair(2, "LANDMARK_DETECTION"));
+	feature_type.insert(std::make_pair(3, "LOGO_DETECTION"));
+	feature_type.insert(std::make_pair(4, "LABEL_DETECTION"));
+	feature_type.insert(std::make_pair(5, "TEXT_DETECTION"));
+	feature_type.insert(std::make_pair(6, "SAFE_SEARCH_DETECTION"));
+	feature_type.insert(std::make_pair(7, "IMAGE_PROPERTIES"));
+	feature_type.insert(std::make_pair(8, "CROP_HINTS"));
+	feature_type.insert(std::make_pair(9, "WEB_DETECTION"));
+
+        // Initialize the face_annotation_type_name map
+	face_annotation_type_name.insert(std::make_pair(0, "UNKNOWN_LANDMARK"));
+	face_annotation_type_name.insert(std::make_pair(1, "LEFT_EYE"));
+	face_annotation_type_name.insert(std::make_pair(2, "RIGHT_EYE"));
+	face_annotation_type_name.insert(std::make_pair(3, "LEFT_OF_LEFT_EYEBROW"));
+	face_annotation_type_name.insert(std::make_pair(4, "RIGHT_OF_LEFT_EYEBROW"));
+	face_annotation_type_name.insert(std::make_pair(5, "LEFT_OF_RIGHT_EYEBROW"));
+	face_annotation_type_name.insert(std::make_pair(6, "RIGHT_OF_RIGHT_EYEBROW"));
+	face_annotation_type_name.insert(std::make_pair(7, "MIDPOINT_BETWEEN_EYES"));
+	face_annotation_type_name.insert(std::make_pair(8, "NOSE_TIPS"));
+	face_annotation_type_name.insert(std::make_pair(9, "UPPER_LIP"));
+        face_annotation_type_name.insert(std::make_pair(10, "LOWER_LIP"));
+	face_annotation_type_name.insert(std::make_pair(11, "MOUTH_LEFT"));
+	face_annotation_type_name.insert(std::make_pair(12, "MOUTH_RIGHT"));
+	face_annotation_type_name.insert(std::make_pair(13, "MOUTH_CENTER"));
+	face_annotation_type_name.insert(std::make_pair(14, "NOSE_BOTTOM_RIGHT"));
+	face_annotation_type_name.insert(std::make_pair(15, "NOSE_BOTTOM_LEFT"));
+	face_annotation_type_name.insert(std::make_pair(16, "NOSE_BOTTOM_CENTER"));
+	face_annotation_type_name.insert(std::make_pair(17, "LEFT_EYE_TOP_BOUNDARY"));
+	face_annotation_type_name.insert(std::make_pair(18, "LEFT_EYE_RIGHT_CORNER"));
+	face_annotation_type_name.insert(std::make_pair(19, "LEFT_EYE_RIGHT_CORNER"));
+	face_annotation_type_name.insert(std::make_pair(20, "LEFT_EYE_LEFT_CORNER"));
+	face_annotation_type_name.insert(std::make_pair(21, "RIGHT_EYE_TOP_BOUNDARY"));
+	face_annotation_type_name.insert(std::make_pair(22, "RIGHT_EYE_RIGHT_CORNER"));
+	face_annotation_type_name.insert(std::make_pair(23, "RIGHT_EYE_BOTTOM_BOUNDARY"));
+	face_annotation_type_name.insert(std::make_pair(24, "RIGHT_EYE_LEFT_CORNER"));
+	face_annotation_type_name.insert(std::make_pair(25, "LEFT_EYEBROW_UPPER_MIDPOINT"));
+	face_annotation_type_name.insert(std::make_pair(26, "RIGHT_EYEBROW_UPPER_MIDPOINT"));
+	face_annotation_type_name.insert(std::make_pair(27, "LEFT_EAR_TRAGION"));
+	face_annotation_type_name.insert(std::make_pair(28, "RIGHT_EAR_TRAGION"));
+	face_annotation_type_name.insert(std::make_pair(29, "LEFT_EYE_PUPIL"));
+	face_annotation_type_name.insert(std::make_pair(30, "RIGHT_EYE_PUPIL"));
+	face_annotation_type_name.insert(std::make_pair(31, "FOREHEAD_GLABELLA"));
+	face_annotation_type_name.insert(std::make_pair(32, "CHIN_GNATHION"));
+	face_annotation_type_name.insert(std::make_pair(33, "CHIN_LEFT_GONION"));
+	face_annotation_type_name.insert(std::make_pair(34, "CHIN_RIGHT_GONION"));
 
 
+        // Initialize the likelihood_name map
+	likelihood_name.insert(std::make_pair(0, "UNKNOWN"));
+	likelihood_name.insert(std::make_pair(1, "VERY_UNLIKELY"));
+	likelihood_name.insert(std::make_pair(2, "UNLIKELY"));
+	likelihood_name.insert(std::make_pair(3, "POSSIBLE"));
+	likelihood_name.insert(std::make_pair(4, "LIKELY"));
+	likelihood_name.insert(std::make_pair(5, "VERY_LIKELY"));
         return true;
     }
 
@@ -141,119 +214,6 @@ public:
     }
 
     /********************************************************/
-    std::string base64_encode(uchar const* bytes_to_encode, unsigned int in_len)
-    {
-        std::string ret;
-
-        int i = 0;
-        int j = 0;
-        unsigned char char_array_3[3];
-        unsigned char char_array_4[4];
-
-        while (in_len--) 
-        {
-            char_array_3[i++] = *(bytes_to_encode++);
-            if (i == 3)
-            {
-                char_array_4[0] = (char_array_3[0] & 0xfc) >> 2;
-                char_array_4[1] = ((char_array_3[0] & 0x03) << 4) + ((char_array_3[1] & 0xf0) >> 4);
-                char_array_4[2] = ((char_array_3[1] & 0x0f) << 2) + ((char_array_3[2] & 0xc0) >> 6);
-                char_array_4[3] = char_array_3[2] & 0x3f;
-
-                for (i = 0; (i <4); i++) 
-                {
-                    ret += base64_chars[char_array_4[i]];
-                }
-                i = 0;
-            }
-        }
-
-        if (i) 
-        {
-            for (j = i; j < 3; j++) 
-            {
-                char_array_3[j] = '\0';
-            }
-
-            char_array_4[0] = (char_array_3[0] & 0xfc) >> 2;
-            char_array_4[1] = ((char_array_3[0] & 0x03) << 4) + ((char_array_3[1] & 0xf0) >> 4);
-            char_array_4[2] = ((char_array_3[1] & 0x0f) << 2) + ((char_array_3[2] & 0xc0) >> 6);
-            char_array_4[3] = char_array_3[2] & 0x3f;
-
-            for (j = 0; (j < i + 1); j++) 
-            {
-                ret += base64_chars[char_array_4[j]];
-            }
-            
-            while ((i++ < 3)) 
-            {
-                ret += '=';
-            }
-        }
-
-        return ret;
-    }
-    
-    /********************************************************/
-    std::string base64_decode(std::string const& encoded_string)
-    {
-        int in_len = encoded_string.size();
-        int i = 0;
-        int j = 0;
-        int in_ = 0;
-        unsigned char char_array_4[4], char_array_3[3];
-        std::string ret;
-
-        while (in_len-- && (encoded_string[in_] != '=') && is_base64(encoded_string[in_]))
-        {
-            char_array_4[i++] = encoded_string[in_]; in_++;
-
-            if (i == 4)
-            {
-                for (i = 0; i < 4; i++)
-                {
-                    char_array_4[i] = base64_chars.find(char_array_4[i]);
-                }
-
-                char_array_3[0] = (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);
-                char_array_3[1] = ((char_array_4[1] & 0xf) << 4) + ((char_array_4[2] & 0x3c) >> 2);
-                char_array_3[2] = ((char_array_4[2] & 0x3) << 6) + char_array_4[3];
-
-                for (i = 0; (i < 3); i++)
-                {
-                    ret += char_array_3[i];
-                }
-
-                i = 0;
-            }
-        }
-
-        if (i)
-        {
-            for (j = i; j < 4; j++)
-            {
-                char_array_4[j] = 0;
-            }
-            
-            for (j = 0; j < 4; j++)
-            {
-                char_array_4[j] = base64_chars.find(char_array_4[j]);
-            }
-
-            char_array_3[0] = (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);
-            char_array_3[1] = ((char_array_4[1] & 0xf) << 4) + ((char_array_4[2] & 0x3c) >> 2);
-            char_array_3[2] = ((char_array_4[2] & 0x3) << 6) + char_array_4[3];
-
-            for (j = 0; (j < i - 1); j++)
-            {
-                ret += char_array_3[j];
-            }
-        }
-
-        return ret;
-    }
-
-    /********************************************************/
     std::string adjustAccents(std::string initial) {
 
         std::map< std::string, std::string> dictionary;
@@ -285,47 +245,40 @@ public:
         return initial;
     }
 
-
 /********************************************************/
-    yarp::os::Bottle queryGoogleVisionAI( cv::Mat &input_cv)
-    {
-        BatchAnnotateImagesRequest requests; // Consists of multiple AnnotateImage requests // 
+
+std::string Mapping(int index, std::map<int, std::string> myMap){
+        std::string value = "";
+	// Use the map
+	std::map<int, std::string>::const_iterator iter =  myMap.find(index);
+	if (iter != myMap.end())
+	{
+	    value = iter->second; //contains your string
+	    // iter->first contains the number you just looked up
+	}
+        return value;
+};
+/********************************************************/
+    yarp::os::Bottle queryGoogleVisionAI( cv::Mat &input_cv){
+
         BatchAnnotateImagesResponse responses;
         AnnotateImageResponse response;
-
-
-        cv::imwrite("original.jpg", input_cv);
-
 
         // Encode data
         int params[3] = {0};
         params[0] = CV_IMWRITE_JPEG_QUALITY;
         params[1] = 100;
         std::vector<uchar> buf;
-	    bool code = cv::imencode(".jpg", input_cv, buf, std::vector<int>(params, params+2));
-	    uchar* result = reinterpret_cast<uchar*> (&buf[0]);
-        /*
-        std::string encoded = base64_encode(result, buf.size());
-        
-        
-        // Decode data to verify consistency
-        std::string decoded_string = base64_decode(encoded);
-        std::vector<uchar> data(decoded_string.begin(), decoded_string.end());
-
-        cv::Mat cv_out = imdecode(data, cv::IMREAD_UNCHANGED);
-        
-        cv::imwrite("decoded.jpg", cv_out);
-         
-        //std::cout << encoded <<std::endl; */
+        bool code = cv::imencode(".jpg", input_cv, buf, std::vector<int>(params, params+2));
+	uchar* result = reinterpret_cast<uchar*> (&buf[0]);
+ 
 
         //----------------------//
         // Set up Configuration //
         //----------------------//
 
         // Image Source //
-        requests.add_requests();
-
-        requests.mutable_requests( 0 )->mutable_image()->set_content(result, buf.size());
+        requests.mutable_requests( requests_size )->mutable_image()->set_content(result, buf.size());
 
 
 
@@ -340,46 +293,44 @@ public:
 
         //requests.mutable_requests( 0 )->mutable_image()->mutable_source()->set_gcs_image_uri( "gs://personal_projects/photo_korea.jpg" ); // TODO [GCS_URL] // 
         //requests.mutable_requests( 0 )->mutable_image_context(); // optional??
-        
-        // Features //
-        requests.mutable_requests( 0 )->add_features();
-        requests.mutable_requests( 0 )->add_features();
-        requests.mutable_requests( 0 )->add_features();
-        requests.mutable_requests( 0 )->add_features();
-        requests.mutable_requests( 0 )->add_features();
-        requests.mutable_requests( 0 )->add_features();
-        requests.mutable_requests( 0 )->add_features();
-        requests.mutable_requests( 0 )->add_features();
-        requests.mutable_requests( 0 )->add_features();
 
-        requests.mutable_requests( 0 )->mutable_features( 0 )->set_type( Feature_Type_FACE_DETECTION );
-        requests.mutable_requests( 0 )->mutable_features( 1 )->set_type( Feature_Type_LANDMARK_DETECTION );
-        requests.mutable_requests( 0 )->mutable_features( 2 )->set_type( Feature_Type_LOGO_DETECTION );
-        requests.mutable_requests( 0 )->mutable_features( 3 )->set_type( Feature_Type_LABEL_DETECTION );
-        requests.mutable_requests( 0 )->mutable_features( 4 )->set_type( Feature_Type_TEXT_DETECTION );
-        requests.mutable_requests( 0 )->mutable_features( 5 )->set_type( Feature_Type_SAFE_SEARCH_DETECTION );
-        requests.mutable_requests( 0 )->mutable_features( 6 )->set_type( Feature_Type_IMAGE_PROPERTIES );
-        requests.mutable_requests( 0 )->mutable_features( 7 )->set_type( Feature_Type_CROP_HINTS );
-        requests.mutable_requests( 0 )->mutable_features( 8 )->set_type( Feature_Type_WEB_DETECTION );
+	if ( !configured ) {
+		// Features //
+		requests.mutable_requests( requests_size )->add_features();
+		requests.mutable_requests( requests_size )->add_features();
+		requests.mutable_requests( requests_size )->add_features();
+		requests.mutable_requests( requests_size )->add_features();
+		requests.mutable_requests( requests_size )->add_features();
+		requests.mutable_requests( requests_size )->add_features();
+		requests.mutable_requests( requests_size )->add_features();
+		requests.mutable_requests( requests_size )->add_features();
+		requests.mutable_requests( requests_size )->add_features();
+
+		requests.mutable_requests( requests_size )->mutable_features( 0 )->set_type( Feature_Type_FACE_DETECTION );
+		requests.mutable_requests( requests_size )->mutable_features( 1 )->set_type( Feature_Type_LANDMARK_DETECTION );
+		requests.mutable_requests( requests_size )->mutable_features( 2 )->set_type( Feature_Type_LOGO_DETECTION );
+		requests.mutable_requests( requests_size )->mutable_features( 3 )->set_type( Feature_Type_LABEL_DETECTION );
+		requests.mutable_requests( requests_size )->mutable_features( 4 )->set_type( Feature_Type_TEXT_DETECTION );
+		requests.mutable_requests( requests_size )->mutable_features( 5 )->set_type( Feature_Type_SAFE_SEARCH_DETECTION );
+		requests.mutable_requests( requests_size )->mutable_features( 6 )->set_type( Feature_Type_IMAGE_PROPERTIES );
+		requests.mutable_requests( requests_size )->mutable_features( 7 )->set_type( Feature_Type_CROP_HINTS );
+		requests.mutable_requests( requests_size )->mutable_features( 8 )->set_type( Feature_Type_WEB_DETECTION );
+		configured = true;
+	 }
         
+
         // Print Configuration //
         std::cout << "\n\n---- Checking Request ----" << std::endl;
-        std::cout << "Features size: " << requests.mutable_requests( 0 )->features_size() << std::endl;
-        for ( int i = 0; i < requests.mutable_requests( 0 )->features_size(); i++ ) {
-            //requests.mutable_requests( 0 ).features( int ); // Features
-            //std::cout << requests.mutable_requests( 0 )->features( i ).type() << std::endl; // Feature_Type
-            std::cout << "Feature " << i << " name: " << Feature_Type_Name( requests.mutable_requests( 0 )->features( i ).type() ) << std::endl;
-            std::cout << "max results: " << requests.mutable_requests( 0 )->features( i ).max_results() << std::endl;
-        }
-
+        std::cout << "Features size: " << requests.mutable_requests( requests_size )->features_size() << std::endl;
+   
         std::cout << "Image Source: ";
-        requests.mutable_requests( 0 )->mutable_image()->has_source() ? std::cout << "OK" << std::endl  :  std::cout << "FALSE" << std::endl; 
+        requests.mutable_requests( requests_size )->mutable_image()->has_source() ? std::cout << "OK" << std::endl  :  std::cout << "FALSE" << std::endl; 
 
         std::cout << "Request has Image: ";
-        requests.mutable_requests( 0 )->has_image() ? std::cout << "OK" << std::endl  :  std::cout << "FALSE" << std::endl;
+        requests.mutable_requests( requests_size )->has_image() ? std::cout << "OK" << std::endl  :  std::cout << "FALSE" << std::endl;
         
         std::cout << "Request has Image Context: ";
-        requests.mutable_requests( 0 )->has_image_context() ? std::cout << "OK" << std::endl  :  std::cout << "FALSE" << std::endl;
+        requests.mutable_requests( requests_size )->has_image_context() ? std::cout << "OK" << std::endl  :  std::cout << "FALSE" << std::endl;
 
         std::cout << "BatchRequests size: " << requests.requests_size() << std::endl;
 
@@ -407,7 +358,6 @@ public:
         b.clear();
         
         if ( status.ok() ) {
-
 
           
             b = get_result(responses, input_cv);
@@ -475,7 +425,7 @@ public:
                         //response.face_annotations( i ).landmarks( j ). // FaceAnnotation_Landmarks
                         std::cout << "FaceAnnotationLandmark: "
                             << "\n\tType: "
-                            << FaceAnnotation_Landmark_Type_Name( response.face_annotations( i ).landmarks( j ).type() )
+                            << Mapping( response.face_annotations( i ).landmarks( j ).type(), face_annotation_type_name)
                             << "\n\tValue: "
                             << response.face_annotations( i ).landmarks( j ).type()
                             << "\n\ti: " << i << "  j: " << j;
@@ -510,19 +460,19 @@ public:
 
                     std::cout << "Alt Info:"
                         << "\n\tJoy: "
-                        << Likelihood_Name( response.face_annotations( i ).joy_likelihood() )
+                        << Mapping( response.face_annotations( i ).joy_likelihood(), likelihood_name)
                         << "\n\tSorrow: "
-                        << Likelihood_Name( response.face_annotations( i ).sorrow_likelihood() )
+                        << Mapping( response.face_annotations( i ).sorrow_likelihood(), likelihood_name )
                         << "\n\tAnger: "
-                        << Likelihood_Name( response.face_annotations( i ).anger_likelihood() )
+                        << Mapping( response.face_annotations( i ).anger_likelihood(), likelihood_name )
                         << "\n\tSurprise: "
-                        << Likelihood_Name( response.face_annotations( i ).surprise_likelihood() )
+                        << Mapping( response.face_annotations( i ).surprise_likelihood(), likelihood_name)
                         << "\n\tUnder Exposed: "
-                        << Likelihood_Name( response.face_annotations( i ).under_exposed_likelihood() )
+                        << Mapping( response.face_annotations( i ).under_exposed_likelihood(), likelihood_name )
                         << "\n\tBlured: "
-                        << Likelihood_Name( response.face_annotations( i ).blurred_likelihood() )
+                        << Mapping( response.face_annotations( i ).blurred_likelihood(), likelihood_name )
                         << "\n\tHeadwear: "
-                        << Likelihood_Name( response.face_annotations( i ).headwear_likelihood() )
+                        << Mapping( response.face_annotations( i ).headwear_likelihood(), likelihood_name )
                         << std::endl;
                 }
 
@@ -979,8 +929,7 @@ public:
         }
 
         google::protobuf::ShutdownProtobufLibrary();
-        
-        requests.release_parent();
+
         response.release_error();
         response.release_context();
         response.release_web_detection();
@@ -992,28 +941,11 @@ public:
         response.clear_face_annotations();
         response.clear_label_annotations();
         response.clear_landmark_annotations();
-        response.clear_logo_annotations();
+        response.clear_logo_annotations(); 
+        response.Clear();
         
-
         std::cout << "\nAll Finished!" << std::endl;
-       
 
-     
-        
-        /*if ( dialog_status.ok() ) {
-
-           yInfo() << "Status returned OK";
-           yInfo() << "\n------Response------\n";
-
-           result.addString(response.query_result().response_messages().Get(0).text().text().Get(0).c_str());
-           yDebug() << "result bottle" << result.toString();
-
-      } else if ( !dialog_status.ok() ) {
-            yError() << "Status Returned Canceled";
-      }
-      request.release_query_input();
-      query_input.release_text();*/
- 
       return b;
    }
 
@@ -1085,7 +1017,8 @@ public:
                     for ( int j = 0; j < response.face_annotations( i ).landmarks_size(); j++ ) {   
 
                         yarp::os::Bottle &annotation_type_btl = face_btl.addList();   
-                        annotation_type_btl.addString(FaceAnnotation_Landmark_Type_Name(response.face_annotations( i ).landmarks( j ).type()));
+                        annotation_type_btl.addString(Mapping(response.face_annotations( i ).landmarks( j ).type(), face_annotation_type_name));
+                        annotation_type_btl.addInt(response.face_annotations( i ).landmarks( j ).type());
 
                     
                         if ( response.face_annotations( i ).landmarks( j ).has_position() ) {
@@ -1146,31 +1079,31 @@ public:
 
                     yarp::os::Bottle &alt_info_joy = alt_info_btl.addList();
                     alt_info_joy.addString("Joy");
-                    alt_info_joy.addString(Likelihood_Name( response.face_annotations( i ).joy_likelihood() ));
+                    alt_info_joy.addString(Mapping( response.face_annotations( i ).joy_likelihood(), likelihood_name ));
 
                     yarp::os::Bottle &alt_info_sorrow = alt_info_btl.addList();
                     alt_info_sorrow.addString("Sorrow");
-                    alt_info_sorrow.addString(Likelihood_Name( response.face_annotations( i ).sorrow_likelihood() ));
+                    alt_info_sorrow.addString(Mapping( response.face_annotations( i ).sorrow_likelihood(), likelihood_name ));
 
                     yarp::os::Bottle &alt_info_anger = alt_info_btl.addList();
                     alt_info_anger.addString("Anger");
-                    alt_info_anger.addString(Likelihood_Name( response.face_annotations( i ).anger_likelihood() ));
+                    alt_info_anger.addString(Mapping( response.face_annotations( i ).anger_likelihood(), likelihood_name ));
 
                     yarp::os::Bottle &alt_info_surprise = alt_info_btl.addList();
                     alt_info_surprise.addString("Surprise");
-                    alt_info_surprise.addString(Likelihood_Name( response.face_annotations( i ).surprise_likelihood() ));
+                    alt_info_surprise.addString(Mapping( response.face_annotations( i ).surprise_likelihood(), likelihood_name ));
 
                     yarp::os::Bottle &alt_info_under_exposed = alt_info_btl.addList();
                     alt_info_under_exposed.addString("Under_exposed");
-                    alt_info_under_exposed.addString(Likelihood_Name( response.face_annotations( i ).under_exposed_likelihood() ));
+                    alt_info_under_exposed.addString(Mapping( response.face_annotations( i ).under_exposed_likelihood(), likelihood_name ));
 
                     yarp::os::Bottle &alt_info_blurred = alt_info_btl.addList();
                     alt_info_blurred.addString("Blurred");
-                    alt_info_blurred.addString(Likelihood_Name( response.face_annotations( i ).blurred_likelihood() ));
+                    alt_info_blurred.addString(Mapping( response.face_annotations( i ).blurred_likelihood(), likelihood_name ));
 
                     yarp::os::Bottle &alt_info_headwear = alt_info_btl.addList();
                     alt_info_headwear.addString("Headwear");
-                    alt_info_headwear.addString(Likelihood_Name( response.face_annotations( i ).headwear_likelihood() ));
+                    alt_info_headwear.addString(Mapping( response.face_annotations( i ).headwear_likelihood(), likelihood_name ));
                 }            
             }
 
@@ -1394,23 +1327,23 @@ public:
 
                 yarp::os::Bottle &safe_search_adult_btl = text_annotation_btl.addList();
                 safe_search_adult_btl.addString("adult");
-                safe_search_adult_btl.addString(Likelihood_Name(response.safe_search_annotation().adult()) );
+                safe_search_adult_btl.addString(Mapping(response.safe_search_annotation().adult(), likelihood_name) );
 
                 yarp::os::Bottle &safe_search_medical_btl = text_annotation_btl.addList();
                 safe_search_medical_btl.addString("medical");
-                safe_search_medical_btl.addString(Likelihood_Name(response.safe_search_annotation().medical()) );
+                safe_search_medical_btl.addString(Mapping(response.safe_search_annotation().medical(), likelihood_name) );
 
                 yarp::os::Bottle &safe_search_spoof_btl = text_annotation_btl.addList();
                 safe_search_spoof_btl.addString("spoofed");
-                safe_search_spoof_btl.addString(Likelihood_Name(response.safe_search_annotation().spoof()) );
+                safe_search_spoof_btl.addString(Mapping(response.safe_search_annotation().spoof(), likelihood_name) );
 
                 yarp::os::Bottle &safe_search_violence_btl = text_annotation_btl.addList();
                 safe_search_violence_btl.addString("violence");
-                safe_search_violence_btl.addString(Likelihood_Name(response.safe_search_annotation().violence()) );
+                safe_search_violence_btl.addString(Mapping(response.safe_search_annotation().violence(), likelihood_name) );
 
                 yarp::os::Bottle &safe_search_racy_btl = text_annotation_btl.addList();
                 safe_search_racy_btl.addString("racy");
-                safe_search_racy_btl.addString(Likelihood_Name(response.safe_search_annotation().racy()) );
+                safe_search_racy_btl.addString(Mapping(response.safe_search_annotation().racy(), likelihood_name) );
             }
 
            
