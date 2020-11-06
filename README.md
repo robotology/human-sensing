@@ -23,6 +23,12 @@ The human sensing repository contains the following directories and modules:
 2. `yarpOpenPose`: This yarp module is configured to estimate human pose based on OpenPose, a library for real-time multi-person keypoint detection and multi-threading. It makes use of Caffe and OpenCV.
 <img src="img/poses.png" width="200">
 
+3. `googleVisionAI`: This yarp module is configured to perform image classification using the Vision AI google service, which makes use of AutoML Vision or use pre-trained Vision API models to detect emotion, understand text, and more.
+
+    <img src="https://user-images.githubusercontent.com/68373291/98142000-8e521000-1ec7-11eb-99db-77af9cd63e56.PNG" width="200" height="150" hspace="20"/>    <img src="https://user-images.githubusercontent.com/68373291/98142004-8f833d00-1ec7-11eb-99c4-f1f55294f4c6.PNG" width="200" height="150" hspace="20"/>    <img src="https://user-images.githubusercontent.com/68373291/98142007-901bd380-1ec7-11eb-9c69-c14a2dfd5aef.PNG" width="200" height="150" hspace="20"/>
+
+
+
 At the present time each directory is independent from the others and must be compiled and set up separately.
 While we provide specific usage instructions for each one in separate files, we will soon integrate all modules as a unique build procedure.
 ## Installation
