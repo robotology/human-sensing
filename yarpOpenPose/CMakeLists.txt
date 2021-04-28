@@ -34,7 +34,7 @@ endif()
 icubcontrib_set_default_prefix()
 
 find_package(openpose REQUIRED)
-find_package(OpenCV 3 REQUIRED)
+find_package(OpenCV REQUIRED)
 include_directories(${openpose_INCLUDE_DIRS})
 include_directories(${OpenCV_INCLUDE_DIRS})
 
