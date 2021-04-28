@@ -350,7 +350,7 @@ void FACEManager::onRead(yarp::sig::ImageOf<yarp::sig::PixelRgb> &img)
                     int pointy = landmarks.get(0).asList()->get(i).asList()->get(1).asInt();
                     cv::Point center(pointx, pointy);
                     std::string s = std::to_string(i);
-                    putText(imgMat, s, cvPoint(pointx, pointy), cv::FONT_HERSHEY_COMPLEX_SMALL, 0.6, cvScalar(200,200,250), 1, CV_AA);
+                    putText(imgMat, s, cvPoint(pointx, pointy), cv::FONT_HERSHEY_COMPLEX_SMALL, 0.6, cvScalar(200,200,250), 1, cv::LINE_AA);
                 }
             }
         }
