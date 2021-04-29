@@ -13,7 +13,7 @@ find_package(OpenCV REQUIRED)
 list(APPEND CMAKE_MODULE_PATH ${ICUBCONTRIB_MODULE_PATH})
 
 #adding c++11 flags
-set(CMAKE_CXX_FLAGS "-std=c++11")
+set(CMAKE_CXX_FLAGS "-std=c++14")
 
 include(ICUBcontribHelpers)
 include(ICUBcontribOptions)
