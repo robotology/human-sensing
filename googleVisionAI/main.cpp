@@ -266,7 +266,7 @@ std::string Mapping(int index, std::map<int, std::string> myMap){
 
         // Encode data
         int params[3] = {0};
-        params[0] = CV_IMWRITE_JPEG_QUALITY;
+        params[0] = cv::IMWRITE_JPEG_QUALITY;
         params[1] = 100;
         std::vector<uchar> buf;
         bool code = cv::imencode(".jpg", input_cv, buf, std::vector<int>(params, params+2));
