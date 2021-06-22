@@ -15,6 +15,7 @@
  * Public License for more details
  */
 
+
 // C++ std library dependencies
 #include <atomic>
 #include <chrono>
