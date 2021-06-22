@@ -64,7 +64,7 @@ jobs:
             token: ${{ env.GITHUB_APPS_TOKEN }}
             repository: icub-tech-iit/code
             event-type: repository_trigger
-            client-payload: '{"type": "repository_trigger", "img_list": "$img_list"}'
+            client-payload: '{"type": "repository_trigger", "img_list": "${{ steps.check-modifications.outputs.img_list }}"}'
 
        
              
