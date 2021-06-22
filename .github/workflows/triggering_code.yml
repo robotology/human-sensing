@@ -23,13 +23,11 @@ jobs:
             echo '${{ steps.file_changes.outputs.files_modified}}'
             echo '${{ steps.file_changes.outputs.files_added}}'
             parsed_list=($(echo '${{ steps.file_changes.outputs.files}}' | tr ',' '\n')) 
-            echo "Parsed list: ${parsed_list[@]}"
             trigger_flag=false
             img_list=""
             for i in "${parsed_list[@]}"
             do 
                 folder=$(echo $i | awk -F'/' '{print $1}' | tr -d '"' | tr -d '[' | tr -d ']')
-                echo "Folder: $folder"
                 if [[ "$folder" == "googleVisionAI" ]]
                 then
                   trigger_flag=true
@@ -40,10 +38,8 @@ jobs:
                   img_list="$img_list human-sensing"
                 fi
             done
-            echo "Image list: $img_list"
             if [[ $trigger_flag == true ]]
             then 
-              echo "inside if"
               img_list=${img_list:1}
             fi
             echo "Trigger flag: $trigger_flag"
@@ -60,17 +56,16 @@ jobs:
             app_id: ${{ secrets.APPLICATION_ID }}
             repository: icub-tech-iit/code
             
-        # - name: Repository dispatch to code
-        #   if: steps.check-modifications.outputs.trigger_flag == 'true'
-
-        #   uses: peter-evans/repository-dispatch@v1
-        #   env:
-        #     GITHUB_APPS_TOKEN: ${{ steps.get_workflow_token.outputs.token }}
-        #   with:
-        #     token: ${{ env.GITHUB_APPS_TOKEN }}
-        #     repository: icub-tech-iit/code
-        #     event-type: repository_trigger
-        #     client-payload: '{"type": "repository_trigger", "img_list": "${img_list[@]}"}'
+        - name: Repository dispatch to code
+          if: steps.check-modifications.outputs.trigger_flag == 'true'
+          uses: peter-evans/repository-dispatch@v1
+          env:
+            GITHUB_APPS_TOKEN: ${{ steps.get_workflow_token.outputs.token }}
+          with:
+            token: ${{ env.GITHUB_APPS_TOKEN }}
+            repository: icub-tech-iit/code
+            event-type: repository_trigger
+            client-payload: '{"type": "repository_trigger", "img_list": "$img_list"}'
 
        
              
