@@ -2,6 +2,10 @@ name: triggering_code
 
 on: 
    push:  
+        paths:
+         - 'googleVisionAI/**'
+         - 'yarpOpenPose/**'
+         - 'faceLandmarks/**'
 
 jobs:
     test:
@@ -21,33 +25,24 @@ jobs:
             echo '${{ steps.file_changes.outputs.files_modified}}'
             echo '${{ steps.file_changes.outputs.files_added}}'
             parsed_list=($(echo '${{ steps.file_changes.outputs.files}}' | tr ',' '\n')) 
-            trigger_flag=false
             img_list=""
             for i in "${parsed_list[@]}"
             do 
                 folder=$(echo $i | awk -F'/' '{print $1}' | tr -d '"' | tr -d '[' | tr -d ']')
                 if [[ "$folder" == "googleVisionAI" ]]
                 then
-                  trigger_flag=true
                   img_list="$img_list google-vision"
                 elif [[ "$folder" == "yarpOpenPose" || "$folder" == "faceLandmarks" ]]
                 then
-                  trigger_flag=true
                   img_list="$img_list human-sensing"
                 fi
             done
-            if [[ $trigger_flag == true ]]
-            then 
-              img_list=${img_list:1}
-            fi
-            echo "Trigger flag: $trigger_flag"
-            echo "Image list: $img_list"
-            echo "::set-output name=folder::$folder"
-            echo "::set-output name=trigger_flag::$trigger_flag"
-            echo "::set-output name=img_list::$img_list"
+            img_list=${img_list:1}
+            img_list_unique=$(echo $img_list | tr ' ' '\n' | sort -u | tr '\n' ' ' )
+            echo "Image list: $img_list_unique"
+            echo "::set-output name=img_list_unique::$img_list_unique"
 
         - name: Get Token
-          if: steps.check-modifications.outputs.trigger_flag == 'true'
           id: get_workflow_token
           uses: tibdex/github-app-token@v1
           with:
@@ -56,7 +51,6 @@ jobs:
             repository: icub-tech-iit/code
             
         - name: Repository dispatch to code
-          if: steps.check-modifications.outputs.trigger_flag == 'true'
           uses: peter-evans/repository-dispatch@v1
           env:
             GITHUB_APPS_TOKEN: ${{ steps.get_workflow_token.outputs.token }}
@@ -64,7 +58,7 @@ jobs:
             token: ${{ env.GITHUB_APPS_TOKEN }}
             repository: icub-tech-iit/code
             event-type: repository_trigger
-            client-payload: '{"type": "repository_trigger", "img_list": "${{ steps.check-modifications.outputs.img_list }}"}'
+            client-payload: '{"type": "repository_trigger", "img_list": "${{ steps.check-modifications.outputs.img_list_unique }}"}'
 
        
              
