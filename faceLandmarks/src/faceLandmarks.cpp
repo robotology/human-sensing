@@ -215,6 +215,9 @@ bool FACEManager::open()
 
     outLandmarksPortName = "/" + moduleName + "/landmarks:o";
     landmarksOutPort.open( outLandmarksPortName.c_str() );
+    
+    outFacePortName = "/" + moduleName + "/face:o";
+    faceOutPort.open( outFacePortName.c_str() );
 
     yDebug() << "path is: " << predictorFile.c_str();
 
@@ -245,6 +248,7 @@ void FACEManager::close()
     imageInPort.close();
     targetOutPort.close();
     landmarksOutPort.close();
+    faceOutPort.close();
     BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelRgb> >::close();
     mutex.post();
     yDebug() <<"finished closing the read port...";
@@ -266,7 +270,11 @@ void FACEManager::onRead(yarp::sig::ImageOf<yarp::sig::PixelRgb> &img)
     yarp::sig::ImageOf<yarp::sig::PixelRgb> &outImg  = imageOutPort.prepare();
     yarp::os::Bottle &target=targetOutPort.prepare();
     yarp::os::Bottle &landmarks=landmarksOutPort.prepare();
+    yarp::os::Bottle &facedetect=faceOutPort.prepare();
+    
+    landmarks.clear();
     target.clear();
+    facedetect.clear();
 
     // Get the image from the yarp port
     imgMat = cv::cvarrToMat((IplImage*)img.getIplImage());
@@ -319,7 +327,6 @@ void FACEManager::onRead(yarp::sig::ImageOf<yarp::sig::PixelRgb> &img)
         if (displayLandmarks)
             render_face(imgMat, shape);
 
-        landmarks.clear();
         yarp::os::Bottle &landM = landmarks.addList();
         for (int f=1; f<shapes[i].num_parts(); f++)
         {
@@ -430,17 +437,25 @@ void FACEManager::onRead(yarp::sig::ImageOf<yarp::sig::PixelRgb> &img)
                 rectangle(imgMat, biggestpt1, biggestpt2, cv::Scalar( 0, 255, 0 ), draw_res, 8, 0);
 
                 targetOutPort.write();
-                if (landmarksOutPort.getOutputCount()>0)
-                    landmarksOutPort.write();
             }
+            
+            facedetect.addInt(faces.size());
+        }
+        else
+        {
+            facedetect.addInt(0);
         }
     }
 
     IplImage yarpImg = cvIplImage(imgMat);
     outImg.resize(yarpImg.width, yarpImg.height);
     cvCopy( &yarpImg, (IplImage *) outImg.getIplImage());
-
+    
+    faceOutPort.write();
     imageOutPort.write();
+
+    if ((landmarksOutPort.getOutputCount()>0) && (faces.size() > 0 ))
+        landmarksOutPort.write();
 
     mutex.post();
 }
