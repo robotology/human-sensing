@@ -6,7 +6,7 @@ cmake_minimum_required(VERSION 3.5)
 project(yarpOpenPose LANGUAGES CXX C VERSION 1.0.0)
 
 find_package(ICUBcontrib REQUIRED)
-find_package(YARP 3.2.1 REQUIRED COMPONENTS os sig dev math cv)
+find_package(YARP 3.2.2 REQUIRED COMPONENTS os sig dev math cv)
 
 include(GNUInstallDirs)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}")
