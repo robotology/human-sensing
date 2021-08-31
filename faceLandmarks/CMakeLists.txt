@@ -9,6 +9,7 @@ find_package(ICUBcontrib REQUIRED)
 find_package(YARP 3.3.2 REQUIRED COMPONENTS os sig dev math rosmsg cv)
 find_package(dlib REQUIRED)
 find_package(OpenCV REQUIRED)
+find_package(Threads)
 
 list(APPEND CMAKE_MODULE_PATH ${ICUBCONTRIB_MODULE_PATH})
 
