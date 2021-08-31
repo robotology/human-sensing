@@ -23,8 +23,8 @@ bool FACEModule::configure(yarp::os::ResourceFinder &rf)
 {
     rf.setVerbose();
     moduleName = rf.check("name", yarp::os::Value("faceLandmarks"), "module name (string)").asString();
-    skipFrames = rf.check("skipFrames", yarp::os::Value(2), "skip frames (int)").asInt();
-    downsampleRatio = rf.check("downsample", yarp::os::Value(1), "face downsample ratio (int)").asInt();
+    skipFrames = rf.check("skipFrames", yarp::os::Value(2), "skip frames (int)").asInt32();
+    downsampleRatio = rf.check("downsample", yarp::os::Value(1), "face downsample ratio (int)").asInt32();
 
     predictorFile = rf.check("faceLandmarksFile", yarp::os::Value("shape_predictor_68_face_landmarks.dat"), "path name (string)").asString();
 
@@ -324,8 +324,8 @@ void FACEManager::onRead(yarp::sig::ImageOf<yarp::sig::PixelRgb> &img)
             if (f != 17 || f != 22 || f != 27 || f != 42 || f != 48)
             {
                 yarp::os::Bottle &temp = landM.addList();
-                temp.addInt(d.part(f).x());
-                temp.addInt(d.part(f).y());
+                temp.addInt32(d.part(f).x());
+                temp.addInt32(d.part(f).y());
             }
         }
         if (displayPoints || displayLabels)
@@ -336,8 +336,8 @@ void FACEManager::onRead(yarp::sig::ImageOf<yarp::sig::PixelRgb> &img)
             {
                 for (size_t i = 0; i < pointSize; i++)
                 {
-                    int pointx = landmarks.get(0).asList()->get(i).asList()->get(0).asInt();
-                    int pointy = landmarks.get(0).asList()->get(i).asList()->get(1).asInt();
+                    int pointx = landmarks.get(0).asList()->get(i).asList()->get(0).asInt32();
+                    int pointy = landmarks.get(0).asList()->get(i).asList()->get(1).asInt32();
                     cv::Point center(pointx, pointy);
                     circle(imgMat, center, 3, cv::Scalar(255, 0 , 0), -1, 8);
                 }
@@ -346,8 +346,8 @@ void FACEManager::onRead(yarp::sig::ImageOf<yarp::sig::PixelRgb> &img)
             {
                 for (size_t i = 0; i < pointSize; i++)
                 {
-                    int pointx = landmarks.get(0).asList()->get(i).asList()->get(0).asInt();
-                    int pointy = landmarks.get(0).asList()->get(i).asList()->get(1).asInt();
+                    int pointx = landmarks.get(0).asList()->get(i).asList()->get(0).asInt32();
+                    int pointy = landmarks.get(0).asList()->get(i).asList()->get(1).asInt32();
                     cv::Point center(pointx, pointy);
                     std::string s = std::to_string(i);
                     putText(imgMat, s, cvPoint(pointx, pointy), cv::FONT_HERSHEY_COMPLEX_SMALL, 0.6, cvScalar(200,200,250), 1, cv::LINE_AA);
@@ -413,10 +413,10 @@ void FACEManager::onRead(yarp::sig::ImageOf<yarp::sig::PixelRgb> &img)
 
 
                 yarp::os::Bottle &pos = target.addList();
-                pos.addDouble(pt1.x);
-                pos.addDouble(pt1.y);
-                pos.addDouble(pt2.x);
-                pos.addDouble(pt2.y);
+                pos.addFloat64(pt1.x);
+                pos.addFloat64(pt1.y);
+                pos.addFloat64(pt2.x);
+                pos.addFloat64(pt2.y);
 
                 cv::Point biggestpt1, biggestpt2;
                 biggestpt1.x = faces[idTargets[0].first].tl_corner().x()* downsampleRatio;
