@@ -252,9 +252,9 @@ public:
                         else
                             partList.addString(mapParts[bodyPart].c_str());
                         
-                        partList.addDouble(pose[finalIndex]);
-                        partList.addDouble(pose[finalIndex+1]);
-                        partList.addDouble(pose[finalIndex+2]);
+                        partList.addFloat64(pose[finalIndex]);
+                        partList.addFloat64(pose[finalIndex+1]);
+                        partList.addFloat64(pose[finalIndex+2]);
 
                     }
                     
@@ -267,9 +267,9 @@ public:
 
                             const auto faceIndex = face.getSize(2)*(person*numberFaceKeypoints + facePart);
                             yarp::os::Bottle &faceList = partList.addList();
-                            faceList.addDouble(face[faceIndex]);
-                            faceList.addDouble(face[faceIndex + 1]);
-                            faceList.addDouble(face[faceIndex + 2]);                                           
+                            faceList.addFloat64(face[faceIndex]);
+                            faceList.addFloat64(face[faceIndex + 1]);
+                            faceList.addFloat64(face[faceIndex + 2]);                                           
                         }
                     }
                 }
@@ -455,16 +455,16 @@ public:
         model_folder = rf.check("model_folder", yarp::os::Value("/models"), "Folder where the pose models (COCO and MPI) are located. (string)").asString();
         net_resolution = rf.check("net_resolution", yarp::os::Value("656x368"), "The resolution of the net, multiples of 16. (string)").asString();
         img_resolution = rf.check("img_resolution", yarp::os::Value("320x240"), "The resolution of the image (display and output). (string)").asString();
-        num_gpu = rf.check("num_gpu", yarp::os::Value(1), "The number of GPU devices to use.(int)").asInt();
-        num_gpu_start = rf.check("num_gpu_start", yarp::os::Value(0), "The GPU device start number.(int)").asInt();
-        num_scales = rf.check("num_scales", yarp::os::Value(1), "Number of scales to average.(int)").asInt();
+        num_gpu = rf.check("num_gpu", yarp::os::Value(1), "The number of GPU devices to use.(int)").asInt32();
+        num_gpu_start = rf.check("num_gpu_start", yarp::os::Value(0), "The GPU device start number.(int)").asInt32();
+        num_scales = rf.check("num_scales", yarp::os::Value(1), "Number of scales to average.(int)").asInt32();
         scale_gap = rf.check("scale_gap", yarp::os::Value(0.3), "Scale gap between scales. No effect unless num_scales>1. Initial scale is always 1. If you want to change the initial scale,"
-                                                                " you actually want to multiply the `net_resolution` by your desired initial scale.(float)").asDouble();
+                                                                " you actually want to multiply the `net_resolution` by your desired initial scale.(float)").asFloat64();
 
         keypoint_scale = rf.check("keypoint_scale", yarp::os::Value(0), "Scaling of the (x,y) coordinates of the final pose data array (op::Datum::pose), i.e. the scale of the (x,y) coordinates that"
                                                                 " will be saved with the `write_pose` & `write_pose_json` flags. Select `0` to scale it to the original source resolution, `1`"
                                                                 " to scale it to the net output size (set with `net_resolution`), `2` to scale it to the final output size (set with "
-                                                                " `resolution`), `3` to scale it in the range [0,1], and 4 for range [-1,1]. Non related with `num_scales` and `scale_gap`.(int)").asInt();
+                                                                " `resolution`), `3` to scale it in the range [0,1], and 4 for range [-1,1]. Non related with `num_scales` and `scale_gap`.(int)").asInt32();
 
         heatmaps_add_parts = rf.check("heatmaps_add_parts", yarp::os::Value(false), "If true, it will add the body part heatmaps to the final op::Datum::poseHeatMaps array (program speed will decrease). Not"
                                                                 " required for our library, enable it only if you intend to process this information later. If more than one `add_heatmaps_X`"
@@ -473,33 +473,33 @@ public:
         heatmaps_add_bkg = rf.check("heatmaps_add_bkg", yarp::os::Value(false), "Same functionality as `add_heatmaps_parts`, but adding the heatmap corresponding to background. (bool)").asBool();
 
         heatmaps_add_PAFs = rf.check("heatmaps_add_PAFs", yarp::os::Value(false),"Same functionality as `add_heatmaps_parts`, but adding the PAFs.(bool)").asBool();
-        heatmaps_scale_mode = rf.check("heatmaps_scale_mode", yarp::os::Value(2), "Set 0 to scale op::Datum::poseHeatMaps in the range [0,1], 1 for [-1,1]; and 2 for integer rounded [0,255].(int)").asInt();
+        heatmaps_scale_mode = rf.check("heatmaps_scale_mode", yarp::os::Value(2), "Set 0 to scale op::Datum::poseHeatMaps in the range [0,1], 1 for [-1,1]; and 2 for integer rounded [0,255].(int)").asInt32();
         //no_render_output = rf.check("no_render_output", yarp::os::Value("false"), "If false, it will fill image with the original image + desired part to be shown. If true, it will leave them empty.(bool)").asBool();
-        render_pose = rf.check("render_pose", yarp::os::Value(2), "Set to 0 for no rendering, 1 for CPU rendering (slightly faster), and 2 for GPU rendering(int)").asInt();
+        render_pose = rf.check("render_pose", yarp::os::Value(2), "Set to 0 for no rendering, 1 for CPU rendering (slightly faster), and 2 for GPU rendering(int)").asInt32();
         part_to_show = rf.check("part_to_show", yarp::os::Value(0),"Part to show from the start.(int)").asInt();
         disable_blending = rf.check("disable_blending", yarp::os::Value(false), "If false, it will blend the results with the original frame. If true, it will only display the results.").asBool();
-        alpha_pose = rf.check("alpha_pose", yarp::os::Value(0.6), "Blending factor (range 0-1) for the body part rendering. 1 will show it completely, 0 will hide it.(double)").asDouble();
+        alpha_pose = rf.check("alpha_pose", yarp::os::Value(0.6), "Blending factor (range 0-1) for the body part rendering. 1 will show it completely, 0 will hide it.(double)").asFloat64();
         alpha_heatmap = rf.check("alpha_heatmap", yarp::os::Value(0.7), "Blending factor (range 0-1) between heatmap and original frame. 1 will only show the heatmap, 0 will only show the frame.(double)").asDouble();
         render_threshold = rf.check("render_threshold", yarp::os::Value(0.05), "Only estimated keypoints whose score confidences are higher than this threshold will be rendered. Generally, a high threshold (> 0.5) will only render very clear body parts.(double)").asDouble();
-        number_people_max = rf.check("number_people_max", yarp::os::Value(-1), "This parameter will limit the maximum number of people detected, by keeping the people with top scores. -1 will keep them all.(int)").asInt();
+        number_people_max = rf.check("number_people_max", yarp::os::Value(-1), "This parameter will limit the maximum number of people detected, by keeping the people with top scores. -1 will keep them all.(int)").asInt32();
         part_candidates = rf.check("part_candidates", yarp::os::Value(false), "If true it will fill the op::Datum::poseCandidates array with the body part candidates.(bool)").asBool();
         body_enable = rf.check("body_enable", yarp::os::Value(true), "Disable body keypoint detection. Option only possible for faster (but less accurate) face. (bool)").asBool();
         hand_enable = rf.check("hand_enable", yarp::os::Value(false), "Enables hand keypoint detection. It will share some parameters from the body pose, e.g."
                                                                 " `model_folder`. Analogously to `--face`, it will also slow down the performance, increase"
                                                                 " the required GPU memory and its speed depends on the number of people.(int)").asBool();
         hand_net_resolution = rf.check("hand_net_resolution", yarp::os::Value("368x368"), "Multiples of 16 and squared. Analogous to `net_resolution` but applied to the hand keypoint (string)").asString();
-        hand_scale_number = rf.check("hand_scale_number", yarp::os::Value(1), "Analogous to `scale_number` but applied to the hand keypoint detector.(int)").asInt();
+        hand_scale_number = rf.check("hand_scale_number", yarp::os::Value(1), "Analogous to `scale_number` but applied to the hand keypoint detector.(int)").asInt32();
         hand_scale_range = rf.check("hand_scale_range", yarp::os::Value(0.4), "Analogous purpose than `scale_gap` but applied to the hand keypoint detector. Total range"
                                                                 " between smallest and biggest scale. The scales will be centered in ratio 1. E.g. if"
-                                                                " scaleRange = 0.4 and scalesNumber = 2, then there will be 2 scales, 0.8 and 1.2.(double)").asDouble();
+                                                                " scaleRange = 0.4 and scalesNumber = 2, then there will be 2 scales, 0.8 and 1.2.(double)").asFloat64();
         hand_tracking = rf.check("hand_tracking", yarp::os::Value(false), "Adding hand tracking might improve hand keypoints detection for webcam (if the frame rate"
                                                                 " is high enough, i.e. >7 FPS per GPU) and video. This is not person ID tracking, it"
                                                                 " simply looks for hands in positions at which hands were located in previous frames, but"
                                                                 " it does not guarantee the same person ID among frames (bool)").asBool();
-        hand_alpha_pose = rf.check("hand_alpha_pose", yarp::os::Value(0.6), "Analogous to `alpha_pose` but applied to hand.(double)").asDouble();
-        hand_alpha_heatmap = rf.check("hand_alpha_heatmap", yarp::os::Value(0.7), "Analogous to `alpha_heatmap` but applied to hand.(double)").asDouble();
-        hand_render_threshold = rf.check("hand_render_threshold", yarp::os::Value(0.2), "Analogous to `render_threshold`, but applied to the hand keypoints.(double)").asDouble();
-        hand_render = rf.check("hand_render", yarp::os::Value(-1), "Analogous to `render_pose` but applied to the hand. Extra option: -1 to use the same(int)").asInt();
+        hand_alpha_pose = rf.check("hand_alpha_pose", yarp::os::Value(0.6), "Analogous to `alpha_pose` but applied to hand.(double)").asFloat64();
+        hand_alpha_heatmap = rf.check("hand_alpha_heatmap", yarp::os::Value(0.7), "Analogous to `alpha_heatmap` but applied to hand.(double)").asFloat64();
+        hand_render_threshold = rf.check("hand_render_threshold", yarp::os::Value(0.2), "Analogous to `render_threshold`, but applied to the hand keypoints.(double)").asFloat64();
+        hand_render = rf.check("hand_render", yarp::os::Value(-1), "Analogous to `render_pose` but applied to the hand. Extra option: -1 to use the same(int)").asInt32();
         face_enable = rf.check("face_enable", yarp::os::Value(false), "enables face keypoint detection. It will share some parameters from the body pose, e.g."
                                                         " `model_folder`. Note that this will considerable slow down the performance and increse"
                                                         " the required GPU memory. In addition, the greater number of people on the image, the"
@@ -514,11 +514,11 @@ public:
                                                         " also apply hand tracking (only for hand). Hand tracking might improve hand keypoint"
                                                         " detection for webcam (if the frame rate is high enough, i.e., >7 FPS per GPU) and video."
                                                         " This is not person ID tracking, it simply looks for hands in positions at which hands were"
-                                                        " located in previous frames, but it does not guarantee the same person ID among frames.(int)").asInt();
-        face_render_threshold = rf.check("face_render_threshold", yarp::os::Value(0.4), "Analogous to `render_threshold`, but applied to the face keypoints.(double)").asDouble();
-        face_render = rf.check("face_render", yarp::os::Value(-1), "Analogous to `render_pose` but applied to the face. Extra option: -1 to use the same.(int)").asInt();
-        face_alpha_pose = rf.check("face_alpha_pose", yarp::os::Value(0.6), "Analogous to `alpha_pose` but applied to face..(double)").asDouble();
-        face_alpha_heatmap = rf.check("face_alpha_heatmap", yarp::os::Value(0.7), "Analogous to `alpha_heatmap` but applied to face.(double)").asDouble();
+                                                        " located in previous frames, but it does not guarantee the same person ID among frames.(int)").asInt32();
+        face_render_threshold = rf.check("face_render_threshold", yarp::os::Value(0.4), "Analogous to `render_threshold`, but applied to the face keypoints.(double)").asFloat64();
+        face_render = rf.check("face_render", yarp::os::Value(-1), "Analogous to `render_pose` but applied to the face. Extra option: -1 to use the same.(int)").asInt32();
+        face_alpha_pose = rf.check("face_alpha_pose", yarp::os::Value(0.6), "Analogous to `alpha_pose` but applied to face..(double)").asFloat64();
+        face_alpha_heatmap = rf.check("face_alpha_heatmap", yarp::os::Value(0.7), "Analogous to `alpha_heatmap` but applied to face.(double)").asFloat64();
         flags_3d = rf.check("flags_3d", yarp::os::Value(false), "Running OpenPose 3-D reconstruction demo: 1) Reading from a stereo camera system."
                                                         " 2) Performing 3-D reconstruction from the multiple views. 3) Displaying 3-D reconstruction"
                                                         " results. Note that it will only display 1 person. If multiple people is present, it will"
@@ -526,7 +526,7 @@ public:
         views_3d = rf.check("views_3d", yarp::os::Value(-1), "Complementary option for `--image_dir` or `--video`. OpenPose will read as many images per"
                                                         " iteration, allowing tasks such as stereo camera processing (`--3d`). Note that"
                                                         " `--camera_parameter_path` must be set. OpenPose must find as many `xml` files in the"
-                                                        " parameter folder as this number indicates.(int)").asInt();
+                                                        " parameter folder as this number indicates.(int)").asInt32();
 
         setName(moduleName.c_str());
         rpcPort.open(("/"+getName("/rpc")).c_str());
