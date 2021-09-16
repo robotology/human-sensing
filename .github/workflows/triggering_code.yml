@@ -2,6 +2,8 @@ name: triggering_code
 
 on: 
    push:  
+        branches:
+         - main
         paths:
          - 'googleVisionAI/**'
          - 'yarpOpenPose/**'
