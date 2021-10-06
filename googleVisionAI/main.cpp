@@ -391,7 +391,6 @@ std::string Mapping(int index, std::map<int, std::string> myMap){
                 for ( int i = 0; i <  response.face_annotations_size(); i++ ) {
 
                     if ( response.face_annotations( i ).has_bounding_poly() ) {
-                        //response.face_annotation( i ).bounding_poly();
                         std::cout << "Has Bounding Poly: "
                             << response.face_annotations( i ).has_bounding_poly()
                             << std::endl;
