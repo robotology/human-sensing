@@ -201,11 +201,8 @@ public:
     /********************************************************/
     void onRead( yarp::sig::ImageOf<yarp::sig::PixelRgb> &img )
     {
-       
         std::lock_guard<std::mutex> lg(mtx);
         annotate_img = img;
-        //std::cout << "Inside the onRead" << std::endl;
-
     }
 
     /********************************************************/
