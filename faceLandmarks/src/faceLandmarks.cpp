@@ -382,54 +382,55 @@ void FACEManager::onRead(yarp::sig::ImageOf<yarp::sig::PixelRgb> &img)
                 return left.second > right.second;
             });
         }
+    }   
 
-        if (faces.size() > 0 )
-        {
-            for (int i=0; i< idTargets.size(); i++)
-            {
-                cv::Point pt1, pt2;
-                pt1.x = faces[idTargets[i].first].tl_corner().x()* downsampleRatio;
-                pt1.y = faces[idTargets[i].first].tl_corner().y()* downsampleRatio;
-                pt2.x = faces[idTargets[i].first].br_corner().x()* downsampleRatio;
-                pt2.y = faces[idTargets[i].first].br_corner().y()* downsampleRatio;
+    if (faces.size() > 0 )
+    {
+        for (int k=0; k< idTargets.size(); k++)
+        { 
 
-                if (pt1.x < 2)
-                    pt1.x = 1;
-                if (pt1.x > imgMat.cols-2)
-                    pt1.x = imgMat.cols-1;
-                if (pt1.y < 2)
-                    pt1.y = 1;
-                if (pt1.y > imgMat.rows)
-                    pt1.y = imgMat.rows-1;
+            cv::Point pt1, pt2;
+            pt1.x = faces[idTargets[k].first].tl_corner().x()* downsampleRatio;
+            pt1.y = faces[idTargets[k].first].tl_corner().y()* downsampleRatio;
+            pt2.x = faces[idTargets[k].first].br_corner().x()* downsampleRatio;
+            pt2.y = faces[idTargets[k].first].br_corner().y()* downsampleRatio;
 
-                if (pt2.x < 2)
-                    pt2.x = 1;
-                if (pt2.x > imgMat.cols-2)
-                    pt2.x = imgMat.cols-1;
-                if (pt2.y < 2)
-                    pt2.y = 1;
-                if (pt2.y > imgMat.rows-2)
-                    pt2.y = imgMat.rows-2;
+            if (pt1.x < 2)
+                pt1.x = 1;
+            if (pt1.x > imgMat.cols-2)
+                pt1.x = imgMat.cols-1;
+            if (pt1.y < 2)
+                pt1.y = 1;
+            if (pt1.y > imgMat.rows)
+                pt1.y = imgMat.rows-1;
+
+            if (pt2.x < 2)
+                pt2.x = 1;
+            if (pt2.x > imgMat.cols-2)
+                pt2.x = imgMat.cols-1;
+            if (pt2.y < 2)
+                pt2.y = 1;
+            if (pt2.y > imgMat.rows-2)
+                pt2.y = imgMat.rows-2;
 
 
-                yarp::os::Bottle &pos = target.addList();
-                pos.addFloat64(pt1.x);
-                pos.addFloat64(pt1.y);
-                pos.addFloat64(pt2.x);
-                pos.addFloat64(pt2.y);
+            yarp::os::Bottle &pos = target.addList();
+            pos.addFloat64(pt1.x);
+            pos.addFloat64(pt1.y);
+            pos.addFloat64(pt2.x);
+            pos.addFloat64(pt2.y);
 
-                cv::Point biggestpt1, biggestpt2;
-                biggestpt1.x = faces[idTargets[0].first].tl_corner().x()* downsampleRatio;
-                biggestpt1.y = faces[idTargets[0].first].tl_corner().y()* downsampleRatio;
-                biggestpt2.x = faces[idTargets[0].first].br_corner().x()* downsampleRatio;
-                biggestpt2.y = faces[idTargets[0].first].br_corner().y()* downsampleRatio;
+            cv::Point biggestpt1, biggestpt2;
+            biggestpt1.x = faces[idTargets[0].first].tl_corner().x()* downsampleRatio;
+            biggestpt1.y = faces[idTargets[0].first].tl_corner().y()* downsampleRatio;
+            biggestpt2.x = faces[idTargets[0].first].br_corner().x()* downsampleRatio;
+            biggestpt2.y = faces[idTargets[0].first].br_corner().y()* downsampleRatio;
 
-                rectangle(imgMat, biggestpt1, biggestpt2, cv::Scalar( 0, 255, 0 ), draw_res, 8, 0);
+            rectangle(imgMat, biggestpt1, biggestpt2, cv::Scalar( 0, 255, 0 ), draw_res, 8, 0);
 
-                targetOutPort.write();
-                if (landmarksOutPort.getOutputCount()>0)
-                    landmarksOutPort.write();
-            }
+            targetOutPort.write();
+            if (landmarksOutPort.getOutputCount()>0)
+                landmarksOutPort.write();
         }
     }
 
