@@ -395,7 +395,7 @@ void FACEManager::onRead(yarp::sig::ImageOf<yarp::sig::PixelRgb> &img)
 
                 if (pt1.x < 2)
                     pt1.x = 1;
-                if (pt1.x > -2)
+                if (pt1.x > imgMat.cols-2)
                     pt1.x = imgMat.cols-1;
                 if (pt1.y < 2)
                     pt1.y = 1;
