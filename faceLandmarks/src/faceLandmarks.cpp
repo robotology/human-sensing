@@ -281,26 +281,29 @@ void FACEManager::onRead(yarp::sig::ImageOf<yarp::sig::PixelRgb> &img)
     dlib::cv_image<dlib::bgr_pixel> cimg_small(im_small);
     dlib::cv_image<dlib::bgr_pixel> cimg(imgMat);
 
-    std::vector<dlib::rectangle> faces;
+    std::vector<dlib::rect_detection> detections;
 
     // Detect faces on resize image
     if ( count % skipFrames == 0 )
     {
-        faces = faceDetector(cimg_small);
+        faceDetector(cimg_small, detections);
     }
+
+
 
     // Find the pose of each face.
     std::vector<dlib::full_object_detection> shapes;
     std::vector<std::pair<int, double >> idTargets;
-
-    for (unsigned long i = 0; i < faces.size(); ++i)
+    
+    landmarks.clear();
+    for (unsigned long i = 0; i < detections.size(); ++i)
     {
         // Resize obtained rectangle for full resolution image.
          dlib::rectangle r(
-                       (long)(faces[i].left() * downsampleRatio),
-                       (long)(faces[i].top() * downsampleRatio),
-                       (long)(faces[i].right() * downsampleRatio),
-                       (long)(faces[i].bottom() * downsampleRatio)
+                       (long)(detections[i].rect.left() * downsampleRatio),
+                       (long)(detections[i].rect.top() * downsampleRatio),
+                       (long)(detections[i].rect.right() * downsampleRatio),
+                       (long)(detections[i].rect.bottom() * downsampleRatio)
                     );
 
         // Landmark detection on full sized image
@@ -316,7 +319,7 @@ void FACEManager::onRead(yarp::sig::ImageOf<yarp::sig::PixelRgb> &img)
         if (displayLandmarks)
             render_face(imgMat, shape);
 
-        landmarks.clear();
+        
         yarp::os::Bottle &landM = landmarks.addList();
         for (int f=1; f<shapes[i].num_parts(); f++)
         {
@@ -328,6 +331,7 @@ void FACEManager::onRead(yarp::sig::ImageOf<yarp::sig::PixelRgb> &img)
                 temp.addInt32(d.part(f).y());
             }
         }
+        landM.addFloat64(detections[i].detection_confidence);
         if (displayPoints || displayLabels)
         {
             int pointSize = landmarks.get(0).asList()->size();
@@ -356,10 +360,10 @@ void FACEManager::onRead(yarp::sig::ImageOf<yarp::sig::PixelRgb> &img)
         }
 
         cv::Point pt1, pt2;
-        pt1.x = faces[i].tl_corner().x()* downsampleRatio;
-        pt1.y = faces[i].tl_corner().y()* downsampleRatio;
-        pt2.x = faces[i].br_corner().x()* downsampleRatio;
-        pt2.y = faces[i].br_corner().y()* downsampleRatio;
+        pt1.x = detections[i].rect.tl_corner().x()* downsampleRatio;
+        pt1.y = detections[i].rect.tl_corner().y()* downsampleRatio;
+        pt2.x = detections[i].rect.br_corner().x()* downsampleRatio;
+        pt2.y = detections[i].rect.br_corner().y()* downsampleRatio;
 
         rightEye.x = d.part(42).x() + ((d.part(45).x()) - (d.part(42).x()))/2;
         rightEye.y = d.part(43).y() + ((d.part(46).y()) - (d.part(43).y()))/2;
@@ -384,16 +388,15 @@ void FACEManager::onRead(yarp::sig::ImageOf<yarp::sig::PixelRgb> &img)
         }
     }   
 
-    if (faces.size() > 0 )
+    if (detections.size() > 0 )
     {
         for (int k=0; k< idTargets.size(); k++)
-        { 
-
+        {
             cv::Point pt1, pt2;
-            pt1.x = faces[idTargets[k].first].tl_corner().x()* downsampleRatio;
-            pt1.y = faces[idTargets[k].first].tl_corner().y()* downsampleRatio;
-            pt2.x = faces[idTargets[k].first].br_corner().x()* downsampleRatio;
-            pt2.y = faces[idTargets[k].first].br_corner().y()* downsampleRatio;
+            pt1.x = detections[idTargets[k].first].rect.tl_corner().x()* downsampleRatio;
+            pt1.y = detections[idTargets[k].first].rect.tl_corner().y()* downsampleRatio;
+            pt2.x = detections[idTargets[k].first].rect.br_corner().x()* downsampleRatio;
+            pt2.y = detections[idTargets[k].first].rect.br_corner().y()* downsampleRatio;
 
             if (pt1.x < 2)
                 pt1.x = 1;
@@ -421,16 +424,18 @@ void FACEManager::onRead(yarp::sig::ImageOf<yarp::sig::PixelRgb> &img)
             pos.addFloat64(pt2.y);
 
             cv::Point biggestpt1, biggestpt2;
-            biggestpt1.x = faces[idTargets[0].first].tl_corner().x()* downsampleRatio;
-            biggestpt1.y = faces[idTargets[0].first].tl_corner().y()* downsampleRatio;
-            biggestpt2.x = faces[idTargets[0].first].br_corner().x()* downsampleRatio;
-            biggestpt2.y = faces[idTargets[0].first].br_corner().y()* downsampleRatio;
+            biggestpt1.x = detections[idTargets[0].first].rect.tl_corner().x()* downsampleRatio;
+            biggestpt1.y = detections[idTargets[0].first].rect.tl_corner().y()* downsampleRatio;
+            biggestpt2.x = detections[idTargets[0].first].rect.br_corner().x()* downsampleRatio;
+            biggestpt2.y = detections[idTargets[0].first].rect.br_corner().y()* downsampleRatio;
 
             rectangle(imgMat, biggestpt1, biggestpt2, cv::Scalar( 0, 255, 0 ), draw_res, 8, 0);
 
             targetOutPort.write();
             if (landmarksOutPort.getOutputCount()>0)
+            {
                 landmarksOutPort.write();
+            }
         }
     }
 
