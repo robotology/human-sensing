@@ -67,17 +67,17 @@ class FACEManager : public yarp::os::BufferedPort<yarp::sig::ImageOf<yarp::sig::
 private:
 
     std::string moduleName;             //string containing module name
-    std::string predictorFile;          //stringc containing the path of the predictor file
+    std::string predictorFile;          //string containing the path of the predictor file
     std::string cntxHomePath;           //contect home path
     std::string inImgPortName;          //string containing image input port name
     std::string outImgPortName;         //string containing image output port name
-    std::string outPropagImgPortName;    //string containing propagated image output port name
+    std::string outPropagImgPortName;   //string containing propagated image output port name
     std::string outTargetPortName;      //string containing the target port name
     std::string outLandmarksPortName;   //string containing the target port name
 
     yarp::os::BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelRgb> >    imageInPort;            //input image ports
-    yarp::os::BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelRgb> >    imageOutPort;            //input image ports
-    yarp::os::BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelRgb> >    propagImageOutPort;           //output port Image
+    yarp::os::BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelRgb> >    imageOutPort;           //input image ports
+    yarp::os::BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelRgb> >    propagImageOutPort;     //output port Image
     yarp::os::BufferedPort<yarp::os::Bottle>                            targetOutPort;          //target port
     yarp::os::BufferedPort<yarp::os::Bottle>                            landmarksOutPort;
 
