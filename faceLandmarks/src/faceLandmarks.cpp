@@ -210,6 +210,9 @@ bool FACEManager::open()
     outImgPortName = "/" + moduleName + "/image:o";
     imageOutPort.open( outImgPortName.c_str() );
 
+    outPropagImgPortName = "/" + moduleName + "/propag_image:o";
+    propagImageOutPort.open( outPropagImgPortName.c_str() );
+
     outTargetPortName = "/" + moduleName + "/target:o";
     targetOutPort.open( outTargetPortName.c_str() );
 
@@ -242,6 +245,7 @@ void FACEManager::close()
     yDebug() <<"now closing ports...";
     imageOutPort.writeStrict();
     imageOutPort.close();
+    propagImageOutPort.close();
     imageInPort.close();
     targetOutPort.close();
     landmarksOutPort.close();
@@ -264,10 +268,14 @@ void FACEManager::onRead(yarp::sig::ImageOf<yarp::sig::PixelRgb> &img)
 {
     mutex.wait();
     yarp::sig::ImageOf<yarp::sig::PixelRgb> &outImg  = imageOutPort.prepare();
+    yarp::sig::ImageOf<yarp::sig::PixelRgb> &propagOutImg  = propagImageOutPort.prepare();
     yarp::os::Bottle &target=targetOutPort.prepare();
     yarp::os::Bottle &landmarks=landmarksOutPort.prepare();
     target.clear();
-
+    
+    // Propagate input image to output
+    propagOutImg = img;
+   
     // Get the image from the yarp port
     imgMat = yarp::cv::toCvMat(img);
 
@@ -442,6 +450,7 @@ void FACEManager::onRead(yarp::sig::ImageOf<yarp::sig::PixelRgb> &img)
     outImg = yarp::cv::fromCvMat<yarp::sig::PixelRgb>(imgMat);
 
     imageOutPort.write();
+    propagImageOutPort.write();
 
     mutex.post();
 }

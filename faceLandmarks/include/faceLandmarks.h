@@ -71,11 +71,13 @@ private:
     std::string cntxHomePath;           //contect home path
     std::string inImgPortName;          //string containing image input port name
     std::string outImgPortName;         //string containing image output port name
+    std::string outPropagImgPortName;    //string containing propagated image output port name
     std::string outTargetPortName;      //string containing the target port name
     std::string outLandmarksPortName;   //string containing the target port name
 
     yarp::os::BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelRgb> >    imageInPort;            //input image ports
-    yarp::os::BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelRgb> >    imageOutPort;           //output port Image
+    yarp::os::BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelRgb> >    imageOutPort;            //input image ports
+    yarp::os::BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelRgb> >    propagImageOutPort;           //output port Image
     yarp::os::BufferedPort<yarp::os::Bottle>                            targetOutPort;          //target port
     yarp::os::BufferedPort<yarp::os::Bottle>                            landmarksOutPort;
 
