@@ -476,11 +476,11 @@ public:
         heatmaps_scale_mode = rf.check("heatmaps_scale_mode", yarp::os::Value(2), "Set 0 to scale op::Datum::poseHeatMaps in the range [0,1], 1 for [-1,1]; and 2 for integer rounded [0,255].(int)").asInt32();
         //no_render_output = rf.check("no_render_output", yarp::os::Value("false"), "If false, it will fill image with the original image + desired part to be shown. If true, it will leave them empty.(bool)").asBool();
         render_pose = rf.check("render_pose", yarp::os::Value(2), "Set to 0 for no rendering, 1 for CPU rendering (slightly faster), and 2 for GPU rendering(int)").asInt32();
-        part_to_show = rf.check("part_to_show", yarp::os::Value(0),"Part to show from the start.(int)").asInt();
+        part_to_show = rf.check("part_to_show", yarp::os::Value(0),"Part to show from the start.(int)").asInt32();
         disable_blending = rf.check("disable_blending", yarp::os::Value(false), "If false, it will blend the results with the original frame. If true, it will only display the results.").asBool();
         alpha_pose = rf.check("alpha_pose", yarp::os::Value(0.6), "Blending factor (range 0-1) for the body part rendering. 1 will show it completely, 0 will hide it.(double)").asFloat64();
-        alpha_heatmap = rf.check("alpha_heatmap", yarp::os::Value(0.7), "Blending factor (range 0-1) between heatmap and original frame. 1 will only show the heatmap, 0 will only show the frame.(double)").asDouble();
-        render_threshold = rf.check("render_threshold", yarp::os::Value(0.05), "Only estimated keypoints whose score confidences are higher than this threshold will be rendered. Generally, a high threshold (> 0.5) will only render very clear body parts.(double)").asDouble();
+        alpha_heatmap = rf.check("alpha_heatmap", yarp::os::Value(0.7), "Blending factor (range 0-1) between heatmap and original frame. 1 will only show the heatmap, 0 will only show the frame.(double)").asFloat64();
+        render_threshold = rf.check("render_threshold", yarp::os::Value(0.05), "Only estimated keypoints whose score confidences are higher than this threshold will be rendered. Generally, a high threshold (> 0.5) will only render very clear body parts.(double)").asFloat64();
         number_people_max = rf.check("number_people_max", yarp::os::Value(-1), "This parameter will limit the maximum number of people detected, by keeping the people with top scores. -1 will keep them all.(int)").asInt32();
         part_candidates = rf.check("part_candidates", yarp::os::Value(false), "If true it will fill the op::Datum::poseCandidates array with the body part candidates.(bool)").asBool();
         body_enable = rf.check("body_enable", yarp::os::Value(true), "Disable body keypoint detection. Option only possible for faster (but less accurate) face. (bool)").asBool();
