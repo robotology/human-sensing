@@ -483,8 +483,7 @@ std::string Mapping(int index, std::map<int, std::string> myMap){
                     response.landmark_annotations( i ).mid(); // string
                     response.landmark_annotations( i ).locale(); //string
                     response.landmark_annotations( i ).description(); // string
-                    response.landmark_annotations( i ).score(); // float 
-                    response.landmark_annotations( i ).confidence(); // float
+                    response.landmark_annotations( i ).score(); // float
                     response.landmark_annotations( i ).topicality(); // float
 
                     /*
@@ -521,8 +520,6 @@ std::string Mapping(int index, std::map<int, std::string> myMap){
                         << response.landmark_annotations( i ).description() // string
                         << "\n\tscore: "
                         << response.landmark_annotations( i ).score() // float
-                        << "\n\tconfidence: "
-                        << response.landmark_annotations( i ).confidence() // float
                         << "\n\ttopicality: "
                         << response.landmark_annotations( i ).topicality() // float
                         << std::endl;
@@ -597,8 +594,6 @@ std::string Mapping(int index, std::map<int, std::string> myMap){
                         << response.logo_annotations( i ).description() // string
                         << "\n\tscore: "
                         << response.logo_annotations( i ).score() // float
-                        << "\n\tconfidence: "
-                        << response.logo_annotations( i ).confidence() // float
                         << "\n\ttopicality: "
                         << response.logo_annotations( i ).topicality() // float
                         << std::endl;
@@ -673,8 +668,6 @@ std::string Mapping(int index, std::map<int, std::string> myMap){
                         << response.label_annotations( i ).description() // string
                         << "\n\tscore: "
                         << response.label_annotations( i ).score() // float
-                        << "\n\tconfidence: "
-                        << response.label_annotations( i ).confidence() // float
                         << "\n\ttopicality: "
                         << response.label_annotations( i ).topicality() // float
                         << std::endl;
@@ -749,8 +742,6 @@ std::string Mapping(int index, std::map<int, std::string> myMap){
                         << response.text_annotations( i ).description() // string
                         << "\n\tscore: "
                         << response.text_annotations( i ).score() // float
-                        << "\n\tconfidence: "
-                        << response.text_annotations( i ).confidence() // float
                         << "\n\ttopicality: "
                         << response.text_annotations( i ).topicality() // float
                         << std::endl;
@@ -968,7 +959,7 @@ std::string Mapping(int index, std::map<int, std::string> myMap){
 
                     yarp::os::Bottle &face_btl = face_annotation_btl.addList();
                     face_btl.addString("face");
-                    face_btl.addInt(i+1);
+                    face_btl.addInt32(i+1);
 
                     if ( response.face_annotations( i ).has_bounding_poly() ) {
                         yarp::os::Bottle &bounding_poly_btl = face_btl.addList();
@@ -976,8 +967,8 @@ std::string Mapping(int index, std::map<int, std::string> myMap){
                         cv::Point tl, br;
                         for ( int j = 0; j < response.face_annotations( i ).bounding_poly().vertices_size(); j++ ) {
                             yarp::os::Bottle &bounding_poly_xy = bounding_poly_btl.addList();
-                            bounding_poly_xy.addDouble(response.face_annotations( i ).bounding_poly().vertices( j ).x());
-                            bounding_poly_xy.addDouble(response.face_annotations( i ).bounding_poly().vertices( j ).y());
+                            bounding_poly_xy.addFloat64(response.face_annotations( i ).bounding_poly().vertices( j ).x());
+                            bounding_poly_xy.addFloat64(response.face_annotations( i ).bounding_poly().vertices( j ).y());
                             if (j==0) //for j=0 we have the top-left point
                                tl = cv::Point (response.face_annotations( i ).bounding_poly().vertices( j ).x(), response.face_annotations( i ).bounding_poly().vertices( j ).y());
                             else if (j==2) //for j=2 we have the bottom-right point
@@ -1001,8 +992,8 @@ std::string Mapping(int index, std::map<int, std::string> myMap){
                         cv::Point db_tl, db_br;    
                         for ( int j = 0; j < response.face_annotations( i ).fd_bounding_poly().vertices_size(); j++ ) {
                             yarp::os::Bottle &fd_bounding_poly_xy = fd_bounding_poly_btl.addList();
-                            fd_bounding_poly_xy.addDouble(response.face_annotations( i ).fd_bounding_poly().vertices( j ).x());
-                            fd_bounding_poly_xy.addDouble(response.face_annotations( i ).fd_bounding_poly().vertices( j ).y());
+                            fd_bounding_poly_xy.addFloat64(response.face_annotations( i ).fd_bounding_poly().vertices( j ).x());
+                            fd_bounding_poly_xy.addFloat64(response.face_annotations( i ).fd_bounding_poly().vertices( j ).y());
                             if (j==0) //for j=0 we have the top-left point
                                db_tl = cv::Point (response.face_annotations( i ).fd_bounding_poly().vertices( j ).x(), response.face_annotations( i ).fd_bounding_poly().vertices( j ).y());
                             else if (j==2) //for j=2 we have the bottom-right point
@@ -1015,22 +1006,22 @@ std::string Mapping(int index, std::map<int, std::string> myMap){
 
                         yarp::os::Bottle &annotation_type_btl = face_btl.addList();   
                         annotation_type_btl.addString(Mapping(response.face_annotations( i ).landmarks( j ).type(), face_annotation_type_name));
-                        annotation_type_btl.addInt(response.face_annotations( i ).landmarks( j ).type());
+                        annotation_type_btl.addInt32(response.face_annotations( i ).landmarks( j ).type());
 
                     
                         if ( response.face_annotations( i ).landmarks( j ).has_position() ) {
 
                             yarp::os::Bottle &annotation_x = annotation_type_btl.addList();
                             annotation_x.addString("x");
-                            annotation_x.addDouble(response.face_annotations( i ).landmarks( j ).position().x());
+                            annotation_x.addFloat64(response.face_annotations( i ).landmarks( j ).position().x());
 
                             yarp::os::Bottle &annotation_y = annotation_type_btl.addList();
                             annotation_y.addString("y");
-                            annotation_y.addDouble(response.face_annotations( i ).landmarks( j ).position().y());
+                            annotation_y.addFloat64(response.face_annotations( i ).landmarks( j ).position().y());
 
                             yarp::os::Bottle &annotation_z = annotation_type_btl.addList();
                             annotation_z.addString("z");
-                            annotation_z.addDouble(response.face_annotations( i ).landmarks( j ).position().z());
+                            annotation_z.addFloat64(response.face_annotations( i ).landmarks( j ).position().z());
                             cv::circle(input_cv, cv::Point(response.face_annotations( i ).landmarks( j ).position().x(),
                                 response.face_annotations( i ).landmarks( j ).position().y()), 1, cv::Scalar(0, 255, 255), -1, 8);
 
@@ -1113,7 +1104,7 @@ std::string Mapping(int index, std::map<int, std::string> myMap){
 
                     yarp::os::Bottle &label_btl = label_annotation_btl.addList();
                     label_btl.addString("label");
-                    label_btl.addInt(i+1);
+                    label_btl.addInt32(i+1);
 
                     yarp::os::Bottle &label_description_btl = label_btl.addList();
                     label_description_btl.addString("description");
@@ -1130,8 +1121,8 @@ std::string Mapping(int index, std::map<int, std::string> myMap){
                         cv::Point tl, br;
                         for ( int j = 0; j < response.label_annotations( i ).bounding_poly().vertices_size(); j++ ) {
                             yarp::os::Bottle &bounding_poly_xy_label = bounding_poly_btl_label.addList();
-                            bounding_poly_xy_label.addDouble(response.label_annotations( i ).bounding_poly().vertices( j ).x());
-                            bounding_poly_xy_label.addDouble(response.label_annotations( i ).bounding_poly().vertices( j ).y());
+                            bounding_poly_xy_label.addFloat64(response.label_annotations( i ).bounding_poly().vertices( j ).x());
+                            bounding_poly_xy_label.addFloat64(response.label_annotations( i ).bounding_poly().vertices( j ).y());
 
                             if (j==0) //for j=0 we have the top-left point
                                 tl = cv::Point (
@@ -1166,7 +1157,7 @@ std::string Mapping(int index, std::map<int, std::string> myMap){
                 for ( int i = 0; i < response.landmark_annotations_size(); i++ ) {
                     yarp::os::Bottle &landmark_btl = landmark_annotation_btl.addList();
                     landmark_btl.addString("label");
-                    landmark_btl.addInt(i+1);
+                    landmark_btl.addInt32(i+1);
 
                     yarp::os::Bottle &landmark_description_btl = landmark_btl.addList();
                     landmark_description_btl.addString("description");
@@ -1182,8 +1173,8 @@ std::string Mapping(int index, std::map<int, std::string> myMap){
                         cv::Point tl, br;
                         for ( int j = 0; j < response.landmark_annotations( i ).bounding_poly().vertices_size(); j++ ) {
                             yarp::os::Bottle &bounding_poly_xy_landmark = bounding_poly_btl_landmark.addList();
-                            bounding_poly_xy_landmark.addDouble(response.landmark_annotations( i ).bounding_poly().vertices( j ).x());
-                            bounding_poly_xy_landmark.addDouble(response.landmark_annotations( i ).bounding_poly().vertices( j ).y());
+                            bounding_poly_xy_landmark.addFloat64(response.landmark_annotations( i ).bounding_poly().vertices( j ).x());
+                            bounding_poly_xy_landmark.addFloat64(response.landmark_annotations( i ).bounding_poly().vertices( j ).y());
                             if (j==0) //for j=0 we have the top-left point
                                 tl = cv::Point (
                                    response.landmark_annotations( i ).bounding_poly().vertices( j ).x(), 
@@ -1217,7 +1208,7 @@ std::string Mapping(int index, std::map<int, std::string> myMap){
                 for ( int i = 0; i < response.logo_annotations_size(); i++ ) {
                     yarp::os::Bottle &logo_btl = logo_annotation_btl.addList();
                     logo_btl.addString("label");
-                    logo_btl.addInt(i+1);
+                    logo_btl.addInt32(i+1);
 
                     yarp::os::Bottle &logo_description_btl = logo_btl.addList();
                     logo_description_btl.addString("description");
@@ -1234,8 +1225,8 @@ std::string Mapping(int index, std::map<int, std::string> myMap){
                         cv::Point tl, br;
                         for ( int j = 0; j < response.logo_annotations( i ).bounding_poly().vertices_size(); j++ ) {
                             yarp::os::Bottle &bounding_poly_xy_logo = bounding_poly_btl_logo.addList();
-                            bounding_poly_xy_logo.addDouble(response.logo_annotations( i ).bounding_poly().vertices( j ).x());
-                            bounding_poly_xy_logo.addDouble(response.logo_annotations( i ).bounding_poly().vertices( j ).y());
+                            bounding_poly_xy_logo.addFloat64(response.logo_annotations( i ).bounding_poly().vertices( j ).x());
+                            bounding_poly_xy_logo.addFloat64(response.logo_annotations( i ).bounding_poly().vertices( j ).y());
                             if (j==0) //for j=0 we have the top-left point
                                 tl = cv::Point (
                                    response.logo_annotations( i ).bounding_poly().vertices( j ).x(), 
@@ -1269,7 +1260,7 @@ std::string Mapping(int index, std::map<int, std::string> myMap){
                 for ( int i = 0; i < response.text_annotations_size(); i++ ) {
                     yarp::os::Bottle &text_btl = text_annotation_btl.addList();
                     text_btl.addString("label");
-                    text_btl.addInt(i+1);
+                    text_btl.addInt32(i+1);
 
                     yarp::os::Bottle &text_language_btl = text_btl.addList();
                     text_language_btl.addString("language");
@@ -1286,8 +1277,8 @@ std::string Mapping(int index, std::map<int, std::string> myMap){
                         cv::Point tl, br;
                         for ( int j = 0; j < response.text_annotations( i ).bounding_poly().vertices_size(); j++ ) {
                             yarp::os::Bottle &bounding_poly_xy_text = bounding_poly_btl_text.addList();
-                            bounding_poly_xy_text.addDouble(response.text_annotations( i ).bounding_poly().vertices( j ).x());
-                            bounding_poly_xy_text.addDouble(response.text_annotations( i ).bounding_poly().vertices( j ).y());
+                            bounding_poly_xy_text.addFloat64(response.text_annotations( i ).bounding_poly().vertices( j ).x());
+                            bounding_poly_xy_text.addFloat64(response.text_annotations( i ).bounding_poly().vertices( j ).y());
                             if (j==0) //for j=0 we have the top-left point
                                 tl = cv::Point (
                                    response.text_annotations( i ).bounding_poly().vertices( j ).x(), 
