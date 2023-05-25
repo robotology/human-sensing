@@ -1,18 +1,6 @@
-#!/bin/bash --login
-# The --login ensures the bash configuration is loaded,
-# enabling Conda.
+#!/bin/bash
 
-# # Enable strict mode.
-# set -euo pipefail
-# # ... Run whatever commands ...
+yarp detect --write
+yarprun --server /container-rtmpose --log &
 
-# # Temporarily disable strict mode and activate conda:
-# set +euo pipefail
-# conda init bash
-# conda activate openmmlab
-
-# # Re-enable strict mode:
-# set -euo pipefail
-
-# exec the final command:
 /bin/bash

@@ -1,0 +1,28 @@
+<application>
+<name>yarprtmpose test video grabber</name>
+
+    <module>
+        <name>yarpdev</name>
+        <parameters>--file app/conf/grabber.ini</parameters>
+        <node>console</node>
+    </module>
+
+    <module>
+        <name>yarpview</name>
+        <parameters>--name /skeleton</parameters>
+        <node>console</node>
+    </module>
+
+    <connection>
+        <from>/grabber</from>
+        <to>/yarpRTMPose/image:i</to>
+        <protocol>mjpeg</protocol>
+    </connection>
+
+    <connection>
+        <from>/yarpRTMPose/image:o</from>
+        <to>/skeleton</to>
+        <protocol>mjpeg</protocol>
+    </connection>
+
+</application>

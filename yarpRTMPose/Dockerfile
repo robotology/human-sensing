@@ -106,10 +106,11 @@ RUN cd /robotology && git clone https://github.com/robotology/icub-contrib-commo
 	&& cd icub-contrib-common && mkdir build && cd build && cmake .. && make && make install
 
 ENV PYTHONPATH="/robotology/yarp/build/lib/python3:/root/yarpPose"
-
 # We need tools and resources from mmdeploy 
 RUN git clone -b main https://github.com/open-mmlab/mmdeploy.git
 
 # Install the application
 COPY . /yarpRTMPose
 RUN /yarpRTMPose/app/scripts/deploy.sh
+
+ENTRYPOINT [ "/bin/bash", "/yarpRTMPose/docker/entrypoint.sh" ]

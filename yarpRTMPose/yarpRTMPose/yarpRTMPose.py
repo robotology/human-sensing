@@ -2,25 +2,24 @@ import numpy as np
 import yarp
 import os
 import sys
-from pathlib import Path
 from importlib import import_module
 from importlib.util import spec_from_file_location, module_from_spec 
 from collections import defaultdict
 from mmdeploy_runtime import Detector, PoseDetector
 import cv2
 
-from yarpRTMPose.format_mapping import COCO_WHOLEBODY_TO_OP, OP_TO_COCO_WHOLEBODY
+import format_mapping as fmt
 
 class RTMPose():
 
-    def __init__(self,det_model,pose_model,dataset,device,openpose_format=True):
+    def __init__(self,det_model,pose_model,dataset,device):
         self.detector = Detector(
             model_path = det_model,
             device_name = device)
         self.pose_detector = PoseDetector(
             model_path = pose_model,
             device_name = device)
-
+            
         self.dataset = dataset
 
         if self.dataset == 'COCO':
@@ -35,18 +34,11 @@ class RTMPose():
             sys.modules["coco_wholebody"] = dataset_module
             spec.loader.exec_module(dataset_module)
             
-        keypoint_info = dataset_module.dataset_info["keypoint_info"]
-
-        # Keeps yarpopenpose keypoints output format
-        self.openpose_format = openpose_format
-        if self.openpose_format:
-            self.keypoint_info = {}
-            for i,keypoints in enumerate(keypoint_info):
-                #If I have no explicit mapping replicate the name of the keypoint
-                self.keypoint_info[i] = {"name": COCO_WHOLEBODY_TO_OP.get(keypoint_info[i]["name"],
-                                                                    keypoint_info[i]["name"])}
-        else:
-            self.keypoint_info = keypoint_info
+        self.keypoint_info = dataset_module.dataset_info["keypoint_info"]
+        self.keypoint_op_info = {} 
+        for i,keypoints in enumerate(self.keypoint_info):
+            self.keypoint_op_info[i] = {"name": fmt.COCO_WHOLEBODY_TO_OP.get(self.keypoint_info[i]["name"],
+                                                                self.keypoint_info[i]["name"])}
 
     def inference(self,img):
         bboxes, labels, _ = self.detector(img)
@@ -56,24 +48,38 @@ class RTMPose():
 
         return poses
 
-    def format_keypoints(self,poses):
+    def format_keypoints(self,poses,openpose_format=False):
+
+        if openpose_format:
+            keypoint_info = self.keypoint_op_info
+        else:
+            keypoint_info = self.keypoint_info
 
         keypoints = []
         for person in poses:
             person_keypoints = {} 
             for i, keypoint in enumerate(person):
-                person_keypoints[self.keypoint_info[i]["name"]] = keypoint 
+                person_keypoints[keypoint_info[i]["name"]] = keypoint 
 
             keypoints.append(person_keypoints)
         
-        if self.openpose_format:
-            openpose_keypoints = defaultdict(list)
-            for kp in keypoints: #kp is a dict {'kp_name': [x,y,score]}
-                for key in kp: #non pythonic
-                    if 'face' not in key:
-                        openpose_keypoints[key] = kp[key] 
+        if openpose_format:
+            for kp in fmt.OP_TO_COCO_WHOLEBODY:
+                for person in keypoints:
+                    if kp not in person:
+                        person[kp] = np.array([0.0, 0.0, 0.0], dtype=np.float32) #Add fake keypoint to keep compatibility w/ op
+
+            openpose_keypoints = [] 
+            for person in keypoints: #kp is a dict {'kp_name': [x,y,score]}
+                openpose_person_keypoints = defaultdict(list)
+                for kp in person:
+                    if 'face' not in kp:
+                        openpose_person_keypoints[kp] = person[kp]
                     else:
-                        openpose_keypoints['face'].append(kp[key])
+                        openpose_person_keypoints['face'].append(person[kp])
+                openpose_keypoints.append(openpose_person_keypoints)
+
+            return openpose_keypoints
 
         return keypoints
 
@@ -115,19 +121,25 @@ class RTMPose():
 class yarpRTMPose(yarp.RFModule,RTMPose):
 
     def __init__(self):
-        RTMPose.__init__(self)
         yarp.RFModule.__init__(self)
 
     def configure(self,rf):
 
         yarp.Network.init()
         
-        image_h = rf.find("height").asInt16()
-        image_w = rf.find("width").asInt16()
+        self.image_h = rf.find("height").asInt16()
+        self.image_w = rf.find("width").asInt16()
 
         self.period = 0.05
-        self.module_name = "yarpRTMPose"
-        
+        self.module_name = 'yarpRTMPose'
+
+        self.det_model = rf.find("det_model_path").asString()
+        self.pose_model = rf.find("pose_model_path").asString()
+        self.dataset = rf.find("dataset").asString()
+        self.device = rf.find("device").asString() 
+        self.openpose_format = rf.find("openpose_format").asBool() 
+        RTMPose.__init__(self,self.det_model,self.pose_model,self.dataset,self.device)
+
         self.in_port = yarp.BufferedPortImageRgb()
         self.in_port_name = "/" + self.module_name + "/image:i"
         self.in_port.open(self.in_port_name)
@@ -141,14 +153,14 @@ class yarpRTMPose(yarp.RFModule,RTMPose):
         self.out_target_port_name = "/" + self.module_name + "/target:o"
         self.out_target_port.open(self.out_target_port_name)
 
-        self.in_buf_array = np.ones((image_h,image_w,3), dtype = np.uint8)
+        self.in_buf_array = np.ones((self.image_h,self.image_w,3), dtype = np.uint8)
         self.in_buf_image = yarp.ImageRgb()
-        self.in_buf_image.resize(image_w,image_h)
+        self.in_buf_image.resize(self.image_w,self.image_h)
         self.in_buf_image.setExternal(self.in_buf_array,self.in_buf_array.shape[1],self.in_buf_array.shape[0])
 
-        self.out_buf_array = np.ones((image_h,image_w,3), dtype = np.int8)
+        self.out_buf_array = np.ones((self.image_h,self.image_w,3), dtype = np.int8)
         self.out_buf_image = yarp.ImageRgb()
-        self.out_buf_image.resize(image_w,image_h)
+        self.out_buf_image.resize(self.image_w,self.image_h)
         self.out_buf_image.setExternal(self.out_buf_array,self.out_buf_array.shape[1],self.out_buf_array.shape[0])
 
         return True
@@ -161,7 +173,9 @@ class yarpRTMPose(yarp.RFModule,RTMPose):
         assert self.in_buf_array.__array_interface__['data'][0] == self.in_buf_image.getRawImage().__int__()
 
         frame = self.in_buf_array
-        skeletons, poses = self.inference(frame)
+        poses = self.inference(frame)
+
+        skeletons = self.format_keypoints(poses,self.openpose_format)
 
         target_bottle = yarp.Bottle()
         subtarget_bottle = yarp.Bottle() #Added to preserve compatibility with yarpOpenPose output
@@ -170,14 +184,27 @@ class yarpRTMPose(yarp.RFModule,RTMPose):
 
             #keypoints = np.reshape(keypoints,[-1,3])
             skeleton_bottle = yarp.Bottle()
-
             for n, kp in enumerate(keypoints):
-                keypoint_bottle = yarp.Bottle()
-                keypoint_bottle.addString(kp)
-                keypoint_bottle.addFloat64(keypoints[kp][0].item()) #x
-                keypoint_bottle.addFloat32(keypoints[kp][1].item()) #y
-                keypoint_bottle.addFloat32(keypoints[kp][2].item()) #score
-                skeleton_bottle.addList().read(keypoint_bottle)
+                if self.openpose_format and kp == 'face':
+                    face_bottle = yarp.Bottle()
+                    face_bottle.addString('face')
+                    for face_kp in keypoints[kp]:
+                        face_kp_bottle = yarp.Bottle()
+                        face_kp_bottle.addFloat32(face_kp[0].item())
+                        face_kp_bottle.addFloat32(face_kp[1].item())
+                        face_kp_bottle.addFloat32(face_kp[2].item())
+                        face_bottle.addList().read(face_kp_bottle)
+                    
+                    skeleton_bottle.addList().read(face_bottle)
+                else:
+                    keypoint_bottle = yarp.Bottle()
+                    keypoint_bottle = yarp.Bottle()
+                    keypoint_bottle = yarp.Bottle()
+                    keypoint_bottle.addString(kp)
+                    keypoint_bottle.addFloat64(keypoints[kp][0].item()) #x
+                    keypoint_bottle.addFloat32(keypoints[kp][1].item()) #y
+                    keypoint_bottle.addFloat32(keypoints[kp][2].item()) #score
+                    skeleton_bottle.addList().read(keypoint_bottle)
             
             subtarget_bottle.addList().read(skeleton_bottle)
 
@@ -187,7 +214,7 @@ class yarpRTMPose(yarp.RFModule,RTMPose):
         self.out_target_port.write(target_bottle)
 
         # Writing output image
-        img_skeleton = self.paint(frame,poses,resize=640)
+        img_skeleton = self.paint(frame,poses,resize=max(self.image_h,self.image_w))
         self.out_buf_array[:,:] = img_skeleton
         self.out_image_port.write(self.out_buf_image)
 
@@ -207,20 +234,3 @@ class yarpRTMPose(yarp.RFModule,RTMPose):
         self.out_image_port.close()
         self.out_target_port.close()
         return True
-
-if __name__ == '__main__':
-    yarp.Network.init()
-
-    if not yarp.Network.checkNetwork():
-        print("Yarp server is not running")
-        quit(-1)
-
-    yarpRTMPose_path = Path(__file__).parent
-
-    rf = yarp.ResourceFinder()
-    rf.setVerbose(True)
-    rf.setDefaultConfigFile(os.path.join(yarpRTMPose_path,'./app/conf/yarpRTMPose.ini'))
-    rf.configure(sys.argv)
-
-    manager = yarpRTMPose()
-    manager.runModule(rf)

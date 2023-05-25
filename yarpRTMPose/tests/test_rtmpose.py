@@ -1,7 +1,7 @@
 import os
 import unittest
 import cv2
-from yarpRTMPose.yarpRTMPose import RTMPose
+from .context import yarpRTMPose
 
 current_path = os.path.dirname(__file__)
 
@@ -12,18 +12,38 @@ class RTMPoseInferenceTest(unittest.TestCase):
         img = cv2.imread(os.path.join(current_path,'data/000000000785.jpg'))
         det_model_path = "/mmdeploy/rtmpose-ort/rtmdet-nano"
         pose_model_path = "/mmdeploy/rtmpose-ort/rtmpose-l"
+        
+        if not os.path.exists(det_model_path):
+            try:
+                det_model_path = os.listdir("/mmdeploy/rtmpose-ort/")[0]
+            except:
+                print("No model has been already deployed to onnxruntime.")
+
+
         dataset = "COCO_wholebody"
         device = "cuda"
-
-        inferencer = RTMPose(det_model_path,pose_model_path,dataset,device)
+    
+        inferencer = yarpRTMPose.RTMPose(det_model_path,
+                            pose_model_path,
+                            dataset,device)
         keypoints = inferencer.inference(img)
-        keypoints = inferencer.format_keypoints(keypoints)
+        keypoints_op_format = inferencer.format_keypoints(keypoints,openpose_format=True)
+        keypoints_op_format = keypoints_op_format[0] #we know we have just one person in test image 
+        self.assertTrue('LHip' in keypoints_op_format.keys())
+        self.assertTrue(3,len(keypoints_op_format['LHip']))
+        self.assertTrue('MidHip' in keypoints_op_format.keys())
+        self.assertTrue('neck' in keypoints_op_format.keys())
 
-        #These next lines can vary wildly depending on the framework. We need to abstract this
-        keypoints = keypoints[0] #we know we have just one person in test image 
-        print(keypoints)
-        self.assertTrue('left_hip' in keypoints.keys())
-        self.assertTrue(3,len(keypoints['left_hip']))
+        keypoints_orig_format = inferencer.format_keypoints(keypoints)
+        keypoints_orig_format = keypoints_orig_format[0]
+        self.assertFalse('LHip' in keypoints_orig_format.keys())
+        self.assertTrue('left_hip' in keypoints_orig_format.keys())
+        self.assertFalse('MidHip' in keypoints_orig_format.keys())
 
+    def test_keypoints_wholebody(self):
+        img = cv2.imread(os.path.join(current_path,'data/000000000785.jpg'))
+        det_model_path = "/mmdeploy/rtmpose-ort/rtmdet-nano"
+        pose_model_path = "/mmdeploy/rtmpose-ort/rtmpose-m"
+        
 if __name__ == "__main__":
     unittest.main()

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE robot PUBLIC "-//YARP//DTD yarprobotinterface 3.0//EN" "http://www.yarp.it/DTD/yarprobotinterfaceV3.0.dtd">
+ 
+<robot name="noname" build="0" portprefix="" xmlns:xi="http://www.w3.org/2001/XInclude">
+    <devices>
+        <device xmlns:xi="http://www.w3.org/2001/XInclude" name="grabber" type="ffmpeg_grabber">
+            <group name="SETTINGS">
+                <param name="source">try.avi</param>
+                <param name="name">ermejo</param>
+            </group>
+        </device>
+    </devices>
+</robot>
