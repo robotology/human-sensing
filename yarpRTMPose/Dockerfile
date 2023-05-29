@@ -89,6 +89,11 @@ RUN apt update && apt install -y cmake g++ wget unzip \
     gstreamer1.0-plugins-bad \
     gstreamer1.0-libav
 
+# Install ffmpeg libraries for video grabber utils
+RUN apt update && apt install -y ffmpeg \ 
+        libavcodec-dev libavdevice-dev \ 
+        libavformat-dev libavutil-dev
+
 RUN cd / && git clone https://github.com/robotology/ycm.git && mkdir robotology && mv ycm/ robotology/ \
     && cd robotology/ycm && mkdir build \
     && cd build && cmake .. && make && make install
@@ -96,7 +101,8 @@ RUN cd / && git clone https://github.com/robotology/ycm.git && mkdir robotology 
 # Install yarp
 RUN cd /robotology && git clone https://github.com/robotology/yarp.git \
 	&& cd yarp && mkdir build && cd build \ 
-    && cmake -D ENABLE_yarpcar_mjpeg=ON -D YARP_COMPILE_BINDINGS=ON -D CREATE_PYTHON=ON .. \
+    && cmake -D ENABLE_yarpcar_mjpeg=ON -D ENABLE_yarpmod_ffmpeg_grabber=ON \
+        -D YARP_COMPILE_BINDINGS=ON -D CREATE_PYTHON=ON .. \
 	&& make -j8 && make install
 
 # Install other yarp libraries

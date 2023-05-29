@@ -3,14 +3,20 @@
 
     <module>
         <name>yarpdev</name>
-        <parameters>--file app/conf/grabber.ini</parameters>
-        <node>console</node>
+        <parameters>--file /yarpRTMPose/app/conf/grabber.ini</parameters>
+        <node>container-rtmpose</node>
+    </module>
+
+    <module>
+        <name>python3</name>
+        <parameters>/yarpRTMPose/yarpRTMPose</parameters>
+        <node>container-rtmpose</node>
     </module>
 
     <module>
         <name>yarpview</name>
         <parameters>--name /skeleton</parameters>
-        <node>console</node>
+        <node>container-rtmpose</node>
     </module>
 
     <connection>

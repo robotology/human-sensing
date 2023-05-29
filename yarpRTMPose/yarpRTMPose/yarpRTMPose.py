@@ -130,7 +130,7 @@ class yarpRTMPose(yarp.RFModule,RTMPose):
         self.image_h = rf.find("height").asInt16()
         self.image_w = rf.find("width").asInt16()
 
-        self.period = 0.05
+        self.period = 0.01
         self.module_name = 'yarpRTMPose'
 
         self.det_model = rf.find("det_model_path").asString()
