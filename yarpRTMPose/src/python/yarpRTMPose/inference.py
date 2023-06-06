@@ -1,14 +1,12 @@
 import numpy as np
 import yarp
-import os
 import sys
-from importlib import import_module
 from importlib.util import spec_from_file_location, module_from_spec 
 from collections import defaultdict
 from mmdeploy_runtime import Detector, PoseDetector
 import cv2
 
-import format_mapping as fmt
+import yarpRTMPose.format_mapping as fmt
 
 class RTMPose():
 

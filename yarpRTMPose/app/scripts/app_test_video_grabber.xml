@@ -9,7 +9,7 @@
 
     <module>
         <name>python3</name>
-        <parameters>/yarpRTMPose/yarpRTMPose</parameters>
+        <parameters>-m yarpRTMPose</parameters>
         <node>container-rtmpose</node>
     </module>
 

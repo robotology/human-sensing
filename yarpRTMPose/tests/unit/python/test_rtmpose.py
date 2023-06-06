@@ -1,15 +1,19 @@
 import os
 import unittest
 import cv2
-from .context import yarpRTMPose
+import yarp
+from yarpRTMPose.inference import RTMPose
 
 current_path = os.path.dirname(__file__)
+
+yarp.Network.init()
+yarp.Network.setLocalMode(True)
 
 # Too slow to be a unit test
 class RTMPoseInferenceTest(unittest.TestCase):
 
     def test_keypoints(self):
-        img = cv2.imread(os.path.join(current_path,'data/000000000785.jpg'))
+        img = cv2.imread(os.path.join(current_path,'../../data/000000000785.jpg'))
         det_model_path = "/mmdeploy/rtmpose-ort/rtmdet-nano"
         pose_model_path = "/mmdeploy/rtmpose-ort/rtmpose-l"
         
@@ -23,7 +27,7 @@ class RTMPoseInferenceTest(unittest.TestCase):
         dataset = "COCO_wholebody"
         device = "cuda"
     
-        inferencer = yarpRTMPose.RTMPose(det_model_path,
+        inferencer = RTMPose(det_model_path,
                             pose_model_path,
                             dataset,device)
         keypoints = inferencer.inference(img)
@@ -41,9 +45,10 @@ class RTMPoseInferenceTest(unittest.TestCase):
         self.assertFalse('MidHip' in keypoints_orig_format.keys())
 
     def test_keypoints_wholebody(self):
-        img = cv2.imread(os.path.join(current_path,'data/000000000785.jpg'))
-        det_model_path = "/mmdeploy/rtmpose-ort/rtmdet-nano"
-        pose_model_path = "/mmdeploy/rtmpose-ort/rtmpose-m"
-        
+        # img = cv2.imread(os.path.join(current_path,'data/000000000785.jpg'))
+        # det_model_path = "/mmdeploy/rtmpose-ort/rtmdet-nano"
+        # pose_model_path = "/mmdeploy/rtmpose-ort/rtmpose-m"
+        pass
+
 if __name__ == "__main__":
     unittest.main()
