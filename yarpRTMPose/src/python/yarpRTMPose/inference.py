@@ -33,6 +33,8 @@ class RTMPose():
             spec.loader.exec_module(dataset_module)
             
         self.keypoint_info = dataset_module.dataset_info["keypoint_info"]
+        self.skeleton_info = dataset_module.dataset_info["skeleton_info"]
+
         self.keypoint_op_info = {} 
         for i,keypoints in enumerate(self.keypoint_info):
             self.keypoint_op_info[i] = {"name": fmt.COCO_WHOLEBODY_TO_OP.get(self.keypoint_info[i]["name"],
@@ -83,19 +85,6 @@ class RTMPose():
 
     #TODO: generalize based on dataset info
     def paint(self,frame,keypoints,thr=0.5,resize=1280):
-        skeleton = [(15, 13), (13, 11), (16, 14), (14, 12), (11, 12), (5, 11),
-                    (6, 12), (5, 6), (5, 7), (6, 8), (7, 9), (8, 10), (1, 2),
-                    (0, 1), (0, 2), (1, 3), (2, 4), (3, 5), (4, 6)]
-        palette = [(255, 128, 0), (255, 153, 51), (255, 178, 102), (230, 230, 0),
-                   (255, 153, 255), (153, 204, 255), (255, 102, 255),
-                   (255, 51, 255), (102, 178, 255),
-                   (51, 153, 255), (255, 153, 153), (255, 102, 102), (255, 51, 51),
-                   (153, 255, 153), (102, 255, 102), (51, 255, 51), (0, 255, 0),
-                   (0, 0, 255), (255, 0, 0), (255, 255, 255)]
-        link_color = [
-            0, 0, 0, 0, 7, 7, 7, 9, 9, 9, 9, 9, 16, 16, 16, 16, 16, 16, 16
-        ]
-        point_color = [16, 16, 16, 16, 16, 9, 9, 9, 9, 9, 9, 0, 0, 0, 0, 0, 0]
 
         scale = resize / max(frame.shape[0], frame.shape[1])
 
@@ -103,18 +92,46 @@ class RTMPose():
         keypoints = (keypoints[..., :2] * scale).astype(int)
 
         img = cv2.resize(frame, (0, 0), fx=scale, fy=scale)
-        for kpts, score in zip(keypoints, scores):
+        for kpts, score in zip(keypoints, scores): #For every person in the image
+            
+            # If I show the skeleton I also show the keypoint, else no
             show = [0] * len(kpts)
-            for (u, v), color in zip(skeleton, link_color):
+
+            for idx in self.skeleton_info:
+                link_dict = self.skeleton_info[idx]
+                u,v = self.link_id(link_dict["link"])
                 if score[u] > thr and score[v] > thr:
-                    cv2.line(img, kpts[u], tuple(kpts[v]), palette[color], 1,
+                    cv2.line(img, kpts[u], tuple(kpts[v]), link_dict["color"], 1,
                              cv2.LINE_AA)
                     show[u] = show[v] = 1
-            for kpt, show, color in zip(kpts, show, point_color):
-                if show:
-                    cv2.circle(img, kpt, 1, palette[color], 2, cv2.LINE_AA)
+            for idx, (kpt, show) in enumerate(zip(kpts, show)):
+                kpt_info = self.keypoint_info[idx]
+                if show or "face" in kpt_info["name"]:
+                    color = kpt_info["color"]
+                    cv2.circle(img, kpt, 1, color, 2, cv2.LINE_AA)
 
         return img
+    
+    def link_id(self,link: tuple):
+        """
+            Args:
+                link = ("left_ankle","left_knee")
+            
+            Returns
+                link = (idx_of_left_ankle_keypoint,idx_of_left_knee_keypoint)
+        """
+
+        for idx in self.keypoint_info:
+            name = self.keypoint_info[idx]["name"]
+            if link[0] == name:
+                link_start = idx
+            elif link[1] == name:
+                link_end = idx
+
+        try:
+            return (link_start,link_end)
+        except:
+            print("Could not find a link (ah!) between link edges and keypoints dict")
 
 class yarpRTMPose(yarp.RFModule,RTMPose):
 
