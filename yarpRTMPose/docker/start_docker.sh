@@ -3,16 +3,21 @@
 DATA_DIR_PATH=~/Videos
 IMG=fbrand-new/yarprtmpose:devel_cudnn
 CMD=bash
+CONTAINER_NAME=yarprtmpose
 
-while getopts ":i:d:c:" opt; do
+while getopts ":i:d:c:n:" opt; do
   case $opt in
-    i)  
-      IMG="$OPTARG"
+    i)
+        IMG="$OPTARG"
     ;;
-    d) DATA_DIR_PATH="$OPTARG"
+    d)
+        DATA_DIR_PATH="$OPTARG"
     ;;
-    c) 
-      CMD="$OPTARG"
+    c)
+        CMD="$OPTARG"
+    ;;
+    n)
+        CONTAINER_NAME="${OPTARG}"
     ;;
     \?) echo "Invalid option -$OPTARG" >&3
     exit 1
@@ -32,5 +37,5 @@ docker run -it --rm --privileged --gpus=all --network host --pid host\
   -v /etc/localtime:/etc/localtime -v /tmp/.X11-unix:/tmp/.X11-unix \
   -v ${XAUTHORITY}:/root/.Xauthority -e DISPLAY=$DISPLAY \
   -e QT_X11_NO_MITSHM=1 -v /etc/hosts:/etc/hosts -v $DATA_DIR_PATH:/${DATA_DIR} \
-  $IMG $CMD
+  --name $CONTAINER_NAME $IMG $CMD
 
