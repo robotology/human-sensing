@@ -7,7 +7,10 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/3bf863cc.pub
 RUN apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu1804/x86_64/7fa2af80.pub
 
-RUN apt-get update && apt-get install -y wget git ninja-build libglib2.0-0 libsm6 libxrender-dev libxext6 libgl1-mesa-glx vim
+RUN apt-get update && apt-get install -y \
+        wget git ninja-build libglib2.0-0 \
+        libsm6 libxrender-dev libxext6 libgl1-mesa-glx
+        
 # compile python from source in order to get python3.8 - avoid unsupported library problems.
 # I could not make mmdeploy work with python3.10 for now
 
@@ -27,22 +30,10 @@ RUN : \
 RUN python3.8 -m venv /venv
 ENV PATH=/venv/bin:$PATH
 
-# Install anaconda 
-# RUN mkdir -p ~/miniconda3 \ 
-#     && wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda3/miniconda.sh \
-#     && bash ~/miniconda3/miniconda.sh -b -u -p ~/miniconda3 \
-#     && rm -rf ~/miniconda3/miniconda.sh 
+# Install opencv
+RUN apt update && apt install -y libopencv-dev python3-opencv python3-dev
 
-# ENV PATH=/root/miniconda3/bin:${PATH}
-
-# SHELL ["/bin/bash", "--login", "-c"]
-# RUN echo ". $CONDA_DIR/etc/profild.d/conda.sh" >> ~/.profile
-# RUN conda init bash
-# RUN conda create --name openmmlab python=3.8 -y
-# RUN echo "conda activate openmmlab" >> ~/.bashrc
-
-# Install torch
-# RUN conda install pytorch torchvision torchaudio pytorch-cuda=11.7 -c pytorch -c nvidia
+# Install pytorch, necessary for mmpose
 RUN pip3 install torch torchvision torchaudio
 
 # Install mmpose dependencies
@@ -65,7 +56,30 @@ RUN pip install mmdeploy==1.0.0 \
     && tar -zxvf onnxruntime-linux-x64-gpu-1.8.1.tgz 
 
 ENV ONNXRUNTIME_DIR=/onnxruntime-linux-x64-gpu-1.8.1
-ENV LD_LIBRARY_PATH=${ONNXRUNTIME_DIR}/lib:$LD_LIBRARY_PATH
+ENV LD_LIBRARY_PATH=${ONNXRUNTIME_DIR}/lib:/usr/lib/x86_64-linux-gnu/:$LD_LIBRARY_PATH/
+
+# MMdeploy sdk prerequisites
+RUN git clone https://github.com/openppl-public/ppl.cv.git \
+    && cd ppl.cv \
+    && git checkout tags/v0.7.0 -b v0.7.0 \
+    && ./build.sh cuda
+
+ENV PPLCV_DIR=/ppl.cv
+
+# # Install mmdeploy sdk
+RUN git clone -b main https://github.com/open-mmlab/mmdeploy.git --recursive \
+    && cd \mmdeploy \
+    && mkdir -p build && cd build \
+    && cmake .. \
+        -DMMDEPLOY_BUILD_SDK=ON \
+        -DMMDEPLOY_BUILD_SDK_PYTHON_API=ON \
+        -DMMDEPLOY_BUILD_EXAMPLES=ON \
+        -DMMDEPLOY_TARGET_DEVICES=cuda \
+        -DMMDEPLOY_TARGET_BACKENDS=ort \
+        -Dpplcv_DIR=${PPLCV_DIR}/cuda-build/install/lib/cmake/ppl \
+        -DONNXRUNTIME_DIR=${ONNXRUNTIME_DIR} \
+        -DCUDNN_DIR=${CUDNN_DIR} \
+    && make -j8 && make install
 
 # Install yarp dependencies
 RUN apt update && apt install -y cmake g++ wget unzip \
@@ -100,7 +114,7 @@ RUN cd / && git clone https://github.com/robotology/ycm.git && mkdir robotology 
 
 # Install yarp
 RUN cd /robotology && git clone https://github.com/robotology/yarp.git \
-	&& cd yarp && mkdir build && cd build \ 
+    && cd yarp && mkdir build && cd build \ 
     && cmake -D ENABLE_yarpcar_mjpeg=ON -D ENABLE_yarpmod_ffmpeg_grabber=ON \
         -D YARP_COMPILE_BINDINGS=ON -D CREATE_PYTHON=ON .. \
 	&& make -j8 && make install
@@ -111,9 +125,15 @@ RUN cd /robotology && git clone https://github.com/robotology/icub-main.git \
 RUN cd /robotology && git clone https://github.com/robotology/icub-contrib-common.git \
 	&& cd icub-contrib-common && mkdir build && cd build && cmake .. && make && make install
 
+# These are used for execution and building
 ENV PYTHONPATH="/robotology/yarp/build/lib/python3:/yarpRTMPose/src/python"
-# We need tools and resources from mmdeploy 
-RUN git clone -b main https://github.com/open-mmlab/mmdeploy.git
+ENV CMAKE_PREFIX_PATH="/mmdeploy/build/install/lib/cmake/MMDeploy"
+
+# Install c++ unit test framework
+RUN git clone https://github.com/catchorg/Catch2.git \
+    && cd Catch2 \
+    && cmake -Bbuild -H. -DBUILD_TESTING=OFF \
+    && cmake --build build/ --target install
 
 # Install the application
 COPY . /yarpRTMPose

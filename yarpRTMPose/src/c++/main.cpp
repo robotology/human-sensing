@@ -1,3 +1,4 @@
+#include <yarpRTMPose.h>
 #include <yarp/os/RFModule.h>
 #include <yarp/os/Network.h>
 #include <yarp/os/LogStream.h>
@@ -13,7 +14,7 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    Module module;
+    yarpRTMPose module;
     yarp::os::ResourceFinder rf;
 
     rf.setVerbose( true );
