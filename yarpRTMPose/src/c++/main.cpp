@@ -2,6 +2,7 @@
 #include <yarp/os/RFModule.h>
 #include <yarp/os/Network.h>
 #include <yarp/os/LogStream.h>
+#include <yarp/os/Log.h>
 
 int main(int argc, char *argv[])
 {
@@ -10,17 +11,17 @@ int main(int argc, char *argv[])
     yarp::os::Network yarp;
     if (!yarp.checkNetwork())
     {
-        yError("YARP server not available!");
+        yError() << "YARP server not available!";
         return 1;
     }
 
     yarpRTMPose module;
     yarp::os::ResourceFinder rf;
 
-    rf.setVerbose( true );
-    rf.setDefaultContext( "yarpOpenPose" );
-    rf.setDefaultConfigFile( "yarpOpenPose.ini" );
-    rf.setDefault("name","yarpOpenPose");
+    rf.setVerbose(true);
+    rf.setDefaultContext("yarpRTMPose");
+    rf.setDefaultConfigFile("yarpRTMPose.ini");
+    rf.setDefault("name","yarpRTMPose");
     rf.configure(argc,argv);
 
     return module.runModule(rf);

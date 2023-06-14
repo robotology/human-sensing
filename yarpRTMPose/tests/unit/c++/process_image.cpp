@@ -3,11 +3,12 @@
 #include <filesystem>
 #include <iostream>
 #include <catch2/catch_test_macros.hpp>
+#include <yarp/os/Log.h>
+#include <yarp/os/LogStream.h>
 
 TEST_CASE("Keypoints from image","[yarpRTMPose]")
 {
-    const std::string current_path = std::filesystem::current_path();
-    const std::string img_path = current_path + "/../../data/000000000785.jpg";
+    std::filesystem::path img_path("/yarpRTMPose/tests/data/000000000785.jpg");
     cv::Mat test_img = cv::imread(img_path);
 
     if(test_img.empty())
@@ -18,7 +19,7 @@ TEST_CASE("Keypoints from image","[yarpRTMPose]")
     const std::string det_model_path = "/mmdeploy/rtmpose-ort/rtmdet-nano";
     const std::string pose_model_path = "/mmdeploy/rtmpose-ort/rtmpose-l";
 
-    const std::string dataset = "COCO_wholebody"; 
+    const std::string dataset = "coco_wholebody"; 
     const std::string device = "cuda";
 
     RTMPose inferencer{det_model_path,pose_model_path,dataset,device};
@@ -32,31 +33,33 @@ TEST_CASE("Keypoints from image","[yarpRTMPose]")
 
 } 
 
-// TEST_CASE(ProcessImage,CheckOPKeypoints)
-// {
-//     //TODO
+TEST_CASE("RTMPose pipeline","[yarpRTMPose]")
+{
+    //TODO
 
-//     // 1. Build keypoints vector
-//     // const std::string current_path = std::filesystem::current_path();
-//     // const std::string img_path = current_path + "../../data/000000000785.jpg";
-//     // cv::Mat test_img = cv::imread(img_path);
+    // 1. Build keypoints vector
+    std::filesystem::path img_path("/yarpRTMPose/tests/data/000000000785.jpg");
+    cv::Mat test_img = cv::imread(img_path);
 
-//     // if(test_img.empty())
-//     // {
-//     //     std::cout << "Could not read the image" << img_path;
-//     // }
+    if(test_img.empty())
+    {
+        std::cout << "Could not read the image" << img_path;
+    }
 
-//     // const std::string det_model_path = "/mmdeploy/rtmpose-ort/rtmdet-nano";
-//     // const std::string pose_model_path = "/mmdeploy/rtmpose-ort/rtmpose-l";
+    const std::string det_model_path = "/mmdeploy/rtmpose-ort/rtmdet-nano";
+    const std::string pose_model_path = "/mmdeploy/rtmpose-ort/rtmpose-l";
 
-//     // const std::string dataset = "COCO_wholebody"; 
-//     // const std::string device = "cuda";
+    const std::string dataset = "coco_wholebody"; 
+    const std::string device = "cuda";
 
-//     // RTMPose inferencer{det_model_path,pose_model_path,dataset,device};
-//     // auto [bboxes, keypoints] = inferencer.inference(test_img);
+    RTMPose inferencer{det_model_path,pose_model_path,dataset,device};
+    auto [bboxes, keypoints] = inferencer.inference(test_img);
 
-//     // // 2. apply formatter
-//     // inferencer.format_keypoints(keypoints);
+    yDebug() << "Inference working";
+    // 2. paint the results
+    cv::Mat kp_img = inferencer.paint(test_img,bboxes,keypoints);
 
-//     // 3. check results
-// }
+    yDebug() << "paint not working";
+    // 3. check results
+    cv::imwrite("/test.png",kp_img);
+}

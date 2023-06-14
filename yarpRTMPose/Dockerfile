@@ -56,7 +56,9 @@ RUN pip install mmdeploy==1.0.0 \
     && tar -zxvf onnxruntime-linux-x64-gpu-1.8.1.tgz 
 
 ENV ONNXRUNTIME_DIR=/onnxruntime-linux-x64-gpu-1.8.1
-ENV LD_LIBRARY_PATH=${ONNXRUNTIME_DIR}/lib:/usr/lib/x86_64-linux-gnu/:$LD_LIBRARY_PATH/
+
+# TODO: this requires more investigation as to why we need two different path to libcuda in different part of docker build
+ENV LD_LIBRARY_PATH=${ONNXRUNTIME_DIR}/lib:/usr/lib/x86_64-linux-gnu/:/usr/local/cuda-11.7/compat/:/$LD_LIBRARY_PATH/
 
 # MMdeploy sdk prerequisites
 RUN git clone https://github.com/openppl-public/ppl.cv.git \
@@ -79,6 +81,7 @@ RUN git clone -b main https://github.com/open-mmlab/mmdeploy.git --recursive \
         -Dpplcv_DIR=${PPLCV_DIR}/cuda-build/install/lib/cmake/ppl \
         -DONNXRUNTIME_DIR=${ONNXRUNTIME_DIR} \
         -DCUDNN_DIR=${CUDNN_DIR} \
+        -DCMAKE_INSTALL_PREFIX=/usr/local \
     && make -j8 && make install
 
 # Install yarp dependencies
@@ -127,7 +130,7 @@ RUN cd /robotology && git clone https://github.com/robotology/icub-contrib-commo
 
 # These are used for execution and building
 ENV PYTHONPATH="/robotology/yarp/build/lib/python3:/yarpRTMPose/src/python"
-ENV CMAKE_PREFIX_PATH="/mmdeploy/build/install/lib/cmake/MMDeploy"
+# ENV CMAKE_PREFIX_PATH="/mmdeploy/build/install/lib/cmake/MMDeploy"
 
 # Install c++ unit test framework
 RUN git clone https://github.com/catchorg/Catch2.git \
@@ -137,4 +140,9 @@ RUN git clone https://github.com/catchorg/Catch2.git \
 
 # Install the application
 COPY . /yarpRTMPose
+
+RUN cd /yarpRTMPose && cmake -B build -S . \
+   && cd build && make install
+
 RUN /yarpRTMPose/app/scripts/deploy.sh
+

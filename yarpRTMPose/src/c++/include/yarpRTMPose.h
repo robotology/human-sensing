@@ -1,4 +1,3 @@
-#include <string>
 #include <yarp/os/RFModule.h>
 #include <yarp/os/BufferedPort.h>
 #include <yarp/os/ResourceFinder.h>
@@ -6,8 +5,11 @@
 #include <opencv2/opencv.hpp>
 #include "mmdeploy/detector.hpp"
 #include "mmdeploy/pose_detector.hpp"
+#include <nlohmann/json.hpp>
+
 
 using RgbImagePort = yarp::os::BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelRgb>>;
+using json = nlohmann::json;
 
 class RTMPose
 {
@@ -21,7 +23,6 @@ class RTMPose
         cv::Mat paint(const cv::Mat& img, 
                             const std::vector<mmdeploy_rect_t> &bboxes,
                             const mmdeploy::PoseDetector::Result poses);
-        
 
         mmdeploy::Detector detector;
         mmdeploy::PoseDetector pose_model;
@@ -50,10 +51,16 @@ class yarpRTMPose : public yarp::os::RFModule
         RgbImagePort outPort;
         yarp::os::BufferedPort<yarp::os::Bottle> targetPort;
 
+        json keypointInfo;
+
     public:
+
         std::unique_ptr<RTMPose> inferencer;
+
+
         bool configure(yarp::os::ResourceFinder& rf) override;
         bool updateModule() override;
+        bool interruptModule() override;
         bool close() override;
         double getPeriod() override;
         yarp::os::Bottle kpToBottle(const mmdeploy::cxx::PoseDetector::Result& keypoints);
