@@ -53,10 +53,12 @@ class yarpRTMPose : public yarp::os::RFModule
 
         json keypointInfo;
 
+        std::size_t face_keypoint_idx_start;
+        std::size_t face_keypoint_idx_end;
+
     public:
 
         std::unique_ptr<RTMPose> inferencer;
-
 
         bool configure(yarp::os::ResourceFinder& rf) override;
         bool updateModule() override;
@@ -64,5 +66,5 @@ class yarpRTMPose : public yarp::os::RFModule
         bool close() override;
         double getPeriod() override;
         yarp::os::Bottle kpToBottle(const mmdeploy::cxx::PoseDetector::Result& keypoints);
-
+        std::pair<size_t,size_t> faceKeypointsIdxs();
 };

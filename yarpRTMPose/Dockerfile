@@ -58,7 +58,7 @@ RUN pip install mmdeploy==1.0.0 \
 ENV ONNXRUNTIME_DIR=/onnxruntime-linux-x64-gpu-1.8.1
 
 # TODO: this requires more investigation as to why we need two different path to libcuda in different part of docker build
-ENV LD_LIBRARY_PATH=${ONNXRUNTIME_DIR}/lib:/usr/lib/x86_64-linux-gnu/:/usr/local/cuda-11.7/compat/:/$LD_LIBRARY_PATH/
+ENV LD_LIBRARY_PATH=${ONNXRUNTIME_DIR}/lib:/usr/lib/x86_64-linux-gnu/:/usr/local/cuda-11.7/compat/:$LD_LIBRARY_PATH
 
 # MMdeploy sdk prerequisites
 RUN git clone https://github.com/openppl-public/ppl.cv.git \

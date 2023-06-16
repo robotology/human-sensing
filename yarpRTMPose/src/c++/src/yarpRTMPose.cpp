@@ -71,11 +71,12 @@ cv::Mat RTMPose::paint(const cv::Mat& img,
 bool yarpRTMPose::configure(yarp::os::ResourceFinder& rf)
 {
     this->period = rf.check("period",yarp::os::Value(0.01)).asFloat32();
-    this->det_model_path = rf.find("det_model_path").asString();
-    this->pose_model_path = rf.find("pose_model_path").asString();
+    this->det_model_path = rf.check("det_model_path",yarp::os::Value("/mmdeploy/rtmpose-ort/rtmdet-nano")).asString();
+    this->pose_model_path = rf.check("pose_model_path",yarp::os::Value("/mmdeploy/rtmpose-ort/rtmpose-l")).asString();
     this->dataset = rf.check("dataset",yarp::os::Value("coco_wholebody")).asString();
     this->device = rf.check("device",yarp::os::Value("cuda")).asString();
     this->module_name = rf.check("module_name",yarp::os::Value("yarpRTMPose")).asString();
+    this->openpose_format = rf.check("openpose_format",yarp::os::Value(false)).asBool();
 
     std::string dataset_file = rf.findFile(this->dataset + ".json");
     // Create the inference engine
@@ -97,6 +98,8 @@ bool yarpRTMPose::configure(yarp::os::ResourceFinder& rf)
     std::ifstream r(dataset_file);
     keypointInfo = json::parse(r);
 
+    std::tie(face_keypoint_idx_start,face_keypoint_idx_end) = faceKeypointsIdxs();
+
     return true;
 }
 
@@ -105,12 +108,15 @@ bool yarpRTMPose::updateModule()
     if(auto* frame = inPort.read())
     {
         const cv::Mat img = yarp::cv::toCvMat(*frame);
-        //TODO: convert frame from yarp to cv
+
+        yDebug() << "In update module";
         auto [bboxes, keypoints] = inferencer->inference(img);
 
+        yDebug() << "keypoints length" << keypoints[0].length;
         //Convert keypoints to bottle format
         yarp::os::Bottle& target = targetPort.prepare();
         target.addList().read(this->kpToBottle(keypoints));
+        targetPort.write();
 
         cv::Mat keypoints_img = inferencer->paint(img,bboxes,keypoints);
         
@@ -145,25 +151,125 @@ yarp::os::Bottle yarpRTMPose::kpToBottle(const mmdeploy::cxx::PoseDetector::Resu
 {
     yarp::os::Bottle targetBottle;
 
-    for(auto &skeleton: keypoints)
+    if(openpose_format && dataset=="coco_wholebody")
     {
-        yarp::os::Bottle skeletonBottle;
 
-        //TODO: right now it is not compatible with openpose face
-        for(size_t i=0; i<skeleton.length; ++i)
+        // Standard format
+        //(((kp x y score)...))
+        // Openpose format
+        //(((kp x y score)... (face (x y score) (x y score) ...) (kp x y score)))
+
+        for(auto &skeleton: keypoints)
         {
-            yarp::os::Bottle keypointBottle;
+            yarp::os::Bottle skeletonBottle;
 
-            const auto &kp = skeleton.point[i];
-            keypointBottle.addString(this->keypointInfo[std::to_string(i)]["name"]);
-            keypointBottle.addFloat32(kp.x);
-            keypointBottle.addFloat32(kp.y);
+            for(size_t i=0; i<face_keypoint_idx_start; ++i)
+            {
+                yarp::os::Bottle keypointBottle;
 
-            skeletonBottle.addList().read(keypointBottle);
+                const auto &kp = skeleton.point[i];
+                keypointBottle.addString(this->keypointInfo[std::to_string(i)]["name"]);
+                keypointBottle.addFloat32(kp.x);
+                keypointBottle.addFloat32(kp.y);
+                keypointBottle.addFloat32(skeleton.score[i]);
+
+                skeletonBottle.addList().read(keypointBottle);
+            }
+
+            yarp::os::Bottle faceBottle;
+            faceBottle.addString("Face");
+
+            for(size_t i=face_keypoint_idx_start; i<face_keypoint_idx_end; ++i)
+            {
+                yarp::os::Bottle faceKeypointBottle;
+                const auto &kp = skeleton.point[i];
+                faceKeypointBottle.addFloat32(kp.x);
+                faceKeypointBottle.addFloat32(kp.y);
+                faceKeypointBottle.addFloat32(skeleton.score[i]);
+
+                faceBottle.addList().read(faceKeypointBottle);
+            }
+
+            skeletonBottle.addList().read(faceBottle);
+
+            for(size_t i=face_keypoint_idx_end; i<skeleton.length; ++i)
+            {
+                yarp::os::Bottle keypointBottle;
+
+                const auto &kp = skeleton.point[i];
+                keypointBottle.addString(this->keypointInfo[std::to_string(i)]["name"]);
+                keypointBottle.addFloat32(kp.x);
+                keypointBottle.addFloat32(kp.y);
+                keypointBottle.addFloat32(skeleton.score[i]);
+
+                skeletonBottle.addList().read(keypointBottle);
+            }
+
+            targetBottle.addList().read(skeletonBottle);
         }
 
-        targetBottle.addList().read(skeletonBottle);
     }
+    else
+    {
+        for(auto &skeleton: keypoints)
+        {
+            yarp::os::Bottle skeletonBottle;
 
+            for(size_t i=0; i<skeleton.length; ++i)
+            {
+                yarp::os::Bottle keypointBottle;
+
+                const auto &kp = skeleton.point[i];
+                keypointBottle.addString(this->keypointInfo[std::to_string(i)]["name"]);
+                keypointBottle.addFloat32(kp.x);
+                keypointBottle.addFloat32(kp.y);
+
+                skeletonBottle.addList().read(keypointBottle);
+            }
+
+            targetBottle.addList().read(skeletonBottle);
+        }
+
+    }
+    
+    
     return targetBottle;
+}
+
+std::pair<size_t,size_t> yarpRTMPose::faceKeypointsIdxs()
+{
+
+    // TODO: make it more general like the (bugged) version below
+    // std::string::size_type n;
+    // size_t start = 0;
+    // size_t end = 0;
+
+    // json::iterator it = keypointInfo.begin();
+
+    // while(start == 0 && it != keypointInfo.end())
+    // {
+    //     std::string value = it.value()["name"].get<std::string>();
+    //     n = value.find("face");
+    //     if(std::string::npos != n) //The first time we see "face" as a keypoint we stop this half
+    //     {
+    //         start = std::stoi(it.key());
+    //     }
+    //     ++it;
+    // }
+    
+    // while(end == 0 && it != keypointInfo.end())
+    // {
+    //     std::string value = it.value()["name"].get<std::string>();
+    //     n = value.find("face");
+    //     if(std::string::npos == n) //The first time we don't see "face" as a keypoint we stop
+    //     {
+    //         end = std::stoi(it.key());
+    //     }
+    //     ++it;
+    // }
+
+    std::size_t start = 23;
+    std::size_t end = 91;
+
+    return std::make_pair(start,end);
 }

@@ -55,11 +55,9 @@ TEST_CASE("RTMPose pipeline","[yarpRTMPose]")
     RTMPose inferencer{det_model_path,pose_model_path,dataset,device};
     auto [bboxes, keypoints] = inferencer.inference(test_img);
 
-    yDebug() << "Inference working";
     // 2. paint the results
     cv::Mat kp_img = inferencer.paint(test_img,bboxes,keypoints);
 
-    yDebug() << "paint not working";
     // 3. check results
     cv::imwrite("/test.png",kp_img);
 }
