@@ -43,6 +43,7 @@ cv::Mat RTMPose::paint(const cv::Mat& img,
     
     utils::Visualize v;
 
+    //TODO: set skeleton can be done at config time
     if(dataset == "coco_wholebody")
     {
         v.set_skeleton(utils::Skeleton::get("coco-wholebody"));
@@ -106,20 +107,19 @@ bool yarpRTMPose::configure(yarp::os::ResourceFinder& rf)
 bool yarpRTMPose::updateModule()
 {
     if(auto* frame = inPort.read())
-    {
+    {   
         const cv::Mat img = yarp::cv::toCvMat(*frame);
 
-        yDebug() << "In update module";
         auto [bboxes, keypoints] = inferencer->inference(img);
 
-        yDebug() << "keypoints length" << keypoints[0].length;
         //Convert keypoints to bottle format
         yarp::os::Bottle& target = targetPort.prepare();
+        target.clear();
         target.addList().read(this->kpToBottle(keypoints));
         targetPort.write();
 
         cv::Mat keypoints_img = inferencer->paint(img,bboxes,keypoints);
-        
+
         auto& outImage = outPort.prepare();
         outImage = yarp::cv::fromCvMat<yarp::sig::PixelRgb>(keypoints_img);
         outPort.write();
