@@ -1,0 +1,16 @@
+{
+    "image": "fbrand-new/yarprtmpose:devel_cudnn",
+    "customizations": {
+        "vscode": {
+            "extensions": [
+				"ms-vscode.cpptools",
+				"twxs.cmake",
+				"ms-vscode.cpptools-extension-pack"
+			]
+        }
+    },
+    "runArgs": [
+        "--gpus",
+        "all"
+    ]
+}   

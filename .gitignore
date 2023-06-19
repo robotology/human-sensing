@@ -32,3 +32,6 @@ Makefile
 cmake_install.cmake
 CMakeCache.txt
 videos/images_track/
+yarpRTMPose/download/*
+yarpRTMPose/.vscode
+**/.cache/
