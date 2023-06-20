@@ -56,6 +56,8 @@ class yarpRTMPose : public yarp::os::RFModule
         std::size_t face_keypoint_idx_start;
         std::size_t face_keypoint_idx_end;
 
+        json op_not_in_coco_json; //optional json used only if openpose format is true
+
     public:
 
         std::unique_ptr<RTMPose> inferencer;

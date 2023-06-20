@@ -99,6 +99,45 @@ bool yarpRTMPose::configure(yarp::os::ResourceFinder& rf)
     std::ifstream r(dataset_file);
     keypointInfo = json::parse(r);
 
+
+    if(openpose_format)
+    {
+        // Convert names to openpose standard
+        std::string coco_to_op_filename = rf.findFile("coco_to_op.json");
+
+        if(coco_to_op_filename == "")
+        {
+            yError() << "coco_to_op.json not found";
+        }
+
+        std::ifstream coco_to_op(coco_to_op_filename);
+        auto coco_to_op_json = json::parse(coco_to_op);
+    
+        for(auto& [key,value]: coco_to_op_json.items())
+        {
+
+            for(auto& [rtm_key,rtm_value]: keypointInfo.items())
+            {
+                // If the original name is equal to the key of coco_to_op then we swap with OP name
+                auto &orig_kp_name = rtm_value["name"];
+                if(orig_kp_name == key)
+                {
+                    orig_kp_name = value;
+                    break;
+                } 
+            }
+        }
+
+        //Add two keypoints not present in COCO
+        std::string op_not_in_coco_filename = rf.findFile("op_not_in_coco.json");
+        if(op_not_in_coco_filename == "")
+        {
+            yError() << "op_not_in_coco.json not found";
+        }
+        std::ifstream op_not_in_coco(op_not_in_coco_filename);
+        this->op_not_in_coco_json = json::parse(op_not_in_coco);
+    }
+
     std::tie(face_keypoint_idx_start,face_keypoint_idx_end) = faceKeypointsIdxs();
 
     return true;
@@ -159,9 +198,22 @@ yarp::os::Bottle yarpRTMPose::kpToBottle(const mmdeploy::cxx::PoseDetector::Resu
         // Openpose format
         //(((kp x y score)... (face (x y score) (x y score) ...) (kp x y score)))
 
+
         for(auto &skeleton: keypoints)
         {
             yarp::os::Bottle skeletonBottle;
+
+            //Adding fake keypoint with 0 score to keep the format
+            for(auto& [key,value]: this->op_not_in_coco_json.items())
+            {
+                yarp::os::Bottle keypointBottle;
+                keypointBottle.addString(value);
+                keypointBottle.addFloat32(0);
+                keypointBottle.addFloat32(0);
+                keypointBottle.addFloat32(0);
+                
+                skeletonBottle.addList().read(keypointBottle);
+            }
 
             for(size_t i=0; i<face_keypoint_idx_start; ++i)
             {
