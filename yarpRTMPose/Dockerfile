@@ -138,6 +138,7 @@ RUN git clone https://github.com/catchorg/Catch2.git \
     && cmake -Bbuild -H. -DBUILD_TESTING=OFF \
     && cmake --build build/ --target install
 
+RUN apt install -y vim
 # Install the application
 COPY . /yarpRTMPose
 
