@@ -14,7 +14,7 @@ A 2d human pose estimation yarp module powered by **RTMPose**. It's (much) faste
 You can download the whole human sensing repository or only this subdirectory. For conveniency reason we only provide instructions to build the docker image.  
 
 ```sh
-git clone https://github.com/fbrand-new/human-sensing.git
+git clone https://github.com/robotology/human-sensing.git
 cd human-sensing/yarpRTMPose
 ./docker/build_docker <my_img_name> #Equivalent of docker build -t <my_img_name> . 
 ```
