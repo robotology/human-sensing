@@ -8,7 +8,6 @@ DEPLOYED_MODELS_DIR="/yarpRTMPose/download/deployed_models"
 DEPLOYED_MODELS=$(ls ${DEPLOYED_MODELS_DIR} 2>/dev/null)
 echo $DEPLOYED_MODELS
 if [ -n "${DEPLOYED_MODELS}" ]; then
-	echo "hello there?"
 	mv ${DEPLOYED_MODELS_DIR}/${DEPLOYED_MODELS} .
 else
 	# Model file can be either a local path or a download link

@@ -1,4 +1,5 @@
-FROM nvidia/cuda:11.7.0-cudnn8-devel-ubuntu22.04
+# FROM nvidia/cuda:11.7.0-cudnn8-devel-ubuntu22.04
+FROM nvidia/cuda:11.7.1-cudnn8-devel-ubuntu22.04
 
 # Non interactive installation mode
 ENV DEBIAN_FRONTEND=noninteractive
@@ -8,7 +9,7 @@ RUN apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/
 RUN apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu1804/x86_64/7fa2af80.pub
 
 RUN apt-get update && apt-get install -y \
-        wget git ninja-build libglib2.0-0 \
+        wget git build-essential ninja-build libglib2.0-0 \
         libsm6 libxrender-dev libxext6 libgl1-mesa-glx
         
 # compile python from source in order to get python3.8 - avoid unsupported library problems.
@@ -43,7 +44,7 @@ RUN pip install -U openmim \
     && mim install "mmdet>=3.0.0"
 
 # Install mmpose
-RUN git clone https://github.com/open-mmlab/mmpose.git \
+RUN git clone https://github.com/open-mmlab/mmpose.git --depth=1 \
     && cd mmpose \
     && pip install -r requirements.txt \
     && pip install -v -e .
@@ -60,6 +61,13 @@ ENV ONNXRUNTIME_DIR=/onnxruntime-linux-x64-gpu-1.8.1
 # TODO: this requires more investigation as to why we need two different path to libcuda in different part of docker build
 ENV LD_LIBRARY_PATH=${ONNXRUNTIME_DIR}/lib:/usr/lib/x86_64-linux-gnu/:/usr/local/cuda-11.7/compat/:$LD_LIBRARY_PATH
 
+# CMake 3.20.0 and add repository if ubuntu < 18.04
+RUN wget https://github.com/Kitware/CMake/releases/download/v3.20.0/cmake-3.20.0-linux-x86_64.tar.gz \
+    && tar -xzvf cmake-3.20.0-linux-x86_64.tar.gz \
+    && ln -sf $(pwd)/cmake-3.20.0-linux-x86_64/bin/* /usr/bin/
+
+ENV CUDA_BIN_PATH=/usr/local/cuda
+
 # MMdeploy sdk prerequisites
 RUN git clone https://github.com/openppl-public/ppl.cv.git \
     && cd ppl.cv \
@@ -69,7 +77,7 @@ RUN git clone https://github.com/openppl-public/ppl.cv.git \
 ENV PPLCV_DIR=/ppl.cv
 
 # # Install mmdeploy sdk
-RUN git clone -b main https://github.com/open-mmlab/mmdeploy.git --recursive \
+RUN git clone -b main https://github.com/open-mmlab/mmdeploy.git --recursive --depth=1 \
     && cd \mmdeploy \
     && mkdir -p build && cd build \
     && cmake .. \
@@ -138,6 +146,7 @@ RUN git clone https://github.com/catchorg/Catch2.git \
     && cmake -Bbuild -H. -DBUILD_TESTING=OFF \
     && cmake --build build/ --target install
 
+RUN apt install -y vim
 # Install the application
 COPY . /yarpRTMPose
 

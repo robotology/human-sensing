@@ -7,50 +7,50 @@
 #include <fstream>
 
 RTMPose::RTMPose(std::string det_model_path,
-                    std::string pose_model_path,
-                    std::string dataset,
-                    std::string device):
-                    detector{mmdeploy::Model(det_model_path),mmdeploy::Device(device)},
-                    pose_model{mmdeploy::Model(pose_model_path),mmdeploy::Device(device)},
-                    dataset{dataset},
-                    device{device},
-                    det_label{0},
-                    det_thr{0.5}
-                    {}
+                 std::string pose_model_path,
+                 std::string dataset,
+                 std::string device) : detector{mmdeploy::Model(det_model_path), mmdeploy::Device(device)},
+                                       pose_model{mmdeploy::Model(pose_model_path), mmdeploy::Device(device)},
+                                       dataset{dataset},
+                                       device{device},
+                                       det_label{0},
+                                       det_thr{0.5}
+{
+}
 
-std::pair<std::vector<mmdeploy_rect_t>,mmdeploy::cxx::PoseDetector::Result> RTMPose::inference(const cv::Mat &img)
+std::pair<std::vector<mmdeploy_rect_t>, mmdeploy::cxx::PoseDetector::Result> RTMPose::inference(const cv::Mat &img)
 {
     mmdeploy::Detector::Result dets = detector.Apply(img);
     std::vector<mmdeploy_rect_t> bboxes;
-    for (const auto& det:dets)
+    for (const auto &det : dets)
     {
-        if (det.label_id == this->det_label && det.score > this->det_thr) {
-           bboxes.push_back(det.bbox);
+        if (det.label_id == this->det_label && det.score > this->det_thr)
+        {
+            bboxes.push_back(det.bbox);
         }
     }
 
     // apply pose detector, if no bboxes are provided, full image will be used.
     mmdeploy::PoseDetector::Result poses = pose_model.Apply(img, bboxes);
 
-    return std::make_pair(bboxes,poses);
+    return std::make_pair(bboxes, poses);
 }
 
-
-cv::Mat RTMPose::paint(const cv::Mat& img, 
-                const std::vector<mmdeploy_rect_t> &bboxes, 
-                const mmdeploy::PoseDetector::Result poses)
+cv::Mat RTMPose::paint(const cv::Mat &img,
+                       const std::vector<mmdeploy_rect_t> &bboxes,
+                       const mmdeploy::PoseDetector::Result poses)
 {
-    
+
     utils::Visualize v;
 
-    //TODO: set skeleton can be done at config time
-    if(dataset == "coco_wholebody")
+    // TODO: set skeleton can be done at config time
+    if (dataset == "coco_wholebody")
     {
         v.set_skeleton(utils::Skeleton::get("coco-wholebody"));
     }
-    else if(dataset == "coco")
+    else if (dataset == "coco")
     {
-        v.set_skeleton(utils::Skeleton::get("coco"));   
+        v.set_skeleton(utils::Skeleton::get("coco"));
     }
     else
     {
@@ -60,28 +60,28 @@ cv::Mat RTMPose::paint(const cv::Mat& img,
 
     auto sess = v.get_session(img);
 
-    for (size_t i = 0; i < bboxes.size(); ++i) {
+    for (size_t i = 0; i < bboxes.size(); ++i)
+    {
         sess.add_bbox(bboxes[i], -1, -1);
         sess.add_pose(poses[i].point, poses[i].score, poses[i].length, this->det_thr);
     }
 
-    return sess.get();
-
+    return sess.get().clone();
 }
 
-bool yarpRTMPose::configure(yarp::os::ResourceFinder& rf)
+bool yarpRTMPose::configure(yarp::os::ResourceFinder &rf)
 {
-    this->period = rf.check("period",yarp::os::Value(0.01)).asFloat32();
-    this->det_model_path = rf.check("det_model_path",yarp::os::Value("/mmdeploy/rtmpose-ort/rtmdet-nano")).asString();
-    this->pose_model_path = rf.check("pose_model_path",yarp::os::Value("/mmdeploy/rtmpose-ort/rtmpose-l")).asString();
-    this->dataset = rf.check("dataset",yarp::os::Value("coco_wholebody")).asString();
-    this->device = rf.check("device",yarp::os::Value("cuda")).asString();
-    this->module_name = rf.check("module_name",yarp::os::Value("yarpRTMPose")).asString();
-    this->openpose_format = rf.check("openpose_format",yarp::os::Value(false)).asBool();
+    this->period = rf.check("period", yarp::os::Value(0.01)).asFloat32();
+    this->det_model_path = rf.check("det_model_path", yarp::os::Value("/mmdeploy/rtmpose-ort/rtmdet-nano")).asString();
+    this->pose_model_path = rf.check("pose_model_path", yarp::os::Value("/mmdeploy/rtmpose-ort/rtmpose-l")).asString();
+    this->dataset = rf.check("dataset", yarp::os::Value("coco_wholebody")).asString();
+    this->device = rf.check("device", yarp::os::Value("cuda")).asString();
+    this->module_name = rf.check("module_name", yarp::os::Value("yarpRTMPose")).asString();
+    this->openpose_format = rf.check("openpose_format", yarp::os::Value(false)).asBool();
 
     std::string dataset_file = rf.findFile(this->dataset + ".json");
     // Create the inference engine
-    this->inferencer = std::make_unique<RTMPose>(this->det_model_path,this->pose_model_path,this->dataset,this->device);
+    this->inferencer = std::make_unique<RTMPose>(this->det_model_path, this->pose_model_path, this->dataset, this->device);
 
     // Open yarp ports
     inPort.open("/" + module_name + "/image:i");
@@ -89,42 +89,82 @@ bool yarpRTMPose::configure(yarp::os::ResourceFinder& rf)
     targetPort.open("/" + module_name + "/target:o");
 
     // Read dataset info json
-    if(dataset_file == "")
+    if (dataset_file == "")
     {
         yError() << "Dataset file was not found. Either dataset is invalid or the corresponding json file is not installed";
         return -1;
     }
-    
+
     yDebug() << "Dataset file:" << dataset_file;
     std::ifstream r(dataset_file);
     keypointInfo = json::parse(r);
 
-    std::tie(face_keypoint_idx_start,face_keypoint_idx_end) = faceKeypointsIdxs();
+    if (openpose_format)
+    {
+        // Convert names to openpose standard
+        std::string coco_to_op_filename = rf.findFile("coco_to_op.json");
+
+        if (coco_to_op_filename == "")
+        {
+            yError() << "coco_to_op.json not found";
+        }
+
+        std::ifstream coco_to_op(coco_to_op_filename);
+        auto coco_to_op_json = json::parse(coco_to_op);
+
+        for (auto &[key, value] : coco_to_op_json.items())
+        {
+
+            for (auto &[rtm_key, rtm_value] : keypointInfo.items())
+            {
+                // If the original name is equal to the key of coco_to_op then we swap with OP name
+                auto &orig_kp_name = rtm_value["name"];
+                if (orig_kp_name == key)
+                {
+                    orig_kp_name = value;
+                    break;
+                }
+            }
+        }
+
+        // Add two keypoints not present in COCO
+        std::string op_not_in_coco_filename = rf.findFile("op_not_in_coco.json");
+        if (op_not_in_coco_filename == "")
+        {
+            yError() << "op_not_in_coco.json not found";
+        }
+        std::ifstream op_not_in_coco(op_not_in_coco_filename);
+        this->op_not_in_coco_json = json::parse(op_not_in_coco);
+    }
+
+    std::tie(face_keypoint_idx_start, face_keypoint_idx_end) = faceKeypointsIdxs();
 
     return true;
 }
 
 bool yarpRTMPose::updateModule()
 {
-    if(auto* frame = inPort.read())
-    {   
-        const cv::Mat img = yarp::cv::toCvMat(*frame);
+    // mutex.wait();
+    auto *frame = inPort.read();
 
-        auto [bboxes, keypoints] = inferencer->inference(img);
+    cv::Mat img = yarp::cv::toCvMat(*frame);
 
-        //Convert keypoints to bottle format
-        yarp::os::Bottle& target = targetPort.prepare();
-        target.clear();
-        target.addList().read(this->kpToBottle(keypoints));
-        targetPort.write();
+    auto [bboxes, keypoints] = inferencer->inference(img);
 
-        cv::Mat keypoints_img = inferencer->paint(img,bboxes,keypoints);
+    // Convert keypoints to bottle format
+    yarp::os::Bottle &target = targetPort.prepare();
+    target.clear();
+    target.addList().read(this->kpToBottle(keypoints));
+    targetPort.write();
 
-        auto& outImage = outPort.prepare();
-        outImage = yarp::cv::fromCvMat<yarp::sig::PixelRgb>(keypoints_img);
-        outPort.write();
+    cv::Mat keypoints_img = inferencer->paint(img, bboxes, keypoints);
 
-    }
+    auto &outImage = outPort.prepare();
+    outImage = yarp::cv::fromCvMat<yarp::sig::PixelRgb>(keypoints_img);
+    // outImage = yarp::cv::fromCvMat<yarp::sig::PixelRgb>(img);
+    outPort.write();
+
+    // mutex.post();
 
     return true;
 }
@@ -147,11 +187,11 @@ double yarpRTMPose::getPeriod()
     return period;
 }
 
-yarp::os::Bottle yarpRTMPose::kpToBottle(const mmdeploy::cxx::PoseDetector::Result& keypoints)
+yarp::os::Bottle yarpRTMPose::kpToBottle(const mmdeploy::cxx::PoseDetector::Result &keypoints)
 {
     yarp::os::Bottle targetBottle;
 
-    if(openpose_format && dataset=="coco_wholebody")
+    if (openpose_format && dataset == "coco_wholebody")
     {
 
         // Standard format
@@ -159,11 +199,23 @@ yarp::os::Bottle yarpRTMPose::kpToBottle(const mmdeploy::cxx::PoseDetector::Resu
         // Openpose format
         //(((kp x y score)... (face (x y score) (x y score) ...) (kp x y score)))
 
-        for(auto &skeleton: keypoints)
+        for (auto &skeleton : keypoints)
         {
             yarp::os::Bottle skeletonBottle;
 
-            for(size_t i=0; i<face_keypoint_idx_start; ++i)
+            // Adding fake keypoint with 0 score to keep the format
+            for (auto &[key, value] : this->op_not_in_coco_json.items())
+            {
+                yarp::os::Bottle keypointBottle;
+                keypointBottle.addString(value);
+                keypointBottle.addFloat32(0);
+                keypointBottle.addFloat32(0);
+                keypointBottle.addFloat32(0);
+
+                skeletonBottle.addList().read(keypointBottle);
+            }
+
+            for (size_t i = 0; i < face_keypoint_idx_start; ++i)
             {
                 yarp::os::Bottle keypointBottle;
 
@@ -179,7 +231,7 @@ yarp::os::Bottle yarpRTMPose::kpToBottle(const mmdeploy::cxx::PoseDetector::Resu
             yarp::os::Bottle faceBottle;
             faceBottle.addString("Face");
 
-            for(size_t i=face_keypoint_idx_start; i<face_keypoint_idx_end; ++i)
+            for (size_t i = face_keypoint_idx_start; i < face_keypoint_idx_end; ++i)
             {
                 yarp::os::Bottle faceKeypointBottle;
                 const auto &kp = skeleton.point[i];
@@ -192,7 +244,7 @@ yarp::os::Bottle yarpRTMPose::kpToBottle(const mmdeploy::cxx::PoseDetector::Resu
 
             skeletonBottle.addList().read(faceBottle);
 
-            for(size_t i=face_keypoint_idx_end; i<skeleton.length; ++i)
+            for (size_t i = face_keypoint_idx_end; i < skeleton.length; ++i)
             {
                 yarp::os::Bottle keypointBottle;
 
@@ -207,15 +259,14 @@ yarp::os::Bottle yarpRTMPose::kpToBottle(const mmdeploy::cxx::PoseDetector::Resu
 
             targetBottle.addList().read(skeletonBottle);
         }
-
     }
     else
     {
-        for(auto &skeleton: keypoints)
+        for (auto &skeleton : keypoints)
         {
             yarp::os::Bottle skeletonBottle;
 
-            for(size_t i=0; i<skeleton.length; ++i)
+            for (size_t i = 0; i < skeleton.length; ++i)
             {
                 yarp::os::Bottle keypointBottle;
 
@@ -229,14 +280,12 @@ yarp::os::Bottle yarpRTMPose::kpToBottle(const mmdeploy::cxx::PoseDetector::Resu
 
             targetBottle.addList().read(skeletonBottle);
         }
-
     }
-    
-    
+
     return targetBottle;
 }
 
-std::pair<size_t,size_t> yarpRTMPose::faceKeypointsIdxs()
+std::pair<size_t, size_t> yarpRTMPose::faceKeypointsIdxs()
 {
 
     // TODO: make it more general like the (bugged) version below
@@ -256,7 +305,7 @@ std::pair<size_t,size_t> yarpRTMPose::faceKeypointsIdxs()
     //     }
     //     ++it;
     // }
-    
+
     // while(end == 0 && it != keypointInfo.end())
     // {
     //     std::string value = it.value()["name"].get<std::string>();
@@ -271,5 +320,5 @@ std::pair<size_t,size_t> yarpRTMPose::faceKeypointsIdxs()
     std::size_t start = 23;
     std::size_t end = 91;
 
-    return std::make_pair(start,end);
+    return std::make_pair(start, end);
 }
