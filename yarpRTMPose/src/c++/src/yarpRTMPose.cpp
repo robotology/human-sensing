@@ -126,25 +126,13 @@ bool yarpRTMPose::configure(yarp::os::ResourceFinder &rf)
                 }
             }
         }
-
-        // Add two keypoints not present in COCO
-        std::string op_not_in_coco_filename = rf.findFile("op_not_in_coco.json");
-        if (op_not_in_coco_filename == "")
-        {
-            yError() << "op_not_in_coco.json not found";
-        }
-        std::ifstream op_not_in_coco(op_not_in_coco_filename);
-        this->op_not_in_coco_json = json::parse(op_not_in_coco);
     }
-
-    std::tie(face_keypoint_idx_start, face_keypoint_idx_end) = faceKeypointsIdxs();
 
     return true;
 }
 
 bool yarpRTMPose::updateModule()
 {
-    // mutex.wait();
     auto *frame = inPort.read();
 
     cv::Mat img = yarp::cv::toCvMat(*frame);
@@ -163,8 +151,6 @@ bool yarpRTMPose::updateModule()
     outImage = yarp::cv::fromCvMat<yarp::sig::PixelRgb>(keypoints_img);
     // outImage = yarp::cv::fromCvMat<yarp::sig::PixelRgb>(img);
     outPort.write();
-
-    // mutex.post();
 
     return true;
 }
@@ -203,17 +189,9 @@ yarp::os::Bottle yarpRTMPose::kpToBottle(const mmdeploy::cxx::PoseDetector::Resu
         {
             yarp::os::Bottle skeletonBottle;
 
-            // Adding fake keypoint with 0 score to keep the format
-            for (auto &[key, value] : this->op_not_in_coco_json.items())
-            {
-                yarp::os::Bottle keypointBottle;
-                keypointBottle.addString(value);
-                keypointBottle.addFloat32(0);
-                keypointBottle.addFloat32(0);
-                keypointBottle.addFloat32(0);
-
-                skeletonBottle.addList().read(keypointBottle);
-            }
+            ////////////////////
+            // BODY KEYPOINTS //
+            ////////////////////
 
             for (size_t i = 0; i < face_keypoint_idx_start; ++i)
             {
@@ -228,6 +206,14 @@ yarp::os::Bottle yarpRTMPose::kpToBottle(const mmdeploy::cxx::PoseDetector::Resu
                 skeletonBottle.addList().read(keypointBottle);
             }
 
+            // Adding two fake keypoints to comply with OP body 25 format
+            // Missing keypoints are Neck and MidHip
+            addFakeKeypoint("Neck",skeletonBottle);
+            addFakeKeypoint("MidHip",skeletonBottle);
+
+            ////////////////////
+            // FACE KEYPOINTS //
+            ////////////////////
             yarp::os::Bottle faceBottle;
             faceBottle.addString("Face");
 
@@ -242,20 +228,13 @@ yarp::os::Bottle yarpRTMPose::kpToBottle(const mmdeploy::cxx::PoseDetector::Resu
                 faceBottle.addList().read(faceKeypointBottle);
             }
 
+            // Adding two fake face keypoints. 
+            // OP predicts eye pupils position at index 69,70 (counting from 1)
+            addFakeFaceKeypoint(faceBottle);
+            addFakeFaceKeypoint(faceBottle);
+
             skeletonBottle.addList().read(faceBottle);
 
-            for (size_t i = face_keypoint_idx_end; i < skeleton.length; ++i)
-            {
-                yarp::os::Bottle keypointBottle;
-
-                const auto &kp = skeleton.point[i];
-                keypointBottle.addString(this->keypointInfo[std::to_string(i)]["name"]);
-                keypointBottle.addFloat32(kp.x);
-                keypointBottle.addFloat32(kp.y);
-                keypointBottle.addFloat32(skeleton.score[i]);
-
-                skeletonBottle.addList().read(keypointBottle);
-            }
 
             targetBottle.addList().read(skeletonBottle);
         }
@@ -285,40 +264,22 @@ yarp::os::Bottle yarpRTMPose::kpToBottle(const mmdeploy::cxx::PoseDetector::Resu
     return targetBottle;
 }
 
-std::pair<size_t, size_t> yarpRTMPose::faceKeypointsIdxs()
+void yarpRTMPose::addFakeKeypoint(const std::string& keypoint, yarp::os::Bottle& parent)
 {
+        yarp::os::Bottle keypointBottle;
+        keypointBottle.addString(keypoint);
+        keypointBottle.addFloat32(0);
+        keypointBottle.addFloat32(0);
+        keypointBottle.addFloat32(0);
+        parent.addList().read(keypointBottle);
+}
 
-    // TODO: make it more general like the (bugged) version below
-    // std::string::size_type n;
-    // size_t start = 0;
-    // size_t end = 0;
 
-    // json::iterator it = keypointInfo.begin();
-
-    // while(start == 0 && it != keypointInfo.end())
-    // {
-    //     std::string value = it.value()["name"].get<std::string>();
-    //     n = value.find("face");
-    //     if(std::string::npos != n) //The first time we see "face" as a keypoint we stop this half
-    //     {
-    //         start = std::stoi(it.key());
-    //     }
-    //     ++it;
-    // }
-
-    // while(end == 0 && it != keypointInfo.end())
-    // {
-    //     std::string value = it.value()["name"].get<std::string>();
-    //     n = value.find("face");
-    //     if(std::string::npos == n) //The first time we don't see "face" as a keypoint we stop
-    //     {
-    //         end = std::stoi(it.key());
-    //     }
-    //     ++it;
-    // }
-
-    std::size_t start = 23;
-    std::size_t end = 91;
-
-    return std::make_pair(start, end);
+void yarpRTMPose::addFakeFaceKeypoint(yarp::os::Bottle& parent)
+{
+        yarp::os::Bottle keypointBottle;
+        keypointBottle.addFloat32(0);
+        keypointBottle.addFloat32(0);
+        keypointBottle.addFloat32(0);
+        parent.addList().read(keypointBottle);
 }

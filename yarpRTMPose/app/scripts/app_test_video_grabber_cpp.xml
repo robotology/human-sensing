@@ -29,5 +29,17 @@
         <to>/skeleton</to>
         <protocol>mjpeg</protocol>
     </connection>
+    
+    <connection>
+        <from>/yarpRTMPose/target:o</from>
+        <to>/mutualgaze/data:i</to>
+        <protocol>fast_tcp</protocol>
+    </connection>
+
+    <connection>
+        <from>/grabber</from>
+        <to>/mutualgaze/image:i</to>
+        <protocol>mjpeg</protocol>
+    </connection>
 
 </application>
