@@ -50,10 +50,11 @@ private:
 
     json keypointInfo;
 
-    std::size_t face_keypoint_idx_start;
-    std::size_t face_keypoint_idx_end;
-
-    json op_not_in_coco_json; // optional json used only if openpose format is true
+    //TODO: this is valid for the COCO_wholebody dataset. Need to parameterize it better.
+    const std::size_t face_keypoint_idx_start = 23;
+    const std::size_t face_keypoint_idx_end = 91;
+    void addFakeKeypoint(const std::string& keypoint, yarp::os::Bottle& parent);
+    void addFakeFaceKeypoint(yarp::os::Bottle& parent);
 
 public:
     std::unique_ptr<RTMPose> inferencer;
