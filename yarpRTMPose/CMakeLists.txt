@@ -19,7 +19,7 @@ set(MMDeploy_EXAMPLE_DIR ${MMDeploy_DIR}/../../../example/cpp/cpp)
 add_subdirectory(src/c++)
 
 if(ENABLE_tests)
-    add_subdirectory(src/tests)
+    add_subdirectory(tests)
 endif()
 
 file(GLOB conf ${CMAKE_CURRENT_SOURCE_DIR}/app/conf/yarpRTMPose.ini)
