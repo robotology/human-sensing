@@ -1,5 +1,5 @@
 {
-    "image": "fbrand-new/yarprtmpose:devel_cudnn",
+    "image": "fbrand/llm4hri:devl_mmdeploy",
     "customizations": {
         "vscode": {
             "extensions": [

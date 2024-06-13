@@ -8,16 +8,17 @@
 
 TEST_CASE("Keypoints from image","[yarpRTMPose]")
 {
-    std::filesystem::path img_path("/yarpRTMPose/tests/data/000000000785.jpg");
-    cv::Mat test_img = cv::imread(img_path);
+    const std::filesystem::path img_path{"../../tests/data/000000000785.jpg"};
+
+    cv::Mat test_img{cv::imread(img_path)};
 
     if(test_img.empty())
     {
-        std::cout << "Could not read the image" << img_path;
+        std::cout << "Could not read the image" << img_path << std::endl;
     }
 
-    const std::string det_model_path = "/mmdeploy/rtmpose-ort/rtmdet-nano";
-    const std::string pose_model_path = "/mmdeploy/rtmpose-ort/rtmpose-l";
+    const std::filesystem::path det_model_path{"../../download/deployed_models/rtmpose-ort/rtmdet-nano"};
+    const std::filesystem::path pose_model_path{"../../download/deployed_models/rtmpose-ort/rtmpose-l"};
 
     const std::string dataset = "coco_wholebody"; 
     const std::string device = "cuda";
@@ -38,7 +39,7 @@ TEST_CASE("RTMPose pipeline","[yarpRTMPose]")
     //TODO
 
     // 1. Build keypoints vector
-    std::filesystem::path img_path("/yarpRTMPose/tests/data/000000000785.jpg");
+    const std::filesystem::path img_path{"../../tests/data/000000000785.jpg"};
     cv::Mat test_img = cv::imread(img_path);
 
     if(test_img.empty())
@@ -46,8 +47,8 @@ TEST_CASE("RTMPose pipeline","[yarpRTMPose]")
         std::cout << "Could not read the image" << img_path;
     }
 
-    const std::string det_model_path = "/mmdeploy/rtmpose-ort/rtmdet-nano";
-    const std::string pose_model_path = "/mmdeploy/rtmpose-ort/rtmpose-l";
+    const std::filesystem::path det_model_path{"../../download/deployed_models/rtmpose-ort/rtmdet-nano"};
+    const std::filesystem::path pose_model_path{"../../download/deployed_models/rtmpose-ort/rtmpose-l"};
 
     const std::string dataset = "coco_wholebody"; 
     const std::string device = "cuda";

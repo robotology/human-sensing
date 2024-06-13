@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # go to the mmdeploy folder
-cd /mmdeploy
+cd /root/workspace/mmdeploy
 
 # Check if there are already deployed models locally and copy them in the expected path
 DEPLOYED_MODELS_DIR="/yarpRTMPose/download/deployed_models"
@@ -26,7 +26,7 @@ else
 	FILE="https://download.openmmlab.com/mmpose/v1/projects/rtmpose/$DET_FILE"
 	fi
 
-	python tools/deploy.py \
+	python3 tools/deploy.py \
 			configs/mmdet/detection/detection_onnxruntime_static.py \
 			../mmpose/projects/rtmpose/rtmdet/person/rtmdet_nano_320-8xb32_coco-person.py \
 			$FILE \
@@ -43,7 +43,7 @@ else
 	fi
 
 
-	python tools/deploy.py \
+	python3 tools/deploy.py \
 			configs/mmpose/pose-detection_simcc_onnxruntime_dynamic.py \
 			../mmpose/projects/rtmpose/rtmpose/wholebody_2d_keypoint/rtmpose-l_8xb64-270e_coco-wholebody-256x192.py \
 			$FILE \
