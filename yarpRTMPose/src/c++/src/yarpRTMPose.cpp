@@ -5,6 +5,7 @@
 #include "mmdeploy/detector.hpp"
 #include "utils/visualize.h"
 #include <fstream>
+#include <cstdlib>
 
 RTMPose::RTMPose(std::string det_model_path,
                  std::string pose_model_path,
@@ -71,9 +72,14 @@ cv::Mat RTMPose::paint(const cv::Mat &img,
 
 bool yarpRTMPose::configure(yarp::os::ResourceFinder &rf)
 {
+    const char* mmdeploy_path_env = std::getenv("MMDEPLOY_DIR");
+    std::string mmdeploy_path = mmdeploy_path_env ? std::string(mmdeploy_path_env) : "/mmdeploy";
+    std::string det_model_default_path = mmdeploy_path + "/rtmpose-ort/rtmdet-nano";
+    std::string pose_model_default_path = mmdeploy_path + "/rtmpose-ort/rtmpose-l";
+
     this->period = rf.check("period", yarp::os::Value(0.01)).asFloat32();
-    this->det_model_path = rf.check("det_model_path", yarp::os::Value("/mmdeploy/rtmpose-ort/rtmdet-nano")).asString();
-    this->pose_model_path = rf.check("pose_model_path", yarp::os::Value("/mmdeploy/rtmpose-ort/rtmpose-l")).asString();
+    this->det_model_path = rf.check("det_model_path", yarp::os::Value(det_model_default_path)).asString();
+    this->pose_model_path = rf.check("pose_model_path", yarp::os::Value(pose_model_default_path)).asString();
     this->dataset = rf.check("dataset", yarp::os::Value("coco_wholebody")).asString();
     this->device = rf.check("device", yarp::os::Value("cuda")).asString();
     this->module_name = rf.check("module_name", yarp::os::Value("yarpRTMPose")).asString();
